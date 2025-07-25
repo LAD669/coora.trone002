@@ -4,7 +4,7 @@
     "slug": "coora-for-sport",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/coora.icon.png",
+    "icon": "./images/coora.icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
