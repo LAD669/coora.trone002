@@ -7,27 +7,26 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "fallbackToExpoCli": true,
       "env": {
         "EXPO_NO_NEW_ARCH": "1"
       }
     },
     "preview": {
       "distribution": "internal",
-      "fallbackToExpoCli": true,
       "env": {
         "EXPO_NO_NEW_ARCH": "1"
       }
     },
     "production": {
       "autoIncrement": true,
-      "fallbackToExpoCli": true,
       "env": {
         "EXPO_NO_NEW_ARCH": "1"
       }
-    }
+    },
+    "fallbackToExpoCli": true
   },
   "submit": {
     "production": {}
   }
 }
+
