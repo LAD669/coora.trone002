@@ -23,7 +23,7 @@
         "EXPO_NO_NEW_ARCH": "1"
       }
     },
-    "fallbackToExpoCli": true
+    "fallbackToExpoCli": {}
   },
   "submit": {
     "production": {}
