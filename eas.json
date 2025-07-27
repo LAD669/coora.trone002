@@ -22,8 +22,7 @@
       "env": {
         "EXPO_NO_NEW_ARCH": "1"
       }
-    },
-    "fallbackToExpoCli": {}
+    }
   },
   "submit": {
     "production": {}
