@@ -20,19 +20,13 @@
       "expo-font",
       "expo-web-browser"
     ],
-    "experiments": {
-      "typedRoutes": true
+    "android": {
+      "package": "com.coora.app.cooraforsport"
     },
     "extra": {
-      "router": {
-        "origin": false
-      },
       "eas": {
         "projectId": "7d523146-86fe-4d7c-8d60-7d3fc4c8dde4"
       }
-    },
-    "android": {
-      "package": "com.coora.app.cooraforsport"
     }
   }
 }
