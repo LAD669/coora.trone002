@@ -7,8 +7,19 @@
     "icon": "./images/coora.icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "jsEngine": "hermes",
+    "experimental": {
+      "newArchEnabled": false
+    },
+    "splash": {
+      "image": "./images/COORA (2).png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.coora.app.cooraforsport",
@@ -16,13 +27,14 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
-    "plugins": [
-      "expo-font",
-      "expo-web-browser"
-    ],
     "android": {
       "package": "com.coora.app.cooraforsport"
     },
+    "plugins": [
+      "expo-font",
+      "expo-splash-screen",
+      "expo-router"
+    ],
     "extra": {
       "eas": {
         "projectId": "7d523146-86fe-4d7c-8d60-7d3fc4c8dde4"
@@ -30,4 +42,3 @@
     }
   }
 }
-
