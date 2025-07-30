@@ -1,11 +1,19 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { Text } from 'react-native';
 
-export function LoadingScreen() {
+interface LoadingScreenProps {
+  message?: string;
+  isError?: boolean;
+}
+
+export function LoadingScreen({ message = 'Loading...', isError = false }: LoadingScreenProps) {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#007AFF" />
-      <Text style={styles.text}>Loading...</Text>
+      <View style={styles.content}>
+        <ActivityIndicator size="large" color={isError ? '#FF3B30' : '#1A1A1A'} />
+        <Text style={[styles.text, isError && styles.errorText]}>{message}</Text>
+      </View>
     </View>
   );
 }
@@ -13,14 +21,20 @@ export function LoadingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+  },
+  content: {
+    alignItems: 'center',
+    gap: 16,
   },
   text: {
-    marginTop: 16,
     fontSize: 16,
     color: '#1A1A1A',
     fontFamily: 'Urbanist-Medium',
+  },
+  errorText: {
+    color: '#FF3B30',
   },
 });

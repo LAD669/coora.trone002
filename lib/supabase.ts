@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/database';
+import { storage } from './storage';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
@@ -9,15 +10,55 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    storage: {
+      getItem: (key) => storage.getItem(key),
+      setItem: (key, value) => storage.setItem(key, value),
+      removeItem: (key) => storage.removeItem(key),
+    },
   },
 });
 
-// Helper functions for common operations
+// Listen to auth state changes
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+    // Store the session
+    if (session) {
+      storage.setItem('supabase.auth.token', session.access_token);
+      storage.setItem('supabase.auth.refreshToken', session.refresh_token);
+    }
+  } else if (event === 'SIGNED_OUT') {
+    // Clear the session
+    storage.removeItem('supabase.auth.token');
+    storage.removeItem('supabase.auth.refreshToken');
+  }
+});
 
+// Helper functions for common operations
 export const getCurrentUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) throw error;
   return user;
+};
+
+export const restoreSession = async () => {
+  try {
+    const access_token = await storage.getItem('supabase.auth.token');
+    const refresh_token = await storage.getItem('supabase.auth.refreshToken');
+
+    if (access_token && refresh_token) {
+      const { data: { session }, error } = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
+
+      if (error) throw error;
+      return session;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error restoring session:', error);
+    return null;
+  }
 };
 
 export const getUserProfile = async (userId: string) => {

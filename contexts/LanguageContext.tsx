@@ -220,6 +220,12 @@ interface Translations {
   somethingWentWrong: string;
   postDetails: string;
   noReactionsYet: string;
+  editProfileDetails: string;
+  changePassword: string;
+  updatePassword: string;
+  privacySettings: string;
+  notificationPreferences: string;
+  signOutDescription: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -440,6 +446,12 @@ const translations: Record<Language, Translations> = {
     somethingWentWrong: 'Something went wrong',
     postDetails: 'Post Details',
     noReactionsYet: 'No reactions yet',
+    editProfileDetails: 'Update your personal information',
+    changePassword: 'Change Password',
+    updatePassword: 'Update your account password',
+    privacySettings: 'Privacy and security settings',
+    notificationPreferences: 'Manage notification settings',
+    signOutDescription: 'Sign out of your account',
   },
   de: {
     // Navigation
@@ -662,6 +674,12 @@ const translations: Record<Language, Translations> = {
     somethingWentWrong: 'Etwas ist schief gelaufen',
     postDetails: 'Beitrag Details',
     noReactionsYet: 'Noch keine Reaktionen',
+    editProfileDetails: 'Aktualisieren Sie Ihre persönlichen Daten',
+    changePassword: 'Passwort ändern',
+    updatePassword: 'Aktualisieren Sie Ihr Kontopasswort',
+    privacySettings: 'Datenschutz- und Sicherheitseinstellungen',
+    notificationPreferences: 'Benachrichtigungseinstellungen verwalten',
+    signOutDescription: 'Melden Sie sich von Ihrem Konto ab',
   },
 };
 

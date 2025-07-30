@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { router } from 'expo-router';
-import { validateAccessCode, getUserProfile, getCurrentUser } from '@/lib/supabase';
+import { validateAccessCode, getUserProfile, getCurrentUser, restoreSession } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
+import { LoadingScreen } from '@/components/LoadingScreen';
+import { Alert } from 'react-native';
+import { storage } from '@/lib/storage';
+
+// Maximum time to wait for session restoration (in milliseconds)
+const SESSION_RESTORE_TIMEOUT = 5000;
 
 interface User {
   id: string;
@@ -20,7 +26,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string, accessCode?: string) => Promise<void>;
   signOut: () => Promise<void>;
-  setUser: (user: User | null) => void;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,38 +37,152 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isRestoringSession, setIsRestoringSession] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+
+  // Clear stored session data and redirect to login
+  const handleSessionError = async (error: any) => {
+    console.error('Session restoration failed:', error);
+    await storage.removeItem('supabase.auth.token');
+    await storage.removeItem('supabase.auth.refreshToken');
+    setUser(null);
+    setSessionError('Session expired. Please sign in again.');
+    router.replace('/auth/login');
+  };
+
+  // Verify and set user data
+  const verifyAndSetUser = async (userId: string): Promise<boolean> => {
+    try {
+      console.log('Verifying user data for:', userId);
+      
+      // First verify the user is still valid
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !currentUser) {
+        console.error('User verification failed:', userError);
+        throw new Error('Failed to verify user');
+      }
+
+      console.log('User verified, fetching profile...');
+      const userProfile = await getUserProfile(userId);
+      
+      setUser({
+        id: userProfile.id,
+        name: userProfile.name,
+        email: userProfile.email,
+        role: userProfile.role,
+        teamId: userProfile.team_id || undefined,
+        clubId: userProfile.club_id || undefined,
+      });
+      
+      console.log('User profile set successfully');
+      return true;
+    } catch (error) {
+      console.error('Error verifying user:', error);
+      return false;
+    }
+  };
 
   // Check for existing session on app start
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (isRestoringSession) {
+        console.log('Session restoration timed out after', SESSION_RESTORE_TIMEOUT, 'ms');
+        setIsRestoringSession(false);
+        setIsLoading(false);
+        setIsInitialized(true);
+        handleSessionError(new Error('Session restoration timed out'));
+      }
+    }, SESSION_RESTORE_TIMEOUT);
+
     checkAuthState();
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setIsLoading(true);
+        try {
+          if (session?.user) {
+            const success = await verifyAndSetUser(session.user.id);
+            if (!success) {
+              throw new Error('Failed to verify user after auth state change');
+            }
+          }
+        } catch (error) {
+          console.error('Error updating user state:', error);
+          handleSessionError(error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        console.log('User signed out');
+        setUser(null);
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const checkAuthState = async () => {
+    console.log('Starting session restoration...');
+    setIsRestoringSession(true);
+    setSessionError(null);
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      // First try to restore the session from storage
+      console.log('Attempting to restore session from storage...');
+      const session = await restoreSession();
+      
       if (session?.user) {
-        const userProfile = await getUserProfile(session.user.id);
-        setUser({
-          id: userProfile.id,
-          name: userProfile.name,
-          email: userProfile.email,
-          role: userProfile.role,
-          teamId: userProfile.team_id || undefined,
-          clubId: userProfile.club_id || undefined,
-        });
+        console.log('Session restored, verifying user...');
+        const success = await verifyAndSetUser(session.user.id);
+        if (!success) {
+          throw new Error('Failed to verify user after session restoration');
+        }
+      } else {
+        // If no stored session, check for active session
+        console.log('No stored session found, checking for active session...');
+        const { data: { session: activeSession } } = await supabase.auth.getSession();
+        if (activeSession?.user) {
+          console.log('Active session found, verifying user...');
+          const success = await verifyAndSetUser(activeSession.user.id);
+          if (!success) {
+            throw new Error('Failed to verify user from active session');
+          }
+        } else {
+          console.log('No active session found');
+          setUser(null);
+        }
       }
     } catch (error) {
-      console.error('Error checking auth state:', error);
+      console.error('Error during session restoration:', error);
+      handleSessionError(error);
     } finally {
+      setIsLoading(false);
       setIsInitialized(true);
+      setIsRestoringSession(false);
+      console.log('Session restoration process completed');
     }
   };
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
+    setSessionError(null);
     try {
+      console.log('Attempting sign in for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -71,17 +191,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (error) throw error;
 
       if (data.user) {
-        const userProfile = await getUserProfile(data.user.id);
-        setUser({
-          id: userProfile.id,
-          name: userProfile.name,
-          email: userProfile.email,
-          role: userProfile.role,
-          teamId: userProfile.team_id || undefined,
-          clubId: userProfile.club_id || undefined,
-        });
+        const success = await verifyAndSetUser(data.user.id);
+        if (!success) {
+          throw new Error('Failed to verify user after sign in');
+        }
       }
     } catch (error) {
+      console.error('Sign in error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -90,6 +206,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signUp = async (email: string, password: string, name: string, accessCode?: string) => {
     setIsLoading(true);
+    setSessionError(null);
     try {
       // Validate access code if provided
       if (accessCode) {
@@ -162,6 +279,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       }
     } catch (error) {
+      console.error('Sign up error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -171,33 +289,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = async () => {
     setIsLoading(true);
     try {
-      console.log('AuthContext: Starting signOut process...');
-      
-      // Sign out from Supabase
+      console.log('Starting sign out process...');
       await supabase.auth.signOut();
-      console.log('AuthContext: Supabase signOut completed');
-      
-      // Clear user state
+      await storage.removeItem('supabase.auth.token');
+      await storage.removeItem('supabase.auth.refreshToken');
       setUser(null);
-      console.log('AuthContext: User state cleared');
-      
-      // Navigate to login screen
+      console.log('Sign out completed successfully');
       router.replace('/auth/login');
-      console.log('AuthContext: Navigation to login initiated');
-      
     } catch (error) {
-      console.error('AuthContext: SignOut error:', error);
-      
-      // Even if there's an error, clear the user state and navigate
-      // This ensures the user is logged out locally even if the server call fails
+      console.error('Sign out error:', error);
+      // Force sign out even if there's an error
       setUser(null);
       router.replace('/auth/login');
-      
-      // Re-throw the error so the calling component can handle it
       throw new Error(error instanceof Error ? error.message : 'Failed to sign out');
     } finally {
       setIsLoading(false);
-      console.log('AuthContext: SignOut process completed');
     }
   };
 
@@ -212,6 +318,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser,
   };
 
+  // Show loading screen while restoring session
+  if (isRestoringSession) {
+    return (
+      <LoadingScreen 
+        message={sessionError || "Restoring your session..."} 
+        isError={!!sessionError}
+      />
+    );
+  }
+
+  // Show loading screen while initializing and loading
+  if (!isInitialized || isLoading || !user) {
+    return (
+      <LoadingScreen 
+        message={sessionError || "Loading..."} 
+        isError={!!sessionError}
+      />
+    );
+  }
+
   return (
     <AuthContext.Provider value={value}>
       {children}
@@ -221,7 +347,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

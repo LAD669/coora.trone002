@@ -89,6 +89,7 @@ function RootLayoutNav() {
       />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="EditProfileScreen" />
       <Stack.Screen name="live-ticker" />
       <Stack.Screen 
         name="auth" 
