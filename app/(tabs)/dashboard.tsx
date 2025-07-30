@@ -671,13 +671,15 @@ export default function DashboardScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t.teamGoals}</Text>
             <View style={styles.sectionActions}>
-              {canManagePlayers && completedMatches.length > 0 && (
+              {canManagePlayers && (completedMatches.length > 0 || matchesWithResults.length > 0) && (
                 <TouchableOpacity 
                   style={styles.matchResultsButton}
                   onPress={() => setMatchResultsModalVisible(true)}
                 >
                   <Trophy size={16} color="#FF9500" strokeWidth={2} />
-                  <Text style={styles.matchResultsText}>Enter Results</Text>
+                  <Text style={styles.matchResultsText}>
+                    {completedMatches.length > 0 ? 'Enter Results' : 'View Results'}
+                  </Text>
                 </TouchableOpacity>
               )}
               {canManagePlayers && (
@@ -926,7 +928,9 @@ export default function DashboardScreen() {
       >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Enter Match Results</Text>
+            <Text style={styles.modalTitle}>
+              {completedMatches.length > 0 ? 'Enter Match Results' : 'Match Results'}
+            </Text>
             <TouchableOpacity onPress={() => setMatchResultsModalVisible(false)}>
               <X size={24} color="#8E8E93" strokeWidth={1.5} />
             </TouchableOpacity>
@@ -934,13 +938,20 @@ export default function DashboardScreen() {
 
           {!selectedMatch ? (
             <ScrollView style={styles.matchesList} showsVerticalScrollIndicator={false}>
-              <Text style={styles.matchesTitle}>Select a Completed Match</Text>
+              <Text style={styles.matchesTitle}>
+                {completedMatches.length > 0 ? 'Select a Completed Match' : 'Completed Matches'}
+              </Text>
               
               {/* Matches that need results */}
               {completedMatches.length === 0 ? (
                 <View style={styles.emptyMatches}>
                   <Trophy size={48} color="#E5E5E7" strokeWidth={1} />
-                  <Text style={styles.emptyMatchesText}>No completed matches without results</Text>
+                  <Text style={styles.emptyMatchesText}>
+                    {matchesWithResults.length > 0 
+                      ? 'All completed matches have results' 
+                      : 'No completed matches found'
+                    }
+                  </Text>
                 </View>
               ) : (
                 <>
