@@ -134,9 +134,37 @@ export default function DashboardScreen() {
       setTeamGoals(goalsData || []);
 
       // Load team stats
-      const statsData = user.role === 'admin' && user.clubId
-        ? await getClubStats(user.clubId)
-        : await getTeamStats(user.teamId);
+      let statsData;
+      try {
+        statsData = user.role === 'admin' && user.clubId
+          ? await getClubStats(user.clubId)
+          : await getTeamStats(user.teamId);
+      } catch (error) {
+        console.error('❌ Error loading stats data:', error);
+        // Provide fallback data if stats loading fails
+        statsData = {
+          totalGoals: 0,
+          totalMatches: 0,
+          winRate: 0,
+          totalPlayers: 0,
+          upcomingEvents: 0,
+          trainings: 0
+        };
+      }
+      
+      // Log the raw stats data to understand the structure
+      console.log('🔍 Dashboard - Raw stats data:', {
+        statsData,
+        userRole: user.role,
+        teamId: user.teamId,
+        clubId: user.clubId,
+        totalGoals: statsData?.totalGoals,
+        totalMatches: statsData?.totalMatches,
+        winRate: statsData?.winRate,
+        trainings: statsData?.trainings,
+        totalPlayers: statsData?.totalPlayers,
+        upcomingEvents: statsData?.upcomingEvents
+      });
       
       // Calculate changes from previous stats
       const calculateChange = (current: number, previous: number | null) => {
@@ -162,27 +190,36 @@ export default function DashboardScreen() {
 
         switch (stat.title) {
           case 'Goals Scored':
-            currentValue = statsData.totalGoals;
+            currentValue = statsData?.totalGoals ?? 0;
+                  console.log('🎯 Goals Scored calculation:', {
+        rawValue: statsData?.totalGoals,
+        type: typeof statsData?.totalGoals,
+        finalValue: currentValue,
+        isNull: statsData?.totalGoals === null,
+        isUndefined: statsData?.totalGoals === undefined,
+        statsDataKeys: statsData ? Object.keys(statsData) : [],
+        note: 'Calculated by summing team_score from all match_results'
+      });
             change = calculateChange(currentValue, previousStats?.totalGoals);
             break;
           case 'Matches Played':
-            currentValue = statsData.totalMatches;
+            currentValue = statsData?.totalMatches ?? 0;
             change = calculateChange(currentValue, previousStats?.totalMatches);
             break;
           case 'Trainings Done':
-            currentValue = statsData.trainings;
+            currentValue = statsData?.trainings ?? 0;
             change = calculateChange(currentValue, previousStats?.trainings);
             break;
           case 'Win Rate':
-            currentValue = `${statsData.winRate}%`;
-            change = calculatePercentageChange(statsData.winRate, previousStats?.winRate);
+            currentValue = `${statsData?.winRate ?? 0}%`;
+            change = calculatePercentageChange(statsData?.winRate ?? 0, previousStats?.winRate);
             break;
           case 'Team Players':
-            currentValue = statsData.totalPlayers;
+            currentValue = statsData?.totalPlayers ?? 0;
             change = calculateChange(currentValue, previousStats?.totalPlayers);
             break;
           case 'Upcoming Events':
-            currentValue = statsData.upcomingEvents;
+            currentValue = statsData?.upcomingEvents ?? 0;
             change = calculateChange(currentValue, previousStats?.upcomingEvents);
             break;
           default:
@@ -510,6 +547,25 @@ export default function DashboardScreen() {
     }
   };
 
+  // Debug function to test goals calculation
+  const debugGoalsCalculation = async () => {
+    if (!user?.teamId) return;
+    
+    try {
+      console.log('🔍 Debug: Testing goals calculation...');
+      const statsData = await getTeamStats(user.teamId);
+      console.log('🔍 Debug: Stats data:', statsData);
+      
+      // Also test club stats if user is admin
+      if (user.role === 'admin' && user.clubId) {
+        const clubStatsData = await getClubStats(user.clubId);
+        console.log('🔍 Debug: Club stats data:', clubStatsData);
+      }
+    } catch (error) {
+      console.error('🔍 Debug: Error testing goals calculation:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -713,6 +769,18 @@ export default function DashboardScreen() {
             </View>
           )}
         </View>
+
+        {/* Debug Section - Remove after testing */}
+        {__DEV__ && (
+          <View style={styles.debugSection}>
+            <TouchableOpacity 
+              style={styles.debugButton}
+              onPress={debugGoalsCalculation}
+            >
+              <Text style={styles.debugButtonText}>Debug Goals Calculation</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
@@ -2095,5 +2163,23 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
     lineHeight: 20,
+  },
+  // Debug styles
+  debugSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+  },
+  debugButton: {
+    backgroundColor: '#FF3B30',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  debugButtonText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
   },
 });

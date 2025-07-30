@@ -237,10 +237,12 @@ export const getTeamEvents = async (teamId: string) => {
 };
 
 export const getTeamStats = async (teamId: string) => {
+  console.log('📊 getTeamStats called for teamId:', teamId);
+  
   // Get aggregated team statistics
   const { data: matchResults, error: matchError } = await supabase
     .from('match_results')
-    .select('team_score, opponent_score, goals, assists')
+    .select('id, team_score, opponent_score')
     .eq('team_id', teamId);
 
   if (matchError) throw matchError;
@@ -259,25 +261,25 @@ export const getTeamStats = async (teamId: string) => {
 
   if (eventsError) throw eventsError;
 
-  // Helper function to safely parse JSON
-  const safeJsonParse = (jsonString: any): any[] => {
-    if (!jsonString || typeof jsonString !== 'string') {
-      return [];
-    }
-    
-    try {
-      const parsed = JSON.parse(jsonString);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      console.warn('Failed to parse JSON for goals/assists:', jsonString, error);
-      return [];
-    }
-  };
+  console.log('📊 getTeamStats - Raw data fetched:', {
+    matchResults: matchResults?.length || 0,
+    players: players?.length || 0,
+    events: events?.length || 0,
+    sampleMatchResult: matchResults?.[0]
+  });
 
-  // Calculate stats with safe JSON parsing
+  // Calculate total goals by summing team_score from all matches
   const totalGoals = matchResults.reduce((sum, match) => {
-    const goals = safeJsonParse(match.goals);
-    return sum + goals.length;
+    const teamScore = match.team_score || 0;
+    
+    console.log('⚽ Match goals calculation:', {
+      matchId: match.id,
+      teamScore: teamScore,
+      opponentScore: match.opponent_score || 0,
+      runningTotal: sum + teamScore
+    });
+    
+    return sum + teamScore;
   }, 0);
 
   const totalMatches = matchResults.length;
@@ -285,7 +287,7 @@ export const getTeamStats = async (teamId: string) => {
   const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
   const upcomingEvents = events.filter(e => new Date(e.event_date) > new Date()).length;
 
-  return {
+  const result = {
     totalGoals,
     totalMatches,
     winRate,
@@ -293,9 +295,14 @@ export const getTeamStats = async (teamId: string) => {
     upcomingEvents,
     trainings: events.filter(e => e.event_type === 'training').length,
   };
+
+  console.log('📊 getTeamStats - Final result:', result);
+  return result;
 };
 
 export const getClubStats = async (clubId: string) => {
+  console.log('🏢 getClubStats called for clubId:', clubId);
+  
   // Get all teams in the club
   const { data: teams, error: teamsError } = await supabase
     .from('teams')
@@ -309,7 +316,7 @@ export const getClubStats = async (clubId: string) => {
   // Get aggregated stats for all teams
   const { data: matchResults, error: matchError } = await supabase
     .from('match_results')
-    .select('team_score, opponent_score, goals, assists')
+    .select('id, team_score, opponent_score')
     .in('team_id', teamIds);
 
   if (matchError) throw matchError;
@@ -328,25 +335,27 @@ export const getClubStats = async (clubId: string) => {
 
   if (eventsError) throw eventsError;
 
-  // Helper function to safely parse JSON
-  const safeJsonParse = (jsonString: any): any[] => {
-    if (!jsonString || typeof jsonString !== 'string') {
-      return [];
-    }
-    
-    try {
-      const parsed = JSON.parse(jsonString);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      console.warn('Failed to parse JSON for goals/assists:', jsonString, error);
-      return [];
-    }
-  };
+  console.log('🏢 getClubStats - Raw data fetched:', {
+    teams: teams?.length || 0,
+    teamIds,
+    matchResults: matchResults?.length || 0,
+    players: players?.length || 0,
+    events: events?.length || 0,
+    sampleMatchResult: matchResults?.[0]
+  });
 
-  // Calculate aggregated stats with safe JSON parsing
+  // Calculate total goals by summing team_score from all matches
   const totalGoals = matchResults.reduce((sum, match) => {
-    const goals = safeJsonParse(match.goals);
-    return sum + goals.length;
+    const teamScore = match.team_score || 0;
+    
+    console.log('⚽ Club match goals calculation:', {
+      matchId: match.id,
+      teamScore: teamScore,
+      opponentScore: match.opponent_score || 0,
+      runningTotal: sum + teamScore
+    });
+    
+    return sum + teamScore;
   }, 0);
 
   const totalMatches = matchResults.length;
@@ -354,7 +363,7 @@ export const getClubStats = async (clubId: string) => {
   const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
   const upcomingEvents = events.filter(e => new Date(e.event_date) > new Date()).length;
 
-  return {
+  const result = {
     totalGoals,
     totalMatches,
     winRate,
@@ -363,6 +372,9 @@ export const getClubStats = async (clubId: string) => {
     upcomingEvents,
     trainings: events.filter(e => e.event_type === 'training').length,
   };
+
+  console.log('🏢 getClubStats - Final result:', result);
+  return result;
 };
 
 export const createClub = async (club: {
