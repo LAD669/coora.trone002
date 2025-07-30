@@ -1257,6 +1257,11 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontFamily: 'Urbanist-SemiBold',
   },
+  sectionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   addGoalButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1269,6 +1274,21 @@ const styles = StyleSheet.create({
   addGoalText: {
     fontSize: 14,
     color: '#007AFF',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
+  },
+  matchResultsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#FFF8F0',
+    borderRadius: 8,
+  },
+  matchResultsText: {
+    fontSize: 14,
+    color: '#FF9500',
     fontWeight: '500',
     fontFamily: 'Urbanist-Medium',
   },

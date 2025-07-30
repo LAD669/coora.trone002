@@ -254,14 +254,30 @@ export const getTeamStats = async (teamId: string) => {
 
   const { data: events, error: eventsError } = await supabase
     .from('events')
-    .select('id, event_type')
+    .select('id, event_type, event_date')
     .eq('team_id', teamId);
 
   if (eventsError) throw eventsError;
 
-  // Calculate stats
+  // Helper function to safely parse JSON
+  const safeJsonParse = (jsonString: any): any[] => {
+    if (!jsonString || typeof jsonString !== 'string') {
+      return [];
+    }
+    
+    try {
+      const parsed = JSON.parse(jsonString);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.warn('Failed to parse JSON for goals/assists:', jsonString, error);
+      return [];
+    }
+  };
+
+  // Calculate stats with safe JSON parsing
   const totalGoals = matchResults.reduce((sum, match) => {
-    return sum + (match.goals ? JSON.parse(match.goals as string).length : 0);
+    const goals = safeJsonParse(match.goals);
+    return sum + goals.length;
   }, 0);
 
   const totalMatches = matchResults.length;
@@ -312,9 +328,25 @@ export const getClubStats = async (clubId: string) => {
 
   if (eventsError) throw eventsError;
 
-  // Calculate aggregated stats
+  // Helper function to safely parse JSON
+  const safeJsonParse = (jsonString: any): any[] => {
+    if (!jsonString || typeof jsonString !== 'string') {
+      return [];
+    }
+    
+    try {
+      const parsed = JSON.parse(jsonString);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.warn('Failed to parse JSON for goals/assists:', jsonString, error);
+      return [];
+    }
+  };
+
+  // Calculate aggregated stats with safe JSON parsing
   const totalGoals = matchResults.reduce((sum, match) => {
-    return sum + (match.goals ? JSON.parse(match.goals as string).length : 0);
+    const goals = safeJsonParse(match.goals);
+    return sum + goals.length;
   }, 0);
 
   const totalMatches = matchResults.length;

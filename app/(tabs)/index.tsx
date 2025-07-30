@@ -100,7 +100,9 @@ function InfohubScreenContent() {
     setIsLoading(true);
     try {
       console.log('Fetching posts for team:', user.teamId, 'type:', activeTab);
-      const data = await getTeamPosts(user.teamId, activeTab);
+      // Map 'teams' to 'coach' for backend compatibility
+      const postType = activeTab === 'teams' ? 'coach' : activeTab;
+      const data = await getTeamPosts(user.teamId, postType);
       console.log('Received posts data:', data);
       setPosts(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -153,7 +155,7 @@ function InfohubScreenContent() {
         title: newPost.title,
         content: newPost.content,
         imageUrl: newPost.imageUrl,
-        postType: postableTab === 'teams' ? 'coach' : postableTab, // Map 'teams' to 'coach' for backend compatibility
+        postType: (postableTab === 'teams' ? 'coach' : postableTab) as 'organization' | 'coach', // Map 'teams' to 'coach' for backend compatibility
         teamId: user.teamId!,
         authorId: user.id,
       };
@@ -415,13 +417,19 @@ function InfohubScreenContent() {
 
       <Modal
         isVisible={isModalVisible}
-        onBackdropPress={() => setModalVisible(false)}
+        onBackdropPress={() => {
+          setModalVisible(false);
+          setNewPost({ title: '', content: '', imageUrl: '' });
+        }}
         style={styles.modal}
       >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t.createUpdate}</Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
+            <TouchableOpacity onPress={() => {
+              setModalVisible(false);
+              setNewPost({ title: '', content: '', imageUrl: '' });
+            }}>
               <Text style={styles.cancelText}>{t.cancel}</Text>
             </TouchableOpacity>
           </View>
@@ -536,7 +544,7 @@ function InfohubScreenContent() {
                     getTopReactions(selectedPostForModal.post_reactions).map(([emoji, count]) => (
                       <View key={emoji} style={styles.postModalReactionItem}>
                         <Text style={styles.postModalReactionEmoji}>{emoji}</Text>
-                        <Text style={styles.postModalReactionCount}>{count}</Text>
+                        <Text style={styles.postModalReactionCount}>{count as number}</Text>
                       </View>
                     ))
                   ) : (
