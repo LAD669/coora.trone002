@@ -575,24 +575,7 @@ export default function DashboardScreen() {
     }
   };
 
-  // Debug function to test goals calculation
-  const debugGoalsCalculation = async () => {
-    if (!user?.teamId) return;
-    
-    try {
-      console.log('🔍 Debug: Testing goals calculation...');
-      const statsData = await getTeamStats(user.teamId);
-      console.log('🔍 Debug: Stats data:', statsData);
-      
-      // Also test club stats if user is admin
-      if (user.role === 'admin' && user.clubId) {
-        const clubStatsData = await getClubStats(user.clubId);
-        console.log('🔍 Debug: Club stats data:', clubStatsData);
-      }
-    } catch (error) {
-      console.error('🔍 Debug: Error testing goals calculation:', error);
-    }
-  };
+
 
   if (isLoading) {
     return (
@@ -800,17 +783,7 @@ export default function DashboardScreen() {
           )}
         </View>
 
-        {/* Debug Section - Remove after testing */}
-        {__DEV__ && (
-          <View style={styles.debugSection}>
-            <TouchableOpacity 
-              style={styles.debugButton}
-              onPress={debugGoalsCalculation}
-            >
-              <Text style={styles.debugButtonText}>Debug Goals Calculation</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+
 
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
@@ -2234,24 +2207,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Regular',
     lineHeight: 20,
   },
-  // Debug styles
-  debugSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-  },
-  debugButton: {
-    backgroundColor: '#FF3B30',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  debugButtonText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '500',
-    fontFamily: 'Urbanist-Medium',
-  },
+
   // Match results styles
   sectionSubtitle: {
     fontSize: 16,
