@@ -211,12 +211,24 @@ export const getClubUsers = async (clubId: string) => {
 
 export const getTeamPlayers = async (teamId: string) => {
   const { data, error } = await supabase
-    .from('users')
-    .select('*, player_stats(*)')
+    .from('players')
+    .select(`
+      *,
+      user:user_id (
+        id,
+        email,
+        name,
+        role
+      ),
+      stats:player_stats (*)
+    `)
     .eq('team_id', teamId)
     .order('name');
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching team players:', error);
+    throw error;
+  }
   return data;
 };
 
