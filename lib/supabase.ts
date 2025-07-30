@@ -182,7 +182,7 @@ export const getTeamUsers = async (teamId: string) => {
     .select('*')
     .eq('role', 'player')
     .eq('team_id', teamId)
-    .order('full_name');
+    .order('first_name');
   
   if (error) {
     console.error('❌ Error fetching team users:', error);
@@ -192,7 +192,13 @@ export const getTeamUsers = async (teamId: string) => {
   console.log('🔍 getTeamUsers - Raw data fetched:', {
     teamId,
     userCount: data?.length || 0,
-    sampleUser: data?.[0]
+    sampleUser: data?.[0] ? {
+      id: data[0].id,
+      first_name: data[0].first_name,
+      last_name: data[0].last_name,
+      role: data[0].role,
+      team_id: data[0].team_id
+    } : null
   });
   
   return data;

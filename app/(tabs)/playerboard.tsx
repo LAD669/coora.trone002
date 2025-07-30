@@ -188,13 +188,19 @@ export default function PlayerboardScreen() {
       console.log('🔍 Playerboard - Players loaded:', {
         teamId: user.teamId,
         playerCount: data?.length || 0,
-        samplePlayer: data?.[0]
+        samplePlayer: data?.[0] ? {
+          id: data[0].id,
+          first_name: data[0].first_name,
+          last_name: data[0].last_name,
+          role: data[0].role,
+          team_id: data[0].team_id
+        } : null
       });
       
       // Transform the data to match the expected format
       const transformedPlayers = (data || []).map(player => ({
         id: player.id,
-        name: player.full_name || player.name || 'Unknown Player',
+        name: `${player.first_name || ''} ${player.last_name || ''}`.trim() || player.name || 'Unknown Player',
         position: player.position || 'Player',
         jersey_number: player.jersey_number || null,
         phone_number: player.phone_number || null,
