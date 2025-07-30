@@ -33,7 +33,15 @@
     "plugins": [
       "expo-font",
       "expo-splash-screen",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./images/coora.icon.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notification.wav"]
+        }
+      ]
     ],
     "extra": {
       "eas": {

@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,7 +66,11 @@ export default function LoginScreen() {
         <View style={styles.header}>
           <View style={styles.logoContainer}>
             <View style={styles.logo}>
-              <Text style={styles.logoText}>⚽</Text>
+              <Image 
+                source={require('@/images/coora.icon.png')} 
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.appName}> COORA </Text>
           </View>
@@ -188,6 +193,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+  },
+  logoImage: {
+    width: 48,
+    height: 48,
   },
   logoText: {
     fontSize: 32,

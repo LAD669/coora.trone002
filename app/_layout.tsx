@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -9,16 +9,60 @@ import {
   Urbanist_700Bold,
 } from '@expo-google-fonts/urbanist';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { Redirect, useRouter, useNavigationContainerRef } from 'expo-router';
+import { 
+  registerForPushNotificationsAsync, 
+  addNotificationReceivedListener, 
+  addNotificationResponseReceivedListener 
+} from '@/lib/notifications';
 
 function RootLayoutNav() {
   const { isAuthenticated, isLoading, isInitialized } = useAuth();
   const router = useRouter();
   const navigationRef = useNavigationContainerRef();
+  const notificationListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription>();
+
+  // Set up push notifications
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(token => {
+      if (token) {
+        console.log('Push token registered:', token);
+        // Here you can send the token to your backend
+        // await sendTokenToBackend(token);
+      }
+    });
+
+    // Listen for incoming notifications while app is foregrounded
+    notificationListener.current = addNotificationReceivedListener(notification => {
+      console.log('Notification received:', notification);
+      // Handle the notification here
+    });
+
+    // Listen for user tapping on notification
+    responseListener.current = addNotificationResponseReceivedListener(response => {
+      console.log('Notification response:', response);
+      // Handle notification tap here
+      const data = response.notification.request.content.data;
+      if (data?.screen) {
+        router.push(data.screen as any);
+      }
+    });
+
+    return () => {
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
+  }, []);
 
   // Wait for navigation to be ready before redirecting
   useEffect(() => {
@@ -29,6 +73,7 @@ function RootLayoutNav() {
       }, 0);
     }
   }, [isInitialized, isLoading, isAuthenticated, navigationRef.isReady()]);
+  
   if (!isInitialized || isLoading) {
     return <LoadingScreen />;
   }

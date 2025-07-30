@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTeamGoals, createTeamGoal, getTeamStats, getClubStats, getTeamPlayers, getTeamEvents, submitMatchResult } from '@/lib/supabase';
+import { sendPushNotification } from '@/lib/notifications';
 
 // Default stats structure - always visible with zero values
 const defaultStats = [
@@ -482,7 +483,7 @@ export default function DashboardScreen() {
 
   const getPlayerName = (playerId: string) => {
     if (!selectedMatch) return '';
-    const player = selectedMatch.players.find((p: any) => p.id === playerId);
+    const player = selectedMatch?.players?.find((p: any) => p.id === playerId);
     return player ? player.name : '';
   };
 
@@ -1118,7 +1119,7 @@ export default function DashboardScreen() {
               {/* Player Selection */}
               <Text style={styles.playersTitle}>{t.selectPlayer}</Text>
               <View style={styles.playersList}>
-                {selectedMatch.players.map((player: any) => (
+                {selectedMatch?.players?.map((player: any) => (
                   <View key={player.id} style={styles.playerVoteCard}>
                     <View style={styles.playerVoteInfo}>
                       <Text style={styles.playerVoteName}>{player.name}</Text>
