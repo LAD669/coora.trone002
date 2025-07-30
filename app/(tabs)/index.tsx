@@ -65,7 +65,7 @@ function ErrorFallback({ error, retry }: { error: Error; retry: () => void }) {
 function InfohubScreenContent() {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'organization' | 'coach'>('organization');
+  const [activeTab, setActiveTab] = useState<'organization' | 'teams'>('organization');
   const [posts, setPosts] = useState<any[]>([]);
   const [isModalVisible, setModalVisible] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
@@ -118,7 +118,7 @@ function InfohubScreenContent() {
   // Determine which tab the user can post to based on their role
   const getPostableTab = () => {
     if (user?.role === 'admin') return 'organization';
-    if (user?.role === 'trainer') return 'coach';
+    if (user?.role === 'trainer') return 'teams';
     return null;
   };
 
@@ -153,7 +153,7 @@ function InfohubScreenContent() {
         title: newPost.title,
         content: newPost.content,
         imageUrl: newPost.imageUrl,
-        postType: postableTab,
+        postType: postableTab === 'teams' ? 'coach' : postableTab, // Map 'teams' to 'coach' for backend compatibility
         teamId: user.teamId!,
         authorId: user.id,
       };
@@ -223,13 +223,22 @@ function InfohubScreenContent() {
     });
   };
 
-  const filteredPosts = Array.isArray(posts) ? posts.filter(post => post?.post_type === activeTab) : [];
+  const filteredPosts = Array.isArray(posts) ? posts.filter(post => {
+    if (activeTab === 'teams') {
+      return post?.post_type === 'coach'; // Map 'teams' tab to 'coach' posts for backward compatibility
+    }
+    return post?.post_type === activeTab;
+  }) : [];
 
   const handlePostClick = (postId: string) => {
     const post = posts.find(p => p.id === postId);
     if (post) {
+      console.log('Selected post for modal:', post);
       setSelectedPostForModal(post);
       setPostModalVisible(true);
+    } else {
+      console.log('Post not found for ID:', postId);
+      Alert.alert('Error', 'Post not found. Please try again.');
     }
     setShowEmojiPicker(null);
   }
@@ -271,13 +280,13 @@ function InfohubScreenContent() {
             <TouchableOpacity
               style={[
                 styles.toggleButton,
-                activeTab === 'coach' && styles.toggleButtonActive
+                activeTab === 'teams' && styles.toggleButtonActive
               ]}
-              onPress={() => setActiveTab('coach')}
+              onPress={() => setActiveTab('teams')}
             >
               <Users 
                 size={18} 
-                color={activeTab === 'coach' ? '#1A1A1A' : '#8E8E93'} 
+                color={activeTab === 'teams' ? '#1A1A1A' : '#8E8E93'} 
                 strokeWidth={1.5} 
               />
             </TouchableOpacity>
@@ -428,7 +437,7 @@ function InfohubScreenContent() {
               ) : (
                 <View style={styles.postTypeDisplay}>
                   <Users size={16} color="#1A1A1A" strokeWidth={1.5} />
-                  <Text style={styles.postTypeText}>{t.trainers}</Text>
+                  <Text style={styles.postTypeText}>{t.teams}</Text>
                 </View>
               )}
             </View>
@@ -469,40 +478,54 @@ function InfohubScreenContent() {
       {/* Post Detail Modal */}
       <Modal
         isVisible={isPostModalVisible}
-        onBackdropPress={() => setPostModalVisible(false)}
+        onBackdropPress={() => {
+          setPostModalVisible(false);
+          setSelectedPostForModal(null);
+        }}
         style={styles.modal}
       >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t.postDetails || 'Post Details'}</Text>
-            <TouchableOpacity onPress={() => setPostModalVisible(false)}>
+            <TouchableOpacity onPress={() => {
+              setPostModalVisible(false);
+              setSelectedPostForModal(null);
+            }}>
               <Text style={styles.cancelText}>{t.close}</Text>
             </TouchableOpacity>
           </View>
 
-          {selectedPostForModal && (
+          {selectedPostForModal ? (
             <ScrollView style={styles.postModalContent} showsVerticalScrollIndicator={false}>
               {/* Post Header */}
               <View style={styles.postModalHeader}>
                 <Text style={styles.postModalDate}>
-                  {formatDate(new Date(selectedPostForModal.created_at))}
+                  {selectedPostForModal.created_at ? formatDate(new Date(selectedPostForModal.created_at)) : 'Date not available'}
                 </Text>
                 <View style={styles.postModalType}>
                   <Text style={styles.postModalTypeText}>
-                    {selectedPostForModal.post_type === 'organization' ? t.organization : t.trainers}
+                    {selectedPostForModal.post_type === 'organization' ? t.organization : t.teams}
                   </Text>
                 </View>
               </View>
 
               {/* Post Title */}
-              <Text style={styles.postModalTitle}>{selectedPostForModal.title}</Text>
+              <Text style={styles.postModalTitle}>
+                {selectedPostForModal.title || 'No title available'}
+              </Text>
 
               {/* Post Content */}
-              <Text style={styles.postModalContentText}>{selectedPostForModal.content}</Text>
+              <Text style={styles.postModalContentText}>
+                {selectedPostForModal.content || 'No content available'}
+              </Text>
 
               {/* Post Image */}
               {selectedPostForModal.image_url && (
-                <Image source={{ uri: selectedPostForModal.image_url }} style={styles.postModalImage} />
+                <Image 
+                  source={{ uri: selectedPostForModal.image_url }} 
+                  style={styles.postModalImage}
+                  onError={() => console.log('Failed to load image:', selectedPostForModal.image_url)}
+                />
               )}
 
               {/* Post Reactions */}
@@ -552,6 +575,21 @@ function InfohubScreenContent() {
                 </View>
               )}
             </ScrollView>
+          ) : (
+            <View style={styles.postModalContent}>
+              <View style={styles.postModalError}>
+                <Text style={styles.postModalErrorTitle}>Post Not Found</Text>
+                <Text style={styles.postModalErrorText}>
+                  The selected post could not be loaded. Please try again.
+                </Text>
+                <TouchableOpacity 
+                  style={styles.postModalErrorButton}
+                  onPress={() => setPostModalVisible(false)}
+                >
+                  <Text style={styles.postModalErrorButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           )}
         </View>
       </Modal>
@@ -1037,5 +1075,40 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
     fontStyle: 'italic',
+  },
+  postModalError: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 48,
+  },
+  postModalErrorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FF3B30',
+    fontFamily: 'Urbanist-SemiBold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  postModalErrorText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  postModalErrorButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  postModalErrorButtonText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
   },
 });

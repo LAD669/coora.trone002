@@ -85,7 +85,7 @@ interface Translations {
 
   // Info Hub
   organization: string;
-  trainers: string;
+  teams: string;
   createUpdate: string;
   updateTitle: string;
   postTo: string;
@@ -212,6 +212,8 @@ interface Translations {
   matchReset: string;
   accessDenied: string;
   somethingWentWrong: string;
+  postDetails: string;
+  noReactionsYet: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -297,7 +299,7 @@ const translations: Record<Language, Translations> = {
 
     // Info Hub
     organization: 'Organization',
-    trainers: 'Trainers',
+    teams: 'Teams',
     createUpdate: 'Create Update',
     updateTitle: 'Update title',
     postTo: 'Post to:',
@@ -424,6 +426,8 @@ const translations: Record<Language, Translations> = {
     matchReset: 'Match has been reset!',
     accessDenied: 'Access denied',
     somethingWentWrong: 'Something went wrong',
+    postDetails: 'Post Details',
+    noReactionsYet: 'No reactions yet',
   },
   de: {
     // Navigation
@@ -507,7 +511,7 @@ const translations: Record<Language, Translations> = {
 
     // Info Hub
     organization: 'Organisation',
-    trainers: 'Trainer',
+    teams: 'Teams',
     createUpdate: 'Update erstellen',
     updateTitle: 'Update-Titel',
     postTo: 'Posten an:',
@@ -638,6 +642,8 @@ const translations: Record<Language, Translations> = {
     matchReset: 'Spiel wurde zurückgesetzt!',
     accessDenied: 'Zugriff verweigert',
     somethingWentWrong: 'Etwas ist schief gelaufen',
+    postDetails: 'Beitrag Details',
+    noReactionsYet: 'Noch keine Reaktionen',
   },
 };
 
