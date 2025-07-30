@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Modal from 'react-native-modal';
 import Header from '@/components/Header';
-import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleCheck as CheckCircle, Circle, Plus, ChevronRight, Clock, X, CalendarDays, Zap } from 'lucide-react-native';
+import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleCheck, Circle, Plus, ChevronRight, Clock, X, CalendarDays, Zap } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -90,6 +90,7 @@ export default function DashboardScreen() {
   const [isPotmModalVisible, setPotmModalVisible] = useState(false);
   const [isMatchResultsModalVisible, setMatchResultsModalVisible] = useState(false);
   const [completedMatches, setCompletedMatches] = useState<any[]>([]);
+  const [matchesWithResults, setMatchesWithResults] = useState<any[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [matchResult, setMatchResult] = useState({
     teamScore: 0,
@@ -262,10 +263,18 @@ export default function DashboardScreen() {
       const completed = events.filter(event => 
         event.event_type === 'match' && 
         new Date(event.event_date) < now &&
-        !event.match_results?.length // No results submitted yet
+        (!event.match_results || event.match_results.length === 0) // No results submitted yet
+      );
+      
+      // Filter for completed matches that already have results
+      const withResults = events.filter(event => 
+        event.event_type === 'match' && 
+        new Date(event.event_date) < now &&
+        event.match_results && event.match_results.length > 0 // Has results submitted
       );
       
       setCompletedMatches(completed);
+      setMatchesWithResults(withResults);
     } catch (error) {
       console.error('Error loading completed matches:', error);
     }
@@ -422,6 +431,15 @@ export default function DashboardScreen() {
       return;
     }
 
+    // Check if match result already exists
+    if (selectedMatch.match_results && selectedMatch.match_results.length > 0) {
+      Alert.alert(
+        t.error, 
+        'A match result has already been submitted for this match. Each match can only have one result.'
+      );
+      return;
+    }
+
     // Validate goals have players selected
     const invalidGoals = matchResult.goals.some(goal => !goal.playerId);
     if (invalidGoals) {
@@ -458,7 +476,17 @@ export default function DashboardScreen() {
       loadCompletedMatches();
     } catch (error) {
       console.error('Error submitting match result:', error);
-      Alert.alert(t.error, 'Failed to submit match result');
+      
+      // Check if it's a duplicate constraint error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage === 'duplicate_match_result' || errorMessage.includes('duplicate')) {
+        Alert.alert(
+          t.error, 
+          'A match result has already been submitted for this match. Each match can only have one result.'
+        );
+      } else {
+        Alert.alert(t.error, 'Failed to submit match result');
+      }
     }
   };
 
@@ -698,7 +726,7 @@ export default function DashboardScreen() {
                         {goal.title}
                       </Text>
                       {goal.completed && (
-                        <CheckCircle size={16} color="#34C759" strokeWidth={1.5} />
+                        <CircleCheck size={16} color="#34C759" strokeWidth={1.5} />
                       )}
                     </View>
                     <ChevronRight 
@@ -750,7 +778,7 @@ export default function DashboardScreen() {
                       {goal.goal_tasks.map((task: any) => (
                         <View key={task.id} style={styles.taskItem}>
                           {task.completed ? (
-                            <CheckCircle size={16} color="#34C759" strokeWidth={1.5} />
+                            <CircleCheck size={16} color="#34C759" strokeWidth={1.5} />
                           ) : (
                             <Circle size={16} color="#8E8E93" strokeWidth={1.5} />
                           )}
@@ -907,28 +935,59 @@ export default function DashboardScreen() {
           {!selectedMatch ? (
             <ScrollView style={styles.matchesList} showsVerticalScrollIndicator={false}>
               <Text style={styles.matchesTitle}>Select a Completed Match</Text>
+              
+              {/* Matches that need results */}
               {completedMatches.length === 0 ? (
                 <View style={styles.emptyMatches}>
                   <Trophy size={48} color="#E5E5E7" strokeWidth={1} />
                   <Text style={styles.emptyMatchesText}>No completed matches without results</Text>
                 </View>
               ) : (
-                completedMatches.map((match) => (
-                  <TouchableOpacity
-                    key={match.id}
-                    style={styles.matchCard}
-                    onPress={() => handleMatchSelect(match)}
-                  >
-                    <View style={styles.matchInfo}>
-                      <Text style={styles.matchOpponent}>{match.title}</Text>
-                      <Text style={styles.matchDate}>
-                        {new Date(match.event_date).toLocaleDateString()}
-                      </Text>
-                      <Text style={styles.matchLocation}>{match.location}</Text>
-                    </View>
-                    <ChevronRight size={20} color="#8E8E93" strokeWidth={1.5} />
-                  </TouchableOpacity>
-                ))
+                <>
+                  <Text style={styles.sectionSubtitle}>Matches Needing Results</Text>
+                  {completedMatches.map((match) => (
+                    <TouchableOpacity
+                      key={match.id}
+                      style={styles.matchCard}
+                      onPress={() => handleMatchSelect(match)}
+                    >
+                      <View style={styles.matchInfo}>
+                        <Text style={styles.matchOpponent}>{match.title}</Text>
+                        <Text style={styles.matchDate}>
+                          {new Date(match.event_date).toLocaleDateString()}
+                        </Text>
+                        <Text style={styles.matchLocation}>{match.location}</Text>
+                      </View>
+                      <ChevronRight size={20} color="#8E8E93" strokeWidth={1.5} />
+                    </TouchableOpacity>
+                  ))}
+                </>
+              )}
+
+              {/* Matches that already have results */}
+              {matchesWithResults.length > 0 && (
+                <>
+                  <Text style={styles.sectionSubtitle}>Matches with Results</Text>
+                  {matchesWithResults.map((match) => (
+                    <TouchableOpacity
+                      key={match.id}
+                      style={[styles.matchCard, styles.matchCardWithResults]}
+                      disabled={true}
+                    >
+                      <View style={styles.matchInfo}>
+                        <Text style={styles.matchOpponent}>{match.title}</Text>
+                        <Text style={styles.matchDate}>
+                          {new Date(match.event_date).toLocaleDateString()}
+                        </Text>
+                        <Text style={styles.matchLocation}>{match.location}</Text>
+                        <View style={styles.resultSubmittedBadge}>
+                          <Text style={styles.resultSubmittedText}>Result Submitted</Text>
+                        </View>
+                      </View>
+                      <CircleCheck size={20} color="#34C759" strokeWidth={1.5} />
+                    </TouchableOpacity>
+                  ))}
+                </>
               )}
             </ScrollView>
           ) : (
@@ -2178,6 +2237,32 @@ const styles = StyleSheet.create({
   },
   debugButtonText: {
     fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
+  },
+  // Match results styles
+  sectionSubtitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-SemiBold',
+    marginBottom: 12,
+    marginTop: 20,
+  },
+  matchCardWithResults: {
+    opacity: 0.6,
+    backgroundColor: '#F8F9FA',
+  },
+  resultSubmittedBadge: {
+    backgroundColor: '#34C759',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  resultSubmittedText: {
+    fontSize: 12,
     color: '#FFFFFF',
     fontWeight: '500',
     fontFamily: 'Urbanist-Medium',

@@ -615,7 +615,13 @@ export const submitMatchResult = async (result: {
     .select()
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    // Check if it's a unique constraint violation
+    if (error.code === '23505' || error.message?.includes('duplicate')) {
+      throw new Error('duplicate_match_result');
+    }
+    throw error;
+  }
    
    if (!data) {
      throw new Error('Failed to submit match result');
