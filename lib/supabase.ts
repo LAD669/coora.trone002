@@ -232,53 +232,115 @@ export const getTeamPlayers = async (teamId: string) => {
   return data;
 };
 
-export const getTeamUsers = async (teamId: string) => {
+interface TeamMember {
+  id: string;
+  team_role: 'trainer' | 'player' | 'admin';
+  joined_at: string;
+  users: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    email: string;
+    position: string | null;
+    role: string;
+    jersey_number: number | null;
+    phone_number: string | null;
+    date_of_birth: string | null;
+    height_cm: number | null;
+    weight_kg: number | null;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+interface TransformedTeamMember {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string;
+  position: string | null;
+  role: 'trainer' | 'player' | 'admin';
+  jersey_number: number | null;
+  phone_number: string | null;
+  date_of_birth: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  created_at: string;
+  updated_at: string;
+  team_member_id: string;
+  joined_at: string;
+}
+
+export const getTeamUsers = async (teamId: string): Promise<TransformedTeamMember[]> => {
   console.log('🔍 getTeamUsers called for teamId:', teamId);
   
   const { data, error } = await supabase
-    .from('users')
+    .from('team_members')
     .select(`
       id,
-      first_name,
-      last_name,
-      email,
-      position,
-      role,
-      team_id,
-      jersey_number,
-      phone_number,
-      date_of_birth,
-      height_cm,
-      weight_kg,
-      created_at,
-      updated_at
+      team_role,
+      joined_at,
+      users!inner (
+        id,
+        first_name,
+        last_name,
+        email,
+        position,
+        role,
+        jersey_number,
+        phone_number,
+        date_of_birth,
+        height_cm,
+        weight_kg,
+        created_at,
+        updated_at
+      )
     `)
     .eq('team_id', teamId)
-    .in('role', ['trainer', 'player'])
-    .order('role', { ascending: false }) // This will put trainers first as 't' comes after 'p'
-    .order('first_name');
+    .order('team_role', { ascending: false }) // This will put trainers first
+    .order('users.first_name')
+    .returns<TeamMember[]>();
   
   if (error) {
     console.error('❌ Error fetching team users:', error);
     throw error;
   }
+
+  // Transform the data to flatten the users object
+  const transformedData: TransformedTeamMember[] = data.map(member => ({
+    id: member.users.id,
+    first_name: member.users.first_name,
+    last_name: member.users.last_name,
+    email: member.users.email,
+    position: member.users.position,
+    role: member.team_role,
+    jersey_number: member.users.jersey_number,
+    phone_number: member.users.phone_number,
+    date_of_birth: member.users.date_of_birth,
+    height_cm: member.users.height_cm,
+    weight_kg: member.users.weight_kg,
+    created_at: member.users.created_at,
+    updated_at: member.users.updated_at,
+    team_member_id: member.id,
+    joined_at: member.joined_at
+  }));
   
   console.log('🔍 getTeamUsers - Raw data fetched:', {
     teamId,
-    userCount: data?.length || 0,
-    trainerCount: data?.filter(u => u.role === 'trainer').length || 0,
-    playerCount: data?.filter(u => u.role === 'player').length || 0,
-    sampleUser: data?.[0] ? {
-      id: data[0].id,
-      first_name: data[0].first_name,
-      last_name: data[0].last_name,
-      email: data[0].email,
-      role: data[0].role,
-      team_id: data[0].team_id
+    userCount: transformedData.length,
+    trainerCount: transformedData.filter(u => u.role === 'trainer').length,
+    playerCount: transformedData.filter(u => u.role === 'player').length,
+    sampleUser: transformedData[0] ? {
+      id: transformedData[0].id,
+      first_name: transformedData[0].first_name,
+      last_name: transformedData[0].last_name,
+      email: transformedData[0].email,
+      role: transformedData[0].role,
+      team_member_id: transformedData[0].team_member_id
     } : null
   });
   
-  return data;
+  return transformedData;
 };
 
 export const createPlayer = async (player: {
