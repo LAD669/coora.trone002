@@ -15,7 +15,7 @@ import Header from '@/components/Header';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Users, Target, Plus, X, User, Phone, Calendar, Ruler, Weight, Trophy, Activity, Clock, Hash, ChevronDown } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeamPlayers, createPlayer } from '@/lib/supabase';
+import { getTeamUsers, createPlayer } from '@/lib/supabase';
 
 const { width } = Dimensions.get('window');
 
@@ -184,24 +184,37 @@ export default function PlayerboardScreen() {
     
     setIsLoading(true);
     try {
-      const data = await getTeamPlayers(user.teamId);
+      const data = await getTeamUsers(user.teamId);
+      console.log('🔍 Playerboard - Players loaded:', {
+        teamId: user.teamId,
+        playerCount: data?.length || 0,
+        samplePlayer: data?.[0]
+      });
+      
       // Transform the data to match the expected format
       const transformedPlayers = (data || []).map(player => ({
         id: player.id,
-        name: player.name,
-        position: player.position,
-        jersey_number: player.jersey_number,
-        phone_number: player.phone_number,
-        date_of_birth: player.date_of_birth,
-        height_cm: player.height_cm,
-        weight_kg: player.weight_kg,
+        name: player.full_name || player.name || 'Unknown Player',
+        position: player.position || 'Player',
+        jersey_number: player.jersey_number || null,
+        phone_number: player.phone_number || null,
+        date_of_birth: player.date_of_birth || null,
+        height_cm: player.height_cm || null,
+        weight_kg: player.weight_kg || null,
         team_id: player.team_id,
-        user_id: player.user_id,
+        user_id: player.id,
         created_at: player.created_at,
         updated_at: player.updated_at,
         player_stats: player.player_stats || []
       }));
+      
       setPlayers(transformedPlayers);
+      
+      // Log if no players found
+      if (!data || data.length === 0) {
+        console.warn('⚠️ No players found for team:', user.teamId);
+        console.warn('💡 Consider adding a migration to ensure existing player accounts have the correct team_id set');
+      }
     } catch (error) {
       console.error('Error loading players:', error);
       setPlayers([]);
@@ -305,13 +318,17 @@ export default function PlayerboardScreen() {
               <View style={styles.emptyPlayersState}>
                 <Users size={48} color="#E5E5E7" strokeWidth={1} />
                 <Text style={styles.emptyPlayersText}>No players found</Text>
-                <Text style={styles.emptyPlayersSubtext}>No players have been added to this team yet</Text>
+                <Text style={styles.emptyPlayersSubtext}>
+                  No players with role "player" found for this team. 
+                  Consider adding a migration to ensure existing player accounts have the correct team_id set.
+                </Text>
               </View>
             ) : (
-              <View style={styles.playersList}>
-                {players.map((player) => (
+              <FlatList
+                data={players}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item: player }) => (
                   <TouchableOpacity 
-                    key={player.id} 
                     style={styles.playerCard}
                     onPress={() => handlePlayerPress(player)}
                     activeOpacity={0.7}
@@ -329,8 +346,10 @@ export default function PlayerboardScreen() {
                       <Text style={styles.playerNumberText}>#{player.jersey_number || '?'}</Text>
                     </View>
                   </TouchableOpacity>
-                ))}
-              </View>
+                )}
+                contentContainerStyle={styles.playersList}
+                showsVerticalScrollIndicator={false}
+              />
             )}
           </View>
         ) : (

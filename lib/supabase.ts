@@ -174,6 +174,30 @@ export const getTeamPlayers = async (teamId: string) => {
   return data;
 };
 
+export const getTeamUsers = async (teamId: string) => {
+  console.log('🔍 getTeamUsers called for teamId:', teamId);
+  
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('role', 'player')
+    .eq('team_id', teamId)
+    .order('full_name');
+  
+  if (error) {
+    console.error('❌ Error fetching team users:', error);
+    throw error;
+  }
+  
+  console.log('🔍 getTeamUsers - Raw data fetched:', {
+    teamId,
+    userCount: data?.length || 0,
+    sampleUser: data?.[0]
+  });
+  
+  return data;
+};
+
 export const createPlayer = async (player: {
   name: string;
   position: string;
