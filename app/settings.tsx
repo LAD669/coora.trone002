@@ -8,6 +8,7 @@ import {
   Switch,
   Alert,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { router } from 'expo-router';
@@ -16,11 +17,23 @@ import { X, User, Bell, Shield, Palette, Globe, CircleHelp as HelpCircle, LogOut
 import { useLanguage } from '@/contexts/LanguageContext';
 import LoginScreen from './auth/login';
 import SignUpScreen from './auth/signup';
+import { updateUserProfile, checkUserProfile, createUserProfile } from '@/lib/supabase';
+import { getUserProfile } from '@/lib/supabase';
 
 
 export default function SettingsScreen() {
   const { language, setLanguage, t } = useLanguage();
-  const { user, signOut } = useAuth();
+  const { user, signOut, setUser } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone_number: '',
+    role: 'player' as 'player' | 'trainer' | 'admin' | 'parent',
+    team_id: undefined as string | undefined,
+    club_id: undefined as string | undefined,
+  });
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -40,12 +53,6 @@ export default function SettingsScreen() {
     password?: string;
     name?: string;
   }>({});
-  const [editingProfile, setEditingProfile] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: '',
-    position: '',
-  });
   
   // Privacy & Security settings
   const [privacySettings, setPrivacySettings] = useState({
@@ -60,17 +67,63 @@ export default function SettingsScreen() {
     loginNotifications: true,
   });
 
-  // Update editing profile when user changes
+  // Load or create user profile when component mounts
   useEffect(() => {
-    if (user) {
-      setEditingProfile({
-        name: user.name,
-        email: user.email,
-        phone: '',
-        position: '',
-      });
+    if (user?.id) {
+      loadOrCreateProfile();
     }
-  }, [user]);
+  }, [user?.id]);
+
+  const loadOrCreateProfile = async () => {
+    if (!user?.id || !user?.email) return;
+
+    try {
+      setIsLoading(true);
+      
+      // Check if profile exists
+      const existingProfile = await checkUserProfile(user.id);
+      
+      if (existingProfile) {
+        console.log('Found existing profile:', existingProfile);
+        setProfile({
+          first_name: existingProfile.first_name || '',
+          last_name: existingProfile.last_name || '',
+          email: existingProfile.email || user.email,
+          phone_number: existingProfile.phone_number || '',
+          role: existingProfile.role || 'player',
+          team_id: existingProfile.team_id,
+          club_id: existingProfile.club_id,
+        });
+      } else {
+        console.log('Creating new profile for user:', user.id);
+        // Create new profile with default values
+        const newProfile = await createUserProfile({
+          id: user.id,
+          email: user.email,
+          role: 'player',
+          first_name: '',
+          last_name: '',
+          team_id: user.teamId,
+          club_id: user.clubId,
+        });
+
+        setProfile({
+          first_name: newProfile.first_name || '',
+          last_name: newProfile.last_name || '',
+          email: newProfile.email,
+          phone_number: newProfile.phone_number || '',
+          role: newProfile.role || 'player',
+          team_id: newProfile.team_id,
+          club_id: newProfile.club_id,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading/creating profile:', error);
+      Alert.alert(t.error, t.somethingWentWrong);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -125,55 +178,67 @@ export default function SettingsScreen() {
     }
   };
 
-  if (!user) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{t.loading}</Text>
-        </View>
-      </View>
-    );
-  }
-
   const handleProfileEdit = () => {
     if (user) {
-      setEditingProfile({
-        name: user.name,
+      setProfile({
+        first_name: user.name.split(' ')[0] || '',
+        last_name: user.name.split(' ')[1] || '',
         email: user.email,
-        phone: '',
-        position: '',
+        phone_number: '',
+        role: user.role,
+        team_id: user.teamId,
+        club_id: user.clubId,
       });
     }
     setProfileModalVisible(true);
   };
 
-  const handleSaveProfile = () => {
-    if (!editingProfile.name.trim() || !editingProfile.email.trim()) {
+  const handleSaveProfile = async () => {
+    if (!user?.id) return;
+
+    // Validate required fields
+    if (!profile.first_name.trim() || !profile.last_name.trim()) {
       Alert.alert(t.error, t.fillAllFields);
       return;
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(editingProfile.email)) {
-      Alert.alert(t.error, t.validEmailRequired);
-      return;
+    try {
+      setIsLoading(true);
+
+      // Update profile in Supabase
+      const updatedProfile = await updateUserProfile(user.id, {
+        first_name: profile.first_name.trim(),
+        last_name: profile.last_name.trim(),
+        name: `${profile.first_name.trim()} ${profile.last_name.trim()}`,
+        phone_number: profile.phone_number.trim() || undefined,
+      });
+
+      // Update local user state
+      setUser({
+        ...user,
+        name: updatedProfile.name,
+      });
+
+      Alert.alert(t.success, t.profileUpdated);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      const errorMessage = error instanceof Error ? error.message : t.somethingWentWrong;
+      Alert.alert(t.error, errorMessage);
+    } finally {
+      setIsLoading(false);
     }
-
-    // In a real app, this would update the user in Supabase
-    // For now, just show success message
-
-    setProfileModalVisible(false);
-    Alert.alert(t.success, t.profileUpdated);
   };
 
   const handleCancelEdit = () => {
     if (user) {
-      setEditingProfile({
-        name: user.name,
+      setProfile({
+        first_name: user.name.split(' ')[0] || '',
+        last_name: user.name.split(' ')[1] || '',
         email: user.email,
-        phone: '',
-        position: '',
+        phone_number: '',
+        role: user.role,
+        team_id: user.teamId,
+        club_id: user.clubId,
       });
     }
     setProfileModalVisible(false);
@@ -335,6 +400,27 @@ export default function SettingsScreen() {
     </TouchableOpacity>
   );
 
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1A1A1A" />
+          <Text style={styles.loadingText}>{t.loading}</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>{t.error}</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -352,30 +438,69 @@ export default function SettingsScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Profile Section */}
         <View style={styles.section}>
-          <View style={styles.profileCard}>
-            <View style={styles.profileAvatar}>
-              <Text style={styles.profileInitials}>
-                {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-              </Text>
+          <Text style={styles.sectionTitle}>{t.profile}</Text>
+          <View style={styles.formSection}>
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>{t.firstName} *</Text>
+              <TextInput
+                style={styles.formInput}
+                value={profile.first_name}
+                onChangeText={(text) => setProfile(prev => ({ ...prev, first_name: text }))}
+                placeholder={t.firstName}
+                placeholderTextColor="#8E8E93"
+              />
             </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{user.name}</Text>
-              <Text style={styles.profileEmail}>{user.email}</Text>
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleText}>{user.role.toUpperCase()}</Text>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>{t.lastName} *</Text>
+              <TextInput
+                style={styles.formInput}
+                value={profile.last_name}
+                onChangeText={(text) => setProfile(prev => ({ ...prev, last_name: text }))}
+                placeholder={t.lastName}
+                placeholderTextColor="#8E8E93"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>{t.phoneNumber}</Text>
+              <TextInput
+                style={styles.formInput}
+                value={profile.phone_number}
+                onChangeText={(text) => setProfile(prev => ({ ...prev, phone_number: text }))}
+                placeholder={t.phoneNumber}
+                placeholderTextColor="#8E8E93"
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            {/* Read-only fields */}
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>{t.email}</Text>
+              <View style={styles.readOnlyField}>
+                <Text style={styles.readOnlyText}>{profile.email}</Text>
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>{t.role}</Text>
+              <View style={styles.readOnlyField}>
+                <Text style={styles.readOnlyText}>{profile.role.toUpperCase()}</Text>
               </View>
             </View>
           </View>
 
-          {/* Add Account Button */}
-          <View style={styles.settingsGroup}>
-            <SettingItem
-              icon={UserPlus}
-              title="Add Account"
-              subtitle="Switch to another account"
-              onPress={handleAddAccount}
-            />
-          </View>
+          {/* Save Button */}
+          <TouchableOpacity
+            style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+            onPress={handleSaveProfile}
+            disabled={isLoading}
+          >
+            <Save size={16} color="#FFFFFF" strokeWidth={1.5} />
+            <Text style={styles.saveButtonText}>
+              {isLoading ? t.loading : t.saveChanges}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Account Settings */}
@@ -459,7 +584,7 @@ export default function SettingsScreen() {
             <View style={styles.modalProfileSection}>
               <View style={styles.modalProfileAvatar}>
                 <Text style={styles.modalProfileInitials}>
-                  {editingProfile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  {profile.first_name.split(' ').map(n => n[0]).join('').toUpperCase()}
                 </Text>
               </View>
               <TouchableOpacity style={styles.editAvatarButton}>
@@ -471,26 +596,24 @@ export default function SettingsScreen() {
             {/* Form Fields */}
             <View style={styles.formSection}>
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>{t.fullName} *</Text>
+                <Text style={styles.formLabel}>{t.firstName} *</Text>
                 <TextInput
                   style={styles.formInput}
-                  value={editingProfile.name}
-                  onChangeText={(text) => setEditingProfile(prev => ({ ...prev, name: text }))}
-                  placeholder={t.fullName}
+                  value={profile.first_name}
+                  onChangeText={(text) => setProfile(prev => ({ ...prev, first_name: text }))}
+                  placeholder={t.firstName}
                   placeholderTextColor="#8E8E93"
                 />
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>{t.email} *</Text>
+                <Text style={styles.formLabel}>{t.lastName} *</Text>
                 <TextInput
                   style={styles.formInput}
-                  value={editingProfile.email}
-                  onChangeText={(text) => setEditingProfile(prev => ({ ...prev, email: text }))}
-                  placeholder={t.email}
+                  value={profile.last_name}
+                  onChangeText={(text) => setProfile(prev => ({ ...prev, last_name: text }))}
+                  placeholder={t.lastName}
                   placeholderTextColor="#8E8E93"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
                 />
               </View>
 
@@ -498,37 +621,26 @@ export default function SettingsScreen() {
                 <Text style={styles.formLabel}>{t.phoneNumber}</Text>
                 <TextInput
                   style={styles.formInput}
-                  value={editingProfile.phone}
-                  onChangeText={(text) => setEditingProfile(prev => ({ ...prev, phone: text }))}
+                  value={profile.phone_number}
+                  onChangeText={(text) => setProfile(prev => ({ ...prev, phone_number: text }))}
                   placeholder={t.phoneNumber}
                   placeholderTextColor="#8E8E93"
                   keyboardType="phone-pad"
                 />
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>{t.position}</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={editingProfile.position}
-                  onChangeText={(text) => setEditingProfile(prev => ({ ...prev, position: text }))}
-                  placeholder={t.position}
-                  placeholderTextColor="#8E8E93"
-                />
-              </View>
-
               {/* Read-only fields */}
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>{t.role}</Text>
+                <Text style={styles.formLabel}>{t.email}</Text>
                 <View style={styles.readOnlyField}>
-                  <Text style={styles.readOnlyText}>{user.role.toUpperCase()}</Text>
+                  <Text style={styles.readOnlyText}>{profile.email}</Text>
                 </View>
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>{t.memberSince}</Text>
+                <Text style={styles.formLabel}>{t.role}</Text>
                 <View style={styles.readOnlyField}>
-                  <Text style={styles.readOnlyText}>{formatJoinedDate('')}</Text>
+                  <Text style={styles.readOnlyText}>{profile.role.toUpperCase()}</Text>
                 </View>
               </View>
             </View>
@@ -1245,7 +1357,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Medium',
   },
   formSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    padding: 20,
     gap: 20,
+    marginTop: 16,
   },
   formGroup: {
     gap: 8,
@@ -1578,5 +1696,8 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
     fontFamily: 'Urbanist-Regular',
     marginTop: 8,
+  },
+  saveButtonDisabled: {
+    opacity: 0.5,
   },
 });

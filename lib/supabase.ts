@@ -32,7 +32,12 @@ export const getUserProfile = async (userId: string) => {
       role,
       team_id,
       club_id,
-      access_code,
+      phone_number,
+      position,
+      height_cm,
+      weight_kg,
+      jersey_number,
+      date_of_birth,
       created_at,
       updated_at,
       teams:team_id (
@@ -165,7 +170,7 @@ export const getClubUsers = async (clubId: string) => {
 
 export const getTeamPlayers = async (teamId: string) => {
   const { data, error } = await supabase
-    .from('players')
+    .from('users')
     .select('*, player_stats(*)')
     .eq('team_id', teamId)
     .order('name');
@@ -179,9 +184,25 @@ export const getTeamUsers = async (teamId: string) => {
   
   const { data, error } = await supabase
     .from('users')
-    .select('*')
-    .eq('role', 'player')
+    .select(`
+      id,
+      first_name,
+      last_name,
+      email,
+      position,
+      role,
+      team_id,
+      jersey_number,
+      phone_number,
+      date_of_birth,
+      height_cm,
+      weight_kg,
+      created_at,
+      updated_at
+    `)
     .eq('team_id', teamId)
+    .in('role', ['trainer', 'player'])
+    .order('role', { ascending: false }) // This will put trainers first as 't' comes after 'p'
     .order('first_name');
   
   if (error) {
@@ -192,10 +213,13 @@ export const getTeamUsers = async (teamId: string) => {
   console.log('🔍 getTeamUsers - Raw data fetched:', {
     teamId,
     userCount: data?.length || 0,
+    trainerCount: data?.filter(u => u.role === 'trainer').length || 0,
+    playerCount: data?.filter(u => u.role === 'player').length || 0,
     sampleUser: data?.[0] ? {
       id: data[0].id,
       first_name: data[0].first_name,
       last_name: data[0].last_name,
+      email: data[0].email,
       role: data[0].role,
       team_id: data[0].team_id
     } : null
@@ -211,7 +235,7 @@ export const createPlayer = async (player: {
   teamId: string;
 }) => {
   const { data, error } = await supabase
-    .from('players')
+    .from('users')
     .insert({
       name: player.name,
       position: player.position,
@@ -805,4 +829,112 @@ export const subscribeToPostReactions = (callback: (payload: any) => void) => {
       callback
     )
     .subscribe();
+};
+
+export const updateUserProfile = async (userId: string, updates: {
+  name?: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  position?: string;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  jersey_number?: number | null;
+  date_of_birth?: string | null;
+  role?: 'admin' | 'trainer' | 'player' | 'parent';
+}) => {
+  console.log('📝 Updating user profile:', { userId, updates });
+
+  const { data, error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', userId)
+    .select(`
+      id,
+      name,
+      email,
+      first_name,
+      last_name,
+      phone_number,
+      position,
+      height_cm,
+      weight_kg,
+      jersey_number,
+      date_of_birth,
+      role,
+      team_id,
+      club_id,
+      created_at,
+      updated_at
+    `)
+    .single();
+
+  if (error) {
+    console.error('❌ Error updating user profile:', error);
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error('Failed to update user profile');
+  }
+
+  console.log('✅ User profile updated successfully:', data);
+  return data;
+};
+
+export const checkUserProfile = async (userId: string) => {
+  console.log('🔍 Checking if user profile exists:', userId);
+  
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('❌ Error checking user profile:', error);
+    throw error;
+  }
+
+  console.log('✅ User profile check result:', { exists: !!data, profile: data });
+  return data;
+};
+
+export const createUserProfile = async (profile: {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string;
+  role?: 'player' | 'trainer' | 'admin' | 'parent';
+  team_id?: string;
+  club_id?: string;
+  phone_number?: string;
+}) => {
+  console.log('📝 Creating new user profile:', profile);
+
+  const { data, error } = await supabase
+    .from('users')
+    .insert({
+      id: profile.id,
+      email: profile.email,
+      first_name: profile.first_name || '',
+      last_name: profile.last_name || '',
+      name: profile.name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'New User',
+      role: profile.role || 'player',
+      team_id: profile.team_id,
+      club_id: profile.club_id,
+      phone_number: profile.phone_number || '',
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('❌ Error creating user profile:', error);
+    throw error;
+  }
+
+  console.log('✅ User profile created successfully:', data);
+  return data;
 };

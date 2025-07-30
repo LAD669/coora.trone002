@@ -44,11 +44,17 @@ interface Translations {
   password: string;
   name: string;
   fullName: string;
+  firstName: string;
+  lastName: string;
   phoneNumber: string;
   position: string;
   role: string;
   profile: string;
   account: string;
+  height: string;
+  weight: string;
+  jerseyNumber: string;
+  dateOfBirth: string;
 
   // Dashboard
   welcomeBack: string;
@@ -258,11 +264,17 @@ const translations: Record<Language, Translations> = {
     password: 'Password',
     name: 'Name',
     fullName: 'Full Name',
+    firstName: 'First Name',
+    lastName: 'Last Name',
     phoneNumber: 'Phone Number',
     position: 'Position',
     role: 'Role',
     profile: 'Profile',
     account: 'Account',
+    height: 'Height',
+    weight: 'Weight',
+    jerseyNumber: 'Jersey Number',
+    dateOfBirth: 'Date of Birth',
 
     // Dashboard
     welcomeBack: 'Welcome back',
@@ -470,11 +482,17 @@ const translations: Record<Language, Translations> = {
     password: 'Passwort',
     name: 'Name',
     fullName: 'Vollständiger Name',
+    firstName: 'Vorname',
+    lastName: 'Nachname',
     phoneNumber: 'Telefonnummer',
     position: 'Position',
     role: 'Rolle',
     profile: 'Profil',
     account: 'Konto',
+    height: 'Größe',
+    weight: 'Gewicht',
+    jerseyNumber: 'Rückennummer',
+    dateOfBirth: 'Geburtsdatum',
 
     // Dashboard
     welcomeBack: 'Willkommen zurück',

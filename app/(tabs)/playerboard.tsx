@@ -162,7 +162,7 @@ export default function PlayerboardScreen() {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [view, setView] = useState<'list' | 'lineup'>('list');
-  const [selectedFormation, setSelectedFormation] = useState(formations[1]); // Default to 4-3-3
+  const [selectedFormation, setSelectedFormation] = useState(formations[1]);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [selectedPosition, setSelectedPosition] = useState<any>(null);
   const [isPlayerModalVisible, setPlayerModalVisible] = useState(false);
@@ -174,55 +174,87 @@ export default function PlayerboardScreen() {
 
   // Load players on component mount
   useEffect(() => {
-    if (user?.teamId) {
+    if (!user) {
+      console.warn('⚠️ No user object available');
+      return;
+    }
+
+    // Use teamId from the User interface (AuthContext maps Supabase's team_id to this)
+    const teamId = user.teamId;
+    if (teamId) {
+      console.log('🔍 Loading players for team:', teamId);
       loadPlayers();
+    } else {
+      console.warn('⚠️ No team assigned to current user:', {
+        userId: user.id,
+        email: user.email,
+        role: user.role
+      });
     }
   }, [user]);
 
   const loadPlayers = async () => {
-    if (!user?.teamId) return;
+    if (!user) {
+      console.warn('⚠️ Cannot load players: No user object available');
+      return;
+    }
+
+    // Use teamId from the User interface (AuthContext maps Supabase's team_id to this)
+    const teamId = user.teamId;
+    if (!teamId) {
+      console.warn('⚠️ Cannot load players: No team assigned to user:', {
+        userId: user.id,
+        email: user.email,
+        role: user.role
+      });
+      return;
+    }
     
     setIsLoading(true);
     try {
-      const data = await getTeamUsers(user.teamId);
-      console.log('🔍 Playerboard - Players loaded:', {
-        teamId: user.teamId,
-        playerCount: data?.length || 0,
-        samplePlayer: data?.[0] ? {
-          id: data[0].id,
-          first_name: data[0].first_name,
-          last_name: data[0].last_name,
-          role: data[0].role,
-          team_id: data[0].team_id
-        } : null
+      console.log('📊 Fetching team users for team:', teamId);
+      const data = await getTeamUsers(teamId);
+      
+      // Transform and sort the data (trainers first, then players)
+      const transformedUsers = (data || [])
+        .map(user => ({
+          id: user.id,
+          name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User',
+          email: user.email || 'No email provided',
+          position: user.position || (user.role === 'trainer' ? 'Trainer' : 'Player'),
+          role: user.role || 'player',
+          jersey_number: user.jersey_number || null,
+          phone_number: user.phone_number || null,
+          date_of_birth: user.date_of_birth || null,
+          height_cm: user.height_cm || null,
+          weight_kg: user.weight_kg || null,
+          team_id: user.team_id,
+          user_id: user.id,
+          created_at: user.created_at,
+          updated_at: user.updated_at
+        }))
+        .sort((a, b) => {
+          // Sort by role first (trainers before players)
+          if (a.role === 'trainer' && b.role !== 'trainer') return -1;
+          if (a.role !== 'trainer' && b.role === 'trainer') return 1;
+          // Then sort by name
+          return a.name.localeCompare(b.name);
+        });
+      
+      console.log('✅ Successfully loaded team users:', {
+        teamId,
+        totalCount: transformedUsers.length,
+        trainerCount: transformedUsers.filter(u => u.role === 'trainer').length,
+        playerCount: transformedUsers.filter(u => u.role === 'player').length
       });
       
-      // Transform the data to match the expected format
-      const transformedPlayers = (data || []).map(player => ({
-        id: player.id,
-        name: `${player.first_name || ''} ${player.last_name || ''}`.trim() || player.name || 'Unknown Player',
-        position: player.position || 'Player',
-        jersey_number: player.jersey_number || null,
-        phone_number: player.phone_number || null,
-        date_of_birth: player.date_of_birth || null,
-        height_cm: player.height_cm || null,
-        weight_kg: player.weight_kg || null,
-        team_id: player.team_id,
-        user_id: player.id,
-        created_at: player.created_at,
-        updated_at: player.updated_at,
-        player_stats: player.player_stats || []
-      }));
+      setPlayers(transformedUsers);
       
-      setPlayers(transformedPlayers);
-      
-      // Log if no players found
       if (!data || data.length === 0) {
-        console.warn('⚠️ No players found for team:', user.teamId);
-        console.warn('💡 Consider adding a migration to ensure existing player accounts have the correct team_id set');
+        console.warn('⚠️ No team members found for team:', teamId);
       }
     } catch (error) {
-      console.error('Error loading players:', error);
+      console.error('❌ Error loading team members:', error);
       setPlayers([]);
     } finally {
       setIsLoading(false);
@@ -268,7 +300,68 @@ export default function PlayerboardScreen() {
     setPositionModalVisible(false);
   };
 
+  const renderListView = () => {
+    // Debug log to inspect players data
+    console.log('🔍 renderListView - Current players state:', {
+      playersCount: players.length,
+      samplePlayer: players[0],
+      roles: players.map(p => p.role)
+    });
 
+    if (isLoading) {
+      return (
+        <View style={styles.centerContainer}>
+          <Text style={styles.loadingText}>Loading team members...</Text>
+        </View>
+      );
+    }
+
+    if (players.length === 0) {
+      return (
+        <View style={styles.centerContainer}>
+          <Users size={48} color="#E5E5E7" strokeWidth={1} />
+          <Text style={styles.emptyPlayersText}>No team members found</Text>
+          <Text style={styles.emptyPlayersSubtext}>
+            No trainers or players found for this team.
+          </Text>
+        </View>
+      );
+    }
+
+    // Simple debug layout to test FlatList rendering
+    const renderDebugItem = ({ item: member, index }: { item: any; index: number }) => (
+      <View style={styles.debugCard}>
+        <Text style={styles.debugText}>
+          {index}: {member.role} - {member.name}
+        </Text>
+      </View>
+    );
+
+    return (
+      <View style={styles.listWrapper}>
+        <FlatList
+          data={players}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={() => (
+            <Text style={styles.sectionTitle}>Team Members ({players.length})</Text>
+          )}
+          renderItem={renderDebugItem}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          onLayout={(event) => {
+            console.log('📏 FlatList layout dimensions:', event.nativeEvent.layout);
+          }}
+          ListEmptyComponent={() => (
+            <View style={styles.debugEmpty}>
+              <Text style={styles.debugText}>
+                FlatList Empty - But players.length = {players.length}
+              </Text>
+            </View>
+          )}
+        />
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -311,55 +404,11 @@ export default function PlayerboardScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {view === 'list' ? (
-          <View style={styles.listView}>
-            <Text style={styles.sectionTitle}>Team Players</Text>
-            
-            {isLoading ? (
-              <View style={styles.loadingContainer}>
-                <Text style={styles.loadingText}>Loading players...</Text>
-              </View>
-            ) : players.length === 0 ? (
-              <View style={styles.emptyPlayersState}>
-                <Users size={48} color="#E5E5E7" strokeWidth={1} />
-                <Text style={styles.emptyPlayersText}>No players found</Text>
-                <Text style={styles.emptyPlayersSubtext}>
-                  No players with role "player" found for this team. 
-                  Consider adding a migration to ensure existing player accounts have the correct team_id set.
-                </Text>
-              </View>
-            ) : (
-              <FlatList
-                data={players}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item: player }) => (
-                  <TouchableOpacity 
-                    style={styles.playerCard}
-                    onPress={() => handlePlayerPress(player)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.playerAvatar}>
-                      <Text style={styles.playerInitials}>
-                        {getInitials(player.name)}
-                      </Text>
-                    </View>
-                    <View style={styles.playerInfo}>
-                      <Text style={styles.playerName}>{player.name}</Text>
-                      <Text style={styles.playerPosition}>{player.position}</Text>
-                    </View>
-                    <View style={styles.playerNumber}>
-                      <Text style={styles.playerNumberText}>#{player.jersey_number || '?'}</Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
-                contentContainerStyle={styles.playersList}
-                showsVerticalScrollIndicator={false}
-              />
-            )}
-          </View>
-        ) : (
-          <View style={styles.lineupView}>
+      {/* Main Content */}
+      <View style={styles.content}>
+        {view === 'list' ? renderListView() : (
+          // Lineup view remains in ScrollView since it's not a list
+          <ScrollView style={styles.lineupView} showsVerticalScrollIndicator={false}>
             <View style={styles.formationHeader}>
               <TouchableOpacity 
                 style={styles.formationDropdownButton}
@@ -408,9 +457,9 @@ export default function PlayerboardScreen() {
                 ))}
               </View>
             </View>
-          </View>
+          </ScrollView>
         )}
-      </ScrollView>
+      </View>
 
       {/* Player Details Modal */}
       <Modal
@@ -1183,5 +1232,66 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
     textAlign: 'center',
+  },
+  playerEmail: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    marginTop: 2,
+  },
+  trainerCard: {
+    backgroundColor: '#F2F2F7',
+    borderColor: '#E5E5EA',
+  },
+  
+  trainerAvatar: {
+    backgroundColor: '#D1D1D6',
+  },
+  
+  trainerInitials: {
+    color: '#1A1A1A',
+  },
+  
+  trainerName: {
+    color: '#1A1A1A',
+  },
+  
+  trainerPosition: {
+    color: '#636366',
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 64,
+    paddingHorizontal: 32,
+  },
+  listContainer: {
+    paddingTop: 20,
+    paddingBottom: 100,
+    gap: 16,
+  },
+  // Debug styles
+  debugCard: {
+    backgroundColor: '#F0F0F0',
+    padding: 10,
+    marginVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  debugText: {
+    fontSize: 14,
+    color: '#000000',
+  },
+  debugEmpty: {
+    padding: 20,
+    backgroundColor: '#FFE0E0',
+    margin: 20,
+    borderRadius: 8,
+  },
+  listWrapper: {
+    flex: 1,
+    paddingHorizontal: 24,
   },
 });
