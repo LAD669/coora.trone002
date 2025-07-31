@@ -12,7 +12,7 @@ import Modal from 'react-native-modal';
 import Header from '@/components/Header';
 import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleCheck, Circle, Plus, ChevronRight, Clock, X, CalendarDays, Zap } from 'lucide-react-native';
 import { router } from 'expo-router';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTeamGoals, createTeamGoal, getTeamStats, getClubStats, getTeamPlayers, getTeamEvents, submitMatchResult } from '@/lib/supabase';
 import { sendPushNotification } from '@/lib/notifications';
@@ -77,7 +77,8 @@ const defaultStats = [
 
 
 export default function DashboardScreen() {
-  const { t, language } = useLanguage();
+  const { t: commonT } = useTranslation('common');
+  const { t: tabsT } = useTranslation('tabs');
   const { user } = useAuth();
   const canManagePlayers = user?.role === 'trainer' || user?.role === 'admin';
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
@@ -317,24 +318,24 @@ export default function DashboardScreen() {
     console.log('handleCreateGoal called with:', newGoal);
     
     if (!newGoal.title.trim() || !newGoal.description.trim() || !newGoal.deadline.trim()) {
-      Alert.alert(t.error, t.fillAllFields);
+      Alert.alert(commonT('error'), commonT('fillAllFields'));
       return;
     }
 
     // Validate deadline is a proper date and in the future
     const deadlineDate = new Date(newGoal.deadline);
     if (isNaN(deadlineDate.getTime())) {
-      Alert.alert(t.error, language === 'de' ? 'Bitte geben Sie ein gültiges Datum ein (JJJJ-MM-TT)' : 'Please enter a valid date (YYYY-MM-DD)');
+      Alert.alert(commonT('error'), commonT('invalidDate'));
       return;
     }
 
     if (deadlineDate <= new Date()) {
-      Alert.alert(t.error, language === 'de' ? 'Das Fälligkeitsdatum muss in der Zukunft liegen' : 'Deadline must be in the future');
+      Alert.alert(commonT('error'), commonT('deadlineFuture'));
       return;
     }
 
     if (!user?.teamId || !user?.id) {
-      Alert.alert(t.error, 'User authentication error. Please try logging in again.');
+      Alert.alert(commonT('error'), commonT('authError'));
       return;
     }
 
@@ -360,11 +361,11 @@ export default function DashboardScreen() {
       console.log('Team goal created successfully');
       setNewGoal({ title: '', description: '', priority: 'medium', deadline: '' });
       setCreateGoalModalVisible(false);
-      Alert.alert(t.success, t.goalCreated);
+      Alert.alert(commonT('success'), commonT('goalCreated'));
       loadDashboardData(); // Reload data
     } catch (error) {
       console.error('Error creating team goal:', error);
-      Alert.alert(t.error, t.somethingWentWrong);
+      Alert.alert(commonT('error'), commonT('somethingWentWrong'));
     }
   };
 
@@ -427,14 +428,14 @@ export default function DashboardScreen() {
 
   const handleSubmitMatchResult = async () => {
     if (!selectedMatch || !user?.teamId || !user?.id) {
-      Alert.alert(t.error, 'Missing required information');
+      Alert.alert(commonT('error'), commonT('missingInfo'));
       return;
     }
 
     // Check if match result already exists
     if (selectedMatch.match_results && selectedMatch.match_results.length > 0) {
       Alert.alert(
-        t.error, 
+        commonT('error'), 
         'A match result has already been submitted for this match. Each match can only have one result.'
       );
       return;
@@ -443,7 +444,7 @@ export default function DashboardScreen() {
     // Validate goals have players selected
     const invalidGoals = matchResult.goals.some(goal => !goal.playerId);
     if (invalidGoals) {
-      Alert.alert(t.error, 'Please select a player for each goal');
+      Alert.alert(commonT('error'), commonT('selectPlayerGoal'));
       return;
     }
 
@@ -460,7 +461,7 @@ export default function DashboardScreen() {
         teamId: user.teamId,
       });
 
-      Alert.alert(t.success, 'Match result submitted successfully!');
+      Alert.alert(commonT('success'), commonT('matchResultSubmitted'));
       setMatchResultsModalVisible(false);
       setSelectedMatch(null);
       setMatchResult({
@@ -481,11 +482,11 @@ export default function DashboardScreen() {
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage === 'duplicate_match_result' || errorMessage.includes('duplicate')) {
         Alert.alert(
-          t.error, 
+          commonT('error'), 
           'A match result has already been submitted for this match. Each match can only have one result.'
         );
       } else {
-        Alert.alert(t.error, 'Failed to submit match result');
+        Alert.alert(commonT('error'), commonT('matchResultFailed'));
       }
     }
   };
@@ -514,28 +515,28 @@ export default function DashboardScreen() {
 
   const submitPotmVotes = () => {
     if (!potmVotes.first) {
-      Alert.alert(t.error, `${t.fillAllFields} - ${t.firstPlace}`);
+      Alert.alert(commonT('error'), `${commonT('fillAllFields')} - ${commonT('firstPlace')}`);
       return;
     }
 
     const selectedPlayers = {
-      first: potmVotes.first ? getPlayerName(potmVotes.first) : null,
-      second: potmVotes.second ? getPlayerName(potmVotes.second) : null,
-      third: potmVotes.third ? getPlayerName(potmVotes.third) : null,
+      first: potmVotes.first ? getPlayerName(potmVotes.first) : commonT('notSelected'),
+      second: potmVotes.second ? getPlayerName(potmVotes.second) : commonT('notSelected'),
+      third: potmVotes.third ? getPlayerName(potmVotes.third) : commonT('notSelected'),
     };
 
     let message = `Player of the Match votes for ${selectedMatch.opponent}:\n\n`;
-    if (selectedPlayers.first) message += `🥇 ${t.firstPlace}: ${selectedPlayers.first}\n`;
-    if (selectedPlayers.second) message += `🥈 ${t.secondPlace}: ${selectedPlayers.second}\n`;
-    if (selectedPlayers.third) message += `🥉 ${t.thirdPlace}: ${selectedPlayers.third}\n`;
-    message += `\n${t.votesSubmitted}!`;
+    if (selectedPlayers.first) message += `🥇 ${commonT('firstPlace')}: ${selectedPlayers.first}\n`;
+    if (selectedPlayers.second) message += `🥈 ${commonT('secondPlace')}: ${selectedPlayers.second}\n`;
+    if (selectedPlayers.third) message += `🥉 ${commonT('thirdPlace')}: ${selectedPlayers.third}\n`;
+    message += `\n${commonT('votesSubmitted')}!`;
 
     Alert.alert(
-      t.votesSubmitted,
+      commonT('votesSubmitted'),
       message,
       [
         {
-          text: t.confirm,
+          text: commonT('confirm'),
           onPress: () => {
             setPotmModalVisible(false);
             setSelectedMatch(null);
@@ -580,9 +581,9 @@ export default function DashboardScreen() {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <Header title={t.dashboard} />
+        <Header title={tabsT('dashboard')} />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{t.loading}</Text>
+          <Text style={styles.loadingText}>{commonT('loading')}</Text>
         </View>
       </View>
     );
@@ -590,12 +591,12 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <Header title={t.dashboard} />
+      <Header title={tabsT('dashboard')} />
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeText}>{t.welcomeBack}, {user?.name}!</Text>
+          <Text style={styles.welcomeText}>{commonT('welcomeBack')}, {user?.name}!</Text>
           <Text style={styles.teamName}>
             {user?.role === 'admin' ? 'Club Admin' : 'Team Member'}
           </Text>
@@ -604,7 +605,7 @@ export default function DashboardScreen() {
         {/* Stats Cards Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {user?.role === 'admin' ? t.clubStatistics : t.teamStatistics}
+            {user?.role === 'admin' ? commonT('clubStatistics') : commonT('teamStatistics')}
           </Text>
           <View style={styles.statsGrid}>
             {stats.map((stat) => {
@@ -652,7 +653,7 @@ export default function DashboardScreen() {
         {/* Team Goals Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t.teamGoals}</Text>
+            <Text style={styles.sectionTitle}>{commonT('teamGoals')}</Text>
             <View style={styles.sectionActions}>
               {canManagePlayers && (completedMatches.length > 0 || matchesWithResults.length > 0) && (
                 <TouchableOpacity 
@@ -671,7 +672,7 @@ export default function DashboardScreen() {
                   onPress={() => setCreateGoalModalVisible(true)}
                 >
                   <Plus size={16} color="#007AFF" strokeWidth={2} />
-                  <Text style={styles.addGoalText}>{t.addGoal}</Text>
+                  <Text style={styles.addGoalText}>{commonT('addGoal')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -680,10 +681,10 @@ export default function DashboardScreen() {
           {teamGoals.length === 0 ? (
             <View style={styles.emptyGoalsState}>
               <Target size={48} color="#E5E5E7" strokeWidth={1} />
-              <Text style={styles.emptyGoalsText}>{language === 'de' ? 'Noch keine Team-Ziele gesetzt' : 'No team goals set yet'}</Text>
+              <Text style={styles.emptyGoalsText}>{commonT('noTeamGoals')}</Text>
               {canManagePlayers && (
                 <Text style={styles.emptyGoalsSubtext}>
-                  {language === 'de' ? 'Erstelle dein erstes Team-Ziel um den Fortschritt zu verfolgen' : 'Create your first team goal to track progress'}
+                  {commonT('createFirstTeamGoal')}
                 </Text>
               )}
             </View>
@@ -729,7 +730,7 @@ export default function DashboardScreen() {
 
                   <View style={styles.goalProgress}>
                     <View style={styles.progressHeader}>
-                      <Text style={styles.progressLabel}>{t.progress}</Text>
+                      <Text style={styles.progressLabel}>{commonT('progress')}</Text>
                       <Text style={styles.progressPercentage}>{goal.progress}%</Text>
                     </View>
                     <View style={styles.progressBarContainer}>
@@ -748,10 +749,10 @@ export default function DashboardScreen() {
                   <View style={styles.goalFooter}>
                     <View style={styles.goalMeta}>
                       <Text style={styles.goalDeadline}>
-                        {t.due}: {formatDeadline(goal.deadline)}
+                        {commonT('due')}: {formatDeadline(goal.deadline)}
                       </Text>
                       <Text style={styles.goalTasks}>
-                        {getCompletedTasks(goal.goal_tasks)}/{goal.goal_tasks?.length || 0} {t.tasks}
+                        {getCompletedTasks(goal.goal_tasks)}/{goal.goal_tasks?.length || 0} {commonT('tasks')}
                       </Text>
                     </View>
                   </View>
@@ -759,7 +760,7 @@ export default function DashboardScreen() {
                   {/* Expanded Task List */}
                   {selectedGoal === goal.id && goal.goal_tasks && (
                     <View style={styles.tasksList}>
-                      <Text style={styles.tasksTitle}>{t.tasks}:</Text>
+                      <Text style={styles.tasksTitle}>{commonT('tasks')}:</Text>
                       {goal.goal_tasks.map((task: any) => (
                         <View key={task.id} style={styles.taskItem}>
                           {task.completed ? (
@@ -789,7 +790,7 @@ export default function DashboardScreen() {
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* Create Goal Modal */}
+      {/* Create Team Goal Modal */}
       <Modal
         isVisible={isCreateGoalModalVisible}
         onBackdropPress={() => setCreateGoalModalVisible(false)}
@@ -797,7 +798,7 @@ export default function DashboardScreen() {
       >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t.createTeamGoal}</Text>
+            <Text style={styles.modalTitle}>{commonT('createTeamGoal')}</Text>
             <TouchableOpacity onPress={() => setCreateGoalModalVisible(false)}>
               <X size={24} color="#8E8E93" strokeWidth={1.5} />
             </TouchableOpacity>
@@ -805,10 +806,10 @@ export default function DashboardScreen() {
 
           <ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>{t.goalTitle} *</Text>
+              <Text style={styles.formLabel}>{commonT('goalTitle')} *</Text>
               <TextInput
                 style={styles.formInput}
-                placeholder={t.goalTitle}
+                placeholder={commonT('goalTitle')}
                 value={newGoal.title}
                 onChangeText={(text) => setNewGoal({ ...newGoal, title: text })}
                 placeholderTextColor="#8E8E93"
@@ -816,10 +817,10 @@ export default function DashboardScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>{t.description} *</Text>
+              <Text style={styles.formLabel}>{commonT('description')} *</Text>
               <TextInput
                 style={[styles.formInput, styles.formTextArea]}
-                placeholder={t.description}
+                placeholder={commonT('description')}
                 value={newGoal.description}
                 onChangeText={(text) => setNewGoal({ ...newGoal, description: text })}
                 multiline
@@ -830,7 +831,7 @@ export default function DashboardScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>{t.priority}</Text>
+              <Text style={styles.formLabel}>{commonT('priority')}</Text>
               <View style={styles.prioritySelector}>
                 {(['high', 'medium', 'low'] as const).map((priority) => (
                   <TouchableOpacity
@@ -850,7 +851,7 @@ export default function DashboardScreen() {
                       styles.priorityButtonText,
                       newGoal.priority === priority && { color: getPriorityColor(priority) }
                     ]}>
-                      {priority === 'high' ? t.high : priority === 'medium' ? t.medium : t.low}
+                      {commonT(priority)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -858,12 +859,12 @@ export default function DashboardScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>{t.deadline} *</Text>
+              <Text style={styles.formLabel}>{commonT('deadline')} *</Text>
               <View style={styles.dateInputContainer}>
                 <CalendarDays size={20} color="#8E8E93" strokeWidth={1.5} />
                 <TextInput
                   style={styles.dateInput}
-                  placeholder={language === 'de' ? 'JJJJ-MM-TT (z.B. 2024-12-31)' : 'YYYY-MM-DD (e.g. 2024-12-31)'}
+                  placeholder={commonT('deadlinePlaceholder')}
                   value={newGoal.deadline}
                   onChangeText={handleDateChange}
                   placeholderTextColor="#8E8E93"
@@ -871,7 +872,7 @@ export default function DashboardScreen() {
                 />
               </View>
               <Text style={styles.formHint}>
-                {language === 'de' ? 'Datum muss in der Zukunft liegen und im Format JJJJ-MM-TT sein' : 'Date must be in the future and in YYYY-MM-DD format'}
+                {commonT('deadlineHint')}
               </Text>
             </View>
           </ScrollView>
@@ -881,13 +882,13 @@ export default function DashboardScreen() {
               style={styles.cancelButton}
               onPress={() => setCreateGoalModalVisible(false)}
             >
-              <Text style={styles.cancelButtonText}>{t.cancel}</Text>
+              <Text style={styles.cancelButtonText}>{commonT('cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.createButton}
               onPress={handleCreateGoal}
             >
-              <Text style={styles.createButtonText}>{t.create} Goal</Text>
+              <Text style={styles.createButtonText}>{commonT('create')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -928,7 +929,7 @@ export default function DashboardScreen() {
                 </View>
               ) : (
                 <>
-                  <Text style={styles.sectionSubtitle}>Matches Needing Results</Text>
+                  <Text style={styles.sectionSubtitle}>{commonT('matchesNeedingResults')}</Text>
                   {completedMatches.map((match) => (
                     <TouchableOpacity
                       key={match.id}
@@ -951,7 +952,7 @@ export default function DashboardScreen() {
               {/* Matches that already have results */}
               {matchesWithResults.length > 0 && (
                 <>
-                  <Text style={styles.sectionSubtitle}>Matches with Results</Text>
+                  <Text style={styles.sectionSubtitle}>{commonT('matchesWithResults')}</Text>
                   {matchesWithResults.map((match) => (
                     <TouchableOpacity
                       key={match.id}
@@ -965,7 +966,7 @@ export default function DashboardScreen() {
                         </Text>
                         <Text style={styles.matchLocation}>{match.location}</Text>
                         <View style={styles.resultSubmittedBadge}>
-                          <Text style={styles.resultSubmittedText}>Result Submitted</Text>
+                          <Text style={styles.resultSubmittedText}>{commonT('resultSubmitted')}</Text>
                         </View>
                       </View>
                       <CircleCheck size={20} color="#34C759" strokeWidth={1.5} />
@@ -981,7 +982,7 @@ export default function DashboardScreen() {
                   style={styles.backButton}
                   onPress={() => setSelectedMatch(null)}
                 >
-                  <Text style={styles.backButtonText}>← Back to Matches</Text>
+                  <Text style={styles.backButtonText}>← {commonT('backToMatches')}</Text>
                 </TouchableOpacity>
                 <Text style={styles.selectedMatchTitle}>{selectedMatch.title}</Text>
                 <Text style={styles.selectedMatchDate}>
@@ -991,10 +992,10 @@ export default function DashboardScreen() {
 
               {/* Score Section */}
               <View style={styles.scoreSection}>
-                <Text style={styles.scoreSectionTitle}>Final Score</Text>
+                <Text style={styles.scoreSectionTitle}>{commonT('finalScore')}</Text>
                 <View style={styles.scoreInputs}>
                   <View style={styles.scoreInput}>
-                    <Text style={styles.scoreLabel}>My Team</Text>
+                    <Text style={styles.scoreLabel}>{commonT('myTeam')}</Text>
                     <TextInput
                       style={styles.scoreField}
                       value={matchResult.teamScore.toString()}
@@ -1008,7 +1009,7 @@ export default function DashboardScreen() {
                   </View>
                   <Text style={styles.scoreDivider}>-</Text>
                   <View style={styles.scoreInput}>
-                    <Text style={styles.scoreLabel}>Opponent</Text>
+                    <Text style={styles.scoreLabel}>{commonT('opponent')}</Text>
                     <TextInput
                       style={styles.scoreField}
                       value={matchResult.opponentScore.toString()}
@@ -1026,16 +1027,16 @@ export default function DashboardScreen() {
               {/* Goals Section */}
               <View style={styles.statsInputSection}>
                 <View style={styles.statsInputHeader}>
-                  <Text style={styles.statsInputTitle}>Goals</Text>
+                  <Text style={styles.statsInputTitle}>{commonT('goals')}</Text>
                   <TouchableOpacity style={styles.addStatButton} onPress={addGoal}>
                     <Plus size={16} color="#007AFF" strokeWidth={2} />
-                    <Text style={styles.addStatText}>Add Goal</Text>
+                    <Text style={styles.addStatText}>{commonT('addGoal')}</Text>
                   </TouchableOpacity>
                 </View>
                 {matchResult.goals.map((goal, index) => (
                   <View key={index} style={styles.statInputRow}>
                     <View style={styles.playerSelectContainer}>
-                      <Text style={styles.playerSelectLabel}>Player:</Text>
+                      <Text style={styles.playerSelectLabel}>{commonT('player')}:</Text>
                       <View style={styles.playerSelect}>
                         {teamPlayers.map((player) => (
                           <TouchableOpacity
@@ -1072,16 +1073,16 @@ export default function DashboardScreen() {
               {/* Assists Section */}
               <View style={styles.statsInputSection}>
                 <View style={styles.statsInputHeader}>
-                  <Text style={styles.statsInputTitle}>Assists</Text>
+                  <Text style={styles.statsInputTitle}>{commonT('assists')}</Text>
                   <TouchableOpacity style={styles.addStatButton} onPress={addAssist}>
                     <Plus size={16} color="#34C759" strokeWidth={2} />
-                    <Text style={styles.addStatText}>Add Assist</Text>
+                    <Text style={styles.addStatText}>{commonT('addAssist')}</Text>
                   </TouchableOpacity>
                 </View>
                 {matchResult.assists.map((assist, index) => (
                   <View key={index} style={styles.statInputRow}>
                     <View style={styles.playerSelectContainer}>
-                      <Text style={styles.playerSelectLabel}>Player:</Text>
+                      <Text style={styles.playerSelectLabel}>{commonT('player')}:</Text>
                       <View style={styles.playerSelect}>
                         {teamPlayers.map((player) => (
                           <TouchableOpacity
@@ -1120,7 +1121,7 @@ export default function DashboardScreen() {
                 style={styles.submitResultButton}
                 onPress={handleSubmitMatchResult}
               >
-                <Text style={styles.submitResultButtonText}>Submit Match Result</Text>
+                <Text style={styles.submitResultButtonText}>{commonT('submitMatchResult')}</Text>
               </TouchableOpacity>
             </ScrollView>
           )}
@@ -1135,7 +1136,7 @@ export default function DashboardScreen() {
       >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t.playerOfTheMatch}</Text>
+            <Text style={styles.modalTitle}>{commonT('playerOfTheMatch')}</Text>
             <TouchableOpacity onPress={() => setPotmModalVisible(false)}>
               <X size={24} color="#8E8E93" strokeWidth={1.5} />
             </TouchableOpacity>
@@ -1143,11 +1144,11 @@ export default function DashboardScreen() {
 
           {!selectedMatch ? (
             <ScrollView style={styles.matchesList} showsVerticalScrollIndicator={false}>
-              <Text style={styles.matchesTitle}>{t.selectRecentMatch}</Text>
+              <Text style={styles.matchesTitle}>{commonT('selectRecentMatch')}</Text>
               {recentMatches.length === 0 ? (
                 <View style={styles.emptyMatches}>
                   <Text style={styles.emptyMatchesText}>
-                    {language === 'de' ? 'Keine aktuellen Spiele gefunden' : 'No recent matches found'}
+                    {commonT('noRecentMatches')}
                   </Text>
                 </View>
               ) : (
@@ -1158,7 +1159,7 @@ export default function DashboardScreen() {
                   onPress={() => handleMatchSelect(match)}
                 >
                   <View style={styles.matchInfo}>
-                    <Text style={styles.matchOpponent}>vs {match.opponent}</Text>
+                    <Text style={styles.matchOpponent}>{match.opponent}</Text>
                     <Text style={styles.matchDate}>{new Date(match.date).toLocaleDateString()}</Text>
                   </View>
                   <View style={[
@@ -1194,9 +1195,9 @@ export default function DashboardScreen() {
                   style={styles.backButton}
                   onPress={() => setSelectedMatch(null)}
                 >
-                  <Text style={styles.backButtonText}>← Back to Matches</Text>
+                  <Text style={styles.backButtonText}>← {commonT('backToMatches')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.selectedMatchTitle}>vs {selectedMatch.opponent}</Text>
+                <Text style={styles.selectedMatchTitle}>{commonT('vs')} {selectedMatch.opponent}</Text>
                 <Text style={styles.selectedMatchDate}>
                   {new Date(selectedMatch.date).toLocaleDateString()}
                 </Text>
@@ -1204,31 +1205,31 @@ export default function DashboardScreen() {
 
               {/* Voting Summary */}
               <View style={styles.votingSummary}>
-                <Text style={styles.votingSummaryTitle}>{t.yourVotes}</Text>
+                <Text style={styles.votingSummaryTitle}>{commonT('yourVotes')}</Text>
                 <View style={styles.votesSummaryList}>
                   <View style={styles.voteSummaryItem}>
-                    <Text style={styles.votePosition}>🥇 {t.firstPlace}:</Text>
+                    <Text style={styles.votePosition}>🥇 {commonT('firstPlace')}:</Text>
                     <Text style={styles.votePlayer}>
-                      {potmVotes.first ? getPlayerName(potmVotes.first) : t.notSelected}
+                      {potmVotes.first ? getPlayerName(potmVotes.first) : commonT('notSelected')}
                     </Text>
                   </View>
                   <View style={styles.voteSummaryItem}>
-                    <Text style={styles.votePosition}>🥈 {t.secondPlace}:</Text>
+                    <Text style={styles.votePosition}>🥈 {commonT('secondPlace')}:</Text>
                     <Text style={styles.votePlayer}>
-                      {potmVotes.second ? getPlayerName(potmVotes.second) : t.notSelected}
+                      {potmVotes.second ? getPlayerName(potmVotes.second) : commonT('notSelected')}
                     </Text>
                   </View>
                   <View style={styles.voteSummaryItem}>
-                    <Text style={styles.votePosition}>🥉 {t.thirdPlace}:</Text>
+                    <Text style={styles.votePosition}>🥉 {commonT('thirdPlace')}:</Text>
                     <Text style={styles.votePlayer}>
-                      {potmVotes.third ? getPlayerName(potmVotes.third) : t.notSelected}
+                      {potmVotes.third ? getPlayerName(potmVotes.third) : commonT('notSelected')}
                     </Text>
                   </View>
                 </View>
               </View>
 
               {/* Player Selection */}
-              <Text style={styles.playersTitle}>{t.selectPlayer}</Text>
+              <Text style={styles.playersTitle}>{commonT('selectPlayer')}</Text>
               <View style={styles.playersList}>
                 {selectedMatch?.players?.map((player: any) => (
                   <View key={player.id} style={styles.playerVoteCard}>
@@ -1305,7 +1306,7 @@ export default function DashboardScreen() {
                   styles.submitVotesButtonText,
                   !potmVotes.first && styles.submitVotesButtonTextDisabled
                 ]}>
-                  {t.submitVotes}
+                  {commonT('submitVotes')}
                 </Text>
               </TouchableOpacity>
             </ScrollView>

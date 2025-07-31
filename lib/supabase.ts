@@ -275,72 +275,67 @@ export const getTeamUsers = async (teamId: string): Promise<TransformedTeamMembe
   console.log('🔍 getTeamUsers called for teamId:', teamId);
   
   const { data, error } = await supabase
-    .from('team_members')
-    .select(`
-      id,
-      team_role,
-      joined_at,
-      users!inner (
-        id,
-        first_name,
-        last_name,
-        email,
-        position,
-        role,
-        jersey_number,
-        phone_number,
-        date_of_birth,
-        height_cm,
-        weight_kg,
-        created_at,
-        updated_at
-      )
-    `)
-    .eq('team_id', teamId)
-    .order('team_role', { ascending: false }) // This will put trainers first
-    .order('users.first_name')
-    .returns<TeamMember[]>();
-  
+    .from('team_users_view')
+    .select('*')
+    .eq('team_id', teamId);
+
   if (error) {
     console.error('❌ Error fetching team users:', error);
     throw error;
   }
 
-  // Transform the data to flatten the users object
-  const transformedData: TransformedTeamMember[] = data.map(member => ({
-    id: member.users.id,
-    first_name: member.users.first_name,
-    last_name: member.users.last_name,
-    email: member.users.email,
-    position: member.users.position,
-    role: member.team_role,
-    jersey_number: member.users.jersey_number,
-    phone_number: member.users.phone_number,
-    date_of_birth: member.users.date_of_birth,
-    height_cm: member.users.height_cm,
-    weight_kg: member.users.weight_kg,
-    created_at: member.users.created_at,
-    updated_at: member.users.updated_at,
-    team_member_id: member.id,
-    joined_at: member.joined_at
-  }));
+  console.log('🔍 Raw data from view:', data?.length || 0);
+
+  // Transform the data to include role field based on team_role
+  const transformedData: TransformedTeamMember[] = (data || [])
+    .map(user => ({
+      id: user.id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      position: user.position,
+      role: user.team_role,
+      jersey_number: user.jersey_number,
+      phone_number: user.phone_number,
+      date_of_birth: user.date_of_birth,
+      height_cm: user.height_cm,
+      weight_kg: user.weight_kg,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      team_member_id: user.team_member_id,
+      joined_at: user.joined_at
+    }));
+
+  // Sort the data:
+  // 1. Trainers first
+  // 2. Then alphabetically by first_name
+  const sortedData = transformedData.sort((a, b) => {
+    // If one is a trainer and the other isn't, trainer comes first
+    if (a.role === 'trainer' && b.role !== 'trainer') return -1;
+    if (a.role !== 'trainer' && b.role === 'trainer') return 1;
+
+    // If both are trainers or both are not trainers, sort by first_name
+    const aName = a.first_name?.toLowerCase() || '';
+    const bName = b.first_name?.toLowerCase() || '';
+    return aName.localeCompare(bName);
+  });
   
-  console.log('🔍 getTeamUsers - Raw data fetched:', {
+  console.log('🔍 getTeamUsers - Final data:', {
     teamId,
-    userCount: transformedData.length,
-    trainerCount: transformedData.filter(u => u.role === 'trainer').length,
-    playerCount: transformedData.filter(u => u.role === 'player').length,
-    sampleUser: transformedData[0] ? {
-      id: transformedData[0].id,
-      first_name: transformedData[0].first_name,
-      last_name: transformedData[0].last_name,
-      email: transformedData[0].email,
-      role: transformedData[0].role,
-      team_member_id: transformedData[0].team_member_id
+    userCount: sortedData.length,
+    trainerCount: sortedData.filter(u => u.role === 'trainer').length,
+    playerCount: sortedData.filter(u => u.role === 'player').length,
+    sampleUser: sortedData[0] ? {
+      id: sortedData[0].id,
+      first_name: sortedData[0].first_name,
+      last_name: sortedData[0].last_name,
+      email: sortedData[0].email,
+      role: sortedData[0].role,
+      team_member_id: sortedData[0].team_member_id
     } : null
   });
   
-  return transformedData;
+  return sortedData;
 };
 
 export const createPlayer = async (player: {

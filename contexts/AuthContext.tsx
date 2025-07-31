@@ -1,13 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { router } from 'expo-router';
+import { router, useRouter } from 'expo-router';
 import { validateAccessCode, getUserProfile, getCurrentUser, restoreSession } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { Alert } from 'react-native';
 import { storage } from '@/lib/storage';
-
-// Maximum time to wait for session restoration (in milliseconds)
-const SESSION_RESTORE_TIMEOUT = 5000;
 
 interface User {
   id: string;
@@ -39,8 +36,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isRestoringSession, setIsRestoringSession] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const router = useRouter();
 
   // Clear stored session data and redirect to login
   const handleSessionError = async (error: any) => {
@@ -85,27 +82,60 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const checkAuthState = async () => {
+    console.log('Starting session restoration...');
+    setSessionError(null);
+    setIsLoading(true);
+
+    try {
+      // First check for active session
+      console.log('Checking for active session...');
+      const { data: { session: activeSession } } = await supabase.auth.getSession();
+      
+      if (activeSession?.user) {
+        console.log('Active session found, verifying user...');
+        const success = await verifyAndSetUser(activeSession.user.id);
+        if (!success) {
+          throw new Error('Failed to verify user from active session');
+        }
+        // Navigate to home if verification successful
+        router.replace('/(tabs)');
+      } else {
+        // Try to restore session from storage
+        console.log('No active session, attempting to restore from storage...');
+        const session = await restoreSession();
+        
+        if (session?.user) {
+          console.log('Session restored, verifying user...');
+          const success = await verifyAndSetUser(session.user.id);
+          if (!success) {
+            throw new Error('Failed to verify user after session restoration');
+          }
+          // Navigate to home if restoration successful
+          router.replace('/(tabs)');
+        } else {
+          console.log('No stored session found');
+          setUser(null);
+          router.replace('/auth/login');
+        }
+      }
+    } catch (error) {
+      console.error('Error during session restoration:', error);
+      handleSessionError(error);
+    } finally {
+      setIsLoading(false);
+      setIsInitialized(true);
+      console.log('Session restoration process completed');
+    }
+  };
+
   // Check for existing session on app start
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (isRestoringSession) {
-        console.log('Session restoration timed out after', SESSION_RESTORE_TIMEOUT, 'ms');
-        setIsRestoringSession(false);
-        setIsLoading(false);
-        setIsInitialized(true);
-        handleSessionError(new Error('Session restoration timed out'));
-      }
-    }, SESSION_RESTORE_TIMEOUT);
-
     checkAuthState();
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
   }, []);
 
+  // Listen for auth state changes
   useEffect(() => {
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event);
       
@@ -117,6 +147,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (!success) {
               throw new Error('Failed to verify user after auth state change');
             }
+            router.replace('/(tabs)');
           }
         } catch (error) {
           console.error('Error updating user state:', error);
@@ -128,6 +159,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('User signed out');
         setUser(null);
         setIsLoading(false);
+        router.replace('/auth/login');
       }
     });
 
@@ -135,48 +167,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       subscription.unsubscribe();
     };
   }, []);
-
-  const checkAuthState = async () => {
-    console.log('Starting session restoration...');
-    setIsRestoringSession(true);
-    setSessionError(null);
-
-    try {
-      // First try to restore the session from storage
-      console.log('Attempting to restore session from storage...');
-      const session = await restoreSession();
-      
-      if (session?.user) {
-        console.log('Session restored, verifying user...');
-        const success = await verifyAndSetUser(session.user.id);
-        if (!success) {
-          throw new Error('Failed to verify user after session restoration');
-        }
-      } else {
-        // If no stored session, check for active session
-        console.log('No stored session found, checking for active session...');
-        const { data: { session: activeSession } } = await supabase.auth.getSession();
-        if (activeSession?.user) {
-          console.log('Active session found, verifying user...');
-          const success = await verifyAndSetUser(activeSession.user.id);
-          if (!success) {
-            throw new Error('Failed to verify user from active session');
-          }
-        } else {
-          console.log('No active session found');
-          setUser(null);
-        }
-      }
-    } catch (error) {
-      console.error('Error during session restoration:', error);
-      handleSessionError(error);
-    } finally {
-      setIsLoading(false);
-      setIsInitialized(true);
-      setIsRestoringSession(false);
-      console.log('Session restoration process completed');
-    }
-  };
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
@@ -318,18 +308,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser,
   };
 
-  // Show loading screen while restoring session
-  if (isRestoringSession) {
-    return (
-      <LoadingScreen 
-        message={sessionError || "Restoring your session..."} 
-        isError={!!sessionError}
-      />
-    );
-  }
-
-  // Show loading screen while initializing and loading
-  if (!isInitialized || isLoading || !user) {
+  // Show loading screen only during initial load or auth state changes
+  if (!isInitialized || isLoading) {
     return (
       <LoadingScreen 
         message={sessionError || "Loading..."} 

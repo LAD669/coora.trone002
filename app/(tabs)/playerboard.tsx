@@ -11,11 +11,14 @@ import {
   Alert,
 } from 'react-native';
 import Modal from 'react-native-modal';
+import { router } from 'expo-router';
 import Header from '@/components/Header';
+import PlayerCard from '@/components/PlayerCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Users, Target, Plus, X, User, Phone, Calendar, Ruler, Weight, Trophy, Activity, Clock, Hash, ChevronDown } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTeamUsers, createPlayer } from '@/lib/supabase';
+import { getSafeKey } from '@/lib/helpers';
 
 const { width } = Dimensions.get('window');
 
@@ -215,40 +218,22 @@ export default function PlayerboardScreen() {
       console.log('📊 Fetching team users for team:', teamId);
       const data = await getTeamUsers(teamId);
       
-      // Transform and sort the data (trainers first, then players)
-      const transformedUsers = (data || [])
-        .map(user => ({
-          id: user.id,
-          name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User',
-          email: user.email || 'No email provided',
-          position: user.position || (user.role === 'trainer' ? 'Trainer' : 'Player'),
-          role: user.role || 'player',
-          jersey_number: user.jersey_number || null,
-          phone_number: user.phone_number || null,
-          date_of_birth: user.date_of_birth || null,
-          height_cm: user.height_cm || null,
-          weight_kg: user.weight_kg || null,
-          team_id: user.team_id,
-          user_id: user.id,
-          created_at: user.created_at,
-          updated_at: user.updated_at
-        }))
-        .sort((a, b) => {
-          // Sort by role first (trainers before players)
-          if (a.role === 'trainer' && b.role !== 'trainer') return -1;
-          if (a.role !== 'trainer' && b.role === 'trainer') return 1;
-          // Then sort by name
-          return a.name.localeCompare(b.name);
-        });
+      // getTeamUsers already returns properly transformed and sorted data
+      // Just add the computed 'name' field for UI consistency
+      const playersWithComputedName = (data || []).map(user => ({
+        ...user,
+        name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User',
+        user_id: user.id, // For UI compatibility
+      }));
       
       console.log('✅ Successfully loaded team users:', {
         teamId,
-        totalCount: transformedUsers.length,
-        trainerCount: transformedUsers.filter(u => u.role === 'trainer').length,
-        playerCount: transformedUsers.filter(u => u.role === 'player').length
+        totalCount: playersWithComputedName.length,
+        trainerCount: playersWithComputedName.filter(u => u.role === 'trainer').length,
+        playerCount: playersWithComputedName.filter(u => u.role === 'player').length
       });
       
-      setPlayers(transformedUsers);
+      setPlayers(playersWithComputedName);
       
       if (!data || data.length === 0) {
         console.warn('⚠️ No team members found for team:', teamId);
@@ -286,8 +271,15 @@ export default function PlayerboardScreen() {
   };
 
   const handlePlayerPress = (player: any) => {
-    setSelectedPlayer(player);
-    setPlayerModalVisible(true);
+    const playerId = player.id || player.user_id;
+    if (playerId) {
+      router.push(`/players/${playerId}`);
+    } else {
+      console.warn('No player ID available for navigation');
+      // Fallback to modal if no ID available
+      setSelectedPlayer(player);
+      setPlayerModalVisible(true);
+    }
   };
 
   const handlePositionPress = (position: any, index: number) => {
@@ -328,37 +320,84 @@ export default function PlayerboardScreen() {
       );
     }
 
-    // Simple debug layout to test FlatList rendering
-    const renderDebugItem = ({ item: member, index }: { item: any; index: number }) => (
-      <View style={styles.debugCard}>
-        <Text style={styles.debugText}>
-          {index}: {member.role} - {member.name}
-        </Text>
-      </View>
-    );
-
     return (
       <View style={styles.listWrapper}>
-        <FlatList
-          data={players}
-          keyExtractor={(item) => item.id}
-          ListHeaderComponent={() => (
-            <Text style={styles.sectionTitle}>Team Members ({players.length})</Text>
-          )}
-          renderItem={renderDebugItem}
-          contentContainerStyle={styles.listContainer}
+        <ScrollView 
+          style={styles.playersList}
           showsVerticalScrollIndicator={false}
-          onLayout={(event) => {
-            console.log('📏 FlatList layout dimensions:', event.nativeEvent.layout);
-          }}
-          ListEmptyComponent={() => (
-            <View style={styles.debugEmpty}>
-              <Text style={styles.debugText}>
-                FlatList Empty - But players.length = {players.length}
-              </Text>
+          contentContainerStyle={styles.playersListContainer}
+        >
+          {/* Debug logs to verify players array */}
+          {(() => {
+            console.log('🔍 Debug - Players array:', {
+              totalPlayers: players.length,
+              samplePlayer: players[0],
+              allRoles: players.map(p => p.role),
+              uniqueRoles: [...new Set(players.map(p => p.role))],
+              trainerCount: players.filter(p => p.role === 'trainer').length,
+              playerCount: players.filter(p => p.role === 'player').length,
+              adminCount: players.filter(p => p.role === 'admin').length,
+            });
+            return null;
+          })()}
+
+          {/* Trainers Section */}
+          {players.filter(player => player.role === 'trainer').length > 0 && (
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>Trainers ({players.filter(player => player.role === 'trainer').length})</Text>
+              {players
+                .filter(player => player.role === 'trainer')
+                .map((player, index) => (
+                  <PlayerCard
+                    key={getSafeKey(player, index, 'trainer')}
+                    name={player.name}
+                    position={player.position}
+                    jerseyNumber={player.jersey_number}
+                    backgroundColor="#F2F2F7"
+                    onPress={() => handlePlayerPress(player)}
+                  />
+                ))}
             </View>
           )}
-        />
+
+          {/* Players Section */}
+          {players.filter(player => player.role === 'player').length > 0 && (
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>Players ({players.filter(player => player.role === 'player').length})</Text>
+              {players
+                .filter(player => player.role === 'player')
+                .map((player, index) => (
+                  <PlayerCard
+                    key={getSafeKey(player, index, 'player')}
+                    name={player.name}
+                    position={player.position}
+                    jerseyNumber={player.jersey_number}
+                    backgroundColor="#F8F9FA"
+                    onPress={() => handlePlayerPress(player)}
+                  />
+                ))}
+            </View>
+          )}
+
+          {/* Fallback: Show all players if no filtering works */}
+          {players.filter(player => player.role === 'trainer').length === 0 && 
+           players.filter(player => player.role === 'player').length === 0 && 
+           players.length > 0 && (
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>All Team Members ({players.length})</Text>
+              {players.map((player, index) => (
+                <PlayerCard
+                  key={getSafeKey(player, index, 'fallback')}
+                  name={player.name}
+                  position={player.position}
+                  jerseyNumber={player.jersey_number}
+                  backgroundColor="#F8F9FA"
+                  onPress={() => handlePlayerPress(player)}
+                />
+              ))}
+            </View>
+          )}
+        </ScrollView>
       </View>
     );
   };
@@ -439,7 +478,7 @@ export default function PlayerboardScreen() {
                 {/* Player positions */}
                 {selectedFormation.positions.map((pos, index) => (
                   <TouchableOpacity
-                    key={index}
+                    key={getSafeKey({ id: `${selectedFormation.id}-${pos.role}` }, index, 'position')}
                     style={[
                       styles.positionCircle,
                       {
@@ -574,9 +613,9 @@ export default function PlayerboardScreen() {
           </View>
 
           <ScrollView style={styles.formationList} showsVerticalScrollIndicator={false}>
-            {formations.map((formation) => (
+            {formations.map((formation, index) => (
               <TouchableOpacity
-                key={formation.id}
+                key={getSafeKey(formation, index, 'formation')}
                 style={[
                   styles.formationListItem,
                   formation.id === selectedFormation.id && styles.formationListItemActive,
@@ -644,9 +683,9 @@ export default function PlayerboardScreen() {
             <View style={styles.availablePlayersList}>
               {players
                 .filter(player => !Object.values(assignedPlayers).some(assigned => assigned?.id === player.id))
-                .map((player) => (
+                .map((player, index) => (
                 <TouchableOpacity
-                  key={player.id}
+                  key={getSafeKey(player, index, 'available-player')}
                   style={styles.availablePlayerCard}
                   onPress={() => assignPlayerToPosition(player)}
                 >
@@ -1293,5 +1332,17 @@ const styles = StyleSheet.create({
   listWrapper: {
     flex: 1,
     paddingHorizontal: 24,
+  },
+  playersListContainer: {
+    paddingTop: 20,
+    paddingBottom: 100,
+    gap: 16,
+  },
+  sectionContainer: {
+    marginBottom: 24,
+  },
+  playerCardLight: {
+    backgroundColor: '#F8F9FA',
+    borderColor: '#F0F0F0',
   },
 });

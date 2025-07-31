@@ -69,9 +69,18 @@ export interface Database {
           id: string
           email: string
           name: string
+          first_name: string
+          last_name: string
           role: 'admin' | 'trainer' | 'player' | 'parent'
           team_id: string | null
           club_id: string
+          access_code: string | null
+          position: string | null
+          jersey_number: number | null
+          phone_number: string | null
+          date_of_birth: string | null
+          height_cm: number | null
+          weight_kg: number | null
           created_at: string
           updated_at: string
         }
@@ -79,9 +88,18 @@ export interface Database {
           id?: string
           email: string
           name: string
+          first_name: string
+          last_name: string
           role: 'admin' | 'trainer' | 'player' | 'parent'
           team_id?: string | null
           club_id: string
+          access_code?: string | null
+          position?: string | null
+          jersey_number?: number | null
+          phone_number?: string | null
+          date_of_birth?: string | null
+          height_cm?: number | null
+          weight_kg?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -89,9 +107,18 @@ export interface Database {
           id?: string
           email?: string
           name?: string
+          first_name?: string
+          last_name?: string
           role?: 'admin' | 'trainer' | 'player' | 'parent'
           team_id?: string | null
           club_id?: string
+          access_code?: string | null
+          position?: string | null
+          jersey_number?: number | null
+          phone_number?: string | null
+          date_of_birth?: string | null
+          height_cm?: number | null
+          weight_kg?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -484,6 +511,35 @@ export interface Database {
           sent?: boolean
           read_by?: Json
           created_at?: string
+        }
+      }
+      team_members: {
+        Row: {
+          id: string
+          team_id: string
+          user_id: string
+          team_role: 'trainer' | 'player' | 'admin'
+          joined_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          team_id: string
+          user_id: string
+          team_role: 'trainer' | 'player' | 'admin'
+          joined_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          team_id?: string
+          user_id?: string
+          team_role?: 'trainer' | 'player' | 'admin'
+          joined_at?: string
+          created_at?: string
+          updated_at?: string
         }
       }
     }

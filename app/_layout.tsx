@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
 import { Stack } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import {
@@ -10,11 +10,9 @@ import {
 } from '@expo-google-fonts/urbanist';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
-import { useFrameworkReady } from '@/hooks/useFrameworkReady';
+import { useRouter, useNavigationContainerRef } from 'expo-router';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
-import { LoadingScreen } from '@/components/LoadingScreen';
-import { Redirect, useRouter, useNavigationContainerRef } from 'expo-router';
 import { 
   registerForPushNotificationsAsync, 
   addNotificationReceivedListener, 
@@ -22,7 +20,7 @@ import {
 } from '@/lib/notifications';
 
 function RootLayoutNav() {
-  const { isAuthenticated, isLoading, isInitialized } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const navigationRef = useNavigationContainerRef();
   const notificationListener = useRef<Notifications.Subscription>();
@@ -33,21 +31,15 @@ function RootLayoutNav() {
     registerForPushNotificationsAsync().then(token => {
       if (token) {
         console.log('Push token registered:', token);
-        // Here you can send the token to your backend
-        // await sendTokenToBackend(token);
       }
     });
 
-    // Listen for incoming notifications while app is foregrounded
     notificationListener.current = addNotificationReceivedListener(notification => {
       console.log('Notification received:', notification);
-      // Handle the notification here
     });
 
-    // Listen for user tapping on notification
     responseListener.current = addNotificationResponseReceivedListener(response => {
       console.log('Notification response:', response);
-      // Handle notification tap here
       const data = response.notification.request.content.data;
       if (data?.screen) {
         router.push(data.screen as any);
@@ -64,19 +56,12 @@ function RootLayoutNav() {
     };
   }, []);
 
-  // Wait for navigation to be ready before redirecting
+  // Handle navigation based on auth state
   useEffect(() => {
-    if (isInitialized && !isLoading && !isAuthenticated && navigationRef.isReady()) {
-      // Use setTimeout to ensure navigation happens after render
-      setTimeout(() => {
-        router.replace('/auth/login');
-      }, 0);
+    if (!isAuthenticated && navigationRef.isReady()) {
+      router.replace('/auth/login');
     }
-  }, [isInitialized, isLoading, isAuthenticated, navigationRef.isReady()]);
-  
-  if (!isInitialized || isLoading) {
-    return <LoadingScreen />;
-  }
+  }, [isAuthenticated, navigationRef.isReady()]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -104,11 +89,10 @@ function RootLayoutNav() {
   );
 }
 
+// Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  useFrameworkReady();
-
   const [fontsLoaded, fontError] = useFonts({
     'Urbanist-Regular': Urbanist_400Regular,
     'Urbanist-Medium': Urbanist_500Medium,
@@ -130,7 +114,7 @@ export default function RootLayout() {
     <LanguageProvider>
       <AuthProvider>
         <RootLayoutNav />
-<StatusBar style="auto" />
+        <StatusBar style="auto" />
       </AuthProvider>
     </LanguageProvider>
   );

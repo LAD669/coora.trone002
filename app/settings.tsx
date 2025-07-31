@@ -16,6 +16,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
+import LanguageSelector from '@/components/LanguageSelector';
 
 interface StoredSession {
   id: string;
@@ -115,12 +116,12 @@ export default function SettingsScreen() {
 
   const handleLogout = () => {
     Alert.alert(
-      t.signOut,
-      `${t.confirm}?`,
+      t('auth.signOut'),
+      t('common.confirm'),
       [
-        { text: t.cancel, style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         { 
-          text: t.signOut, 
+          text: t('auth.signOut'), 
           style: 'destructive',
           onPress: performLogout
         }
@@ -135,7 +136,7 @@ export default function SettingsScreen() {
       const errorMessage = error instanceof Error 
         ? error.message 
         : 'An unexpected error occurred during logout';
-      Alert.alert(t.error, errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     }
   };
 
@@ -143,37 +144,46 @@ export default function SettingsScreen() {
     const languageName = newLanguage === 'en' ? 'English' : 'Deutsch';
     setLanguage(newLanguage);
     setLanguageModalVisible(false);
-    Alert.alert(t.languageChanged, t.languageChangedMessage.replace('{language}', languageName));
+    Alert.alert(
+      t('settings.languageChanged'),
+      t('settings.languageChangedMessage', { language: languageName })
+    );
   };
 
   const handleToggle2FA = () => {
     if (!twoFactorAuth) {
       Alert.alert(
-        t.enableTwoFactor,
-        t.enableTwoFactorMessage,
+        t('settings.enableTwoFactor'),
+        t('settings.enableTwoFactorMessage'),
         [
-          { text: t.cancel, style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           { 
-            text: t.enable, 
+            text: t('common.enable'), 
             onPress: () => {
               setTwoFactorAuth(true);
-              Alert.alert(t.success, `${t.twoFactorAuth} ${t.enabled.toLowerCase()}!`);
+              Alert.alert(
+                t('common.success'),
+                `${t('settings.twoFactorAuth')} ${t('settings.enabled').toLowerCase()}!`
+              );
             }
           }
         ]
       );
     } else {
       Alert.alert(
-        t.disableTwoFactor,
-        t.disableTwoFactorMessage,
+        t('settings.disableTwoFactor'),
+        t('settings.disableTwoFactorMessage'),
         [
-          { text: t.cancel, style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           { 
-            text: t.disable, 
+            text: t('common.disable'), 
             style: 'destructive',
             onPress: () => {
               setTwoFactorAuth(false);
-              Alert.alert(t.disabled, `${t.twoFactorAuth} ${t.disabled.toLowerCase()}.`);
+              Alert.alert(
+                t('settings.disabled'),
+                `${t('settings.twoFactorAuth')} ${t('settings.disabled').toLowerCase()}.`
+              );
             }
           }
         ]
@@ -248,7 +258,7 @@ export default function SettingsScreen() {
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#1A1A1A" />
-          <Text style={styles.loadingText}>{t.loading}</Text>
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
         </View>
       </View>
     );
@@ -258,7 +268,7 @@ export default function SettingsScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{t.error}</Text>
+          <Text style={styles.loadingText}>{t('common.error')}</Text>
         </View>
       </View>
     );
@@ -274,7 +284,7 @@ export default function SettingsScreen() {
         >
           <X size={24} color="#1A1A1A" strokeWidth={1.5} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t.settings}</Text>
+        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -284,18 +294,18 @@ export default function SettingsScreen() {
 
         {/* Account Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.account}</Text>
+          <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
           <View style={styles.settingsGroup}>
             <SettingItem
               icon={Key}
-              title={t.changePassword}
-              subtitle={t.updatePassword}
+              title={t('settings.changePassword')}
+              subtitle={t('settings.updatePassword')}
               onPress={() => Alert.alert('Coming Soon', 'Change password feature will be available soon.')}
             />
             <SettingItem
               icon={Shield}
-              title={t.privacySecurity}
-              subtitle={t.privacySettings}
+              title={t('settings.privacySecurity')}
+              subtitle={t('settings.privacySettings')}
               onPress={() => Alert.alert('Coming Soon', 'Privacy settings will be available soon.')}
             />
           </View>
@@ -332,18 +342,18 @@ export default function SettingsScreen() {
 
         {/* Preferences */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.preferences}</Text>
+          <Text style={styles.sectionTitle}>{t('settings.preferences')}</Text>
           <View style={styles.settingsGroup}>
             <SettingItem
               icon={Globe}
-              title={t.language}
+              title={t('settings.language')}
               subtitle={language === 'en' ? 'English' : 'Deutsch'}
               onPress={() => setLanguageModalVisible(true)}
             />
             <SettingItem
               icon={Bell}
-              title={t.notifications}
-              subtitle={t.notificationPreferences}
+              title={t('settings.notifications')}
+              subtitle={t('settings.notificationPreferences')}
               rightComponent={
                 <Switch
                   value={notifications}
@@ -356,8 +366,8 @@ export default function SettingsScreen() {
             />
             <SettingItem
               icon={Lock}
-              title={t.twoFactorAuth}
-              subtitle={twoFactorAuth ? t.enabled : t.disabled}
+              title={t('settings.twoFactorAuth')}
+              subtitle={twoFactorAuth ? t('settings.enabled') : t('settings.disabled')}
               rightComponent={
                 <Switch
                   value={twoFactorAuth}
@@ -373,18 +383,18 @@ export default function SettingsScreen() {
 
         {/* App Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.app}</Text>
+          <Text style={styles.sectionTitle}>{t('settings.app')}</Text>
           <View style={styles.settingsGroup}>
             <SettingItem
               icon={HelpCircle}
-              title={t.helpSupport}
-              subtitle={t.helpSupport}
-              onPress={() => Alert.alert(t.helpSupport, 'Help center coming soon')}
+              title={t('settings.helpSupport')}
+              subtitle={t('settings.helpSupport')}
+              onPress={() => Alert.alert(t('settings.helpSupport'), 'Help center coming soon')}
             />
             <SettingItem
               icon={LogOut}
-              title={t.signOut}
-              subtitle={t.signOutDescription}
+              title={t('auth.signOut')}
+              subtitle={t('auth.signOutDescription')}
               onPress={handleLogout}
             />
           </View>
@@ -393,6 +403,12 @@ export default function SettingsScreen() {
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Language Selector Modal */}
+      <LanguageSelector
+        isVisible={isLanguageModalVisible}
+        onClose={() => setLanguageModalVisible(false)}
+      />
     </View>
   );
 }

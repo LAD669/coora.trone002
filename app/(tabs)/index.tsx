@@ -12,7 +12,7 @@ import {
 import Modal from 'react-native-modal';
 import Header from '@/components/Header';
 import { Plus, MoveHorizontal as MoreHorizontal, Heart, MessageCircle, Building2, Users, Smile } from 'lucide-react-native';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTeamPosts, createPost, addPostReaction, removePostReaction } from '@/lib/supabase';
 
@@ -63,7 +63,7 @@ function ErrorFallback({ error, retry }: { error: Error; retry: () => void }) {
 }
 
 function InfohubScreenContent() {
-  const { t } = useLanguage();
+  const { t: commonT } = useTranslation('common');
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'organization' | 'teams'>('organization');
   const [posts, setPosts] = useState<any[]>([]);
@@ -128,17 +128,17 @@ function InfohubScreenContent() {
 
   const handleCreatePost = async () => {
     if (!canCreatePost || !postableTab) {
-      Alert.alert(t.error, 'You do not have permission to create posts');
+      Alert.alert(commonT('error'), commonT('noPermission'));
       return;
     }
 
     if (!user?.teamId || !user?.id) {
-      Alert.alert(t.error, 'User authentication error. Please try logging in again.');
+      Alert.alert(commonT('error'), commonT('authError'));
       return;
     }
 
     if (!newPost.title.trim() || !newPost.content.trim()) {
-      Alert.alert(t.error, t.fillAllFields);
+      Alert.alert(commonT('error'), commonT('fillAllFields'));
       return;
     }
 
@@ -166,13 +166,13 @@ function InfohubScreenContent() {
       
       setNewPost({ title: '', content: '', imageUrl: '' });
       setModalVisible(false);
-      Alert.alert(t.success, t.postCreated);
+      Alert.alert(commonT('success'), commonT('postCreated'));
       loadPosts(); // Reload posts
     } catch (error) {
       console.error('Error creating post:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Full error details:', error);
-      Alert.alert(t.error, `Failed to create post: ${errorMessage}`);
+      Alert.alert(commonT('error'), commonT('postCreateError'));
     }
   };
 
@@ -249,9 +249,9 @@ function InfohubScreenContent() {
   if (!user) {
     return (
       <View style={styles.container}>
-        <Header title={t.infoHub} />
+        <Header title={commonT('infoHub')} />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading user...</Text>
+          <Text style={styles.loadingText}>{commonT('loading')}</Text>
         </View>
       </View>
     );
@@ -259,8 +259,6 @@ function InfohubScreenContent() {
 
   return (
     <View style={styles.container}>
-      <Header title={t.infoHub} />
-      
       <View style={styles.content}>
         {/* Toggle Section */}
         <View style={styles.toggleContainer}>
@@ -302,7 +300,7 @@ function InfohubScreenContent() {
         >
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>{t.loading}</Text>
+              <Text style={styles.loadingText}>{commonT('loading')}</Text>
             </View>
           ) : (
             <View style={styles.postsContainer}>
@@ -330,7 +328,7 @@ function InfohubScreenContent() {
                   {post.content}
                 </Text>
                 {post.content && post.content.length > 150 && (
-                  <Text style={styles.readMoreText}>{t.tapToReadMore}</Text>
+                  <Text style={styles.readMoreText}>{commonT('tapToReadMore')}</Text>
                 )}
 
                 {post.image_url && (
@@ -348,7 +346,7 @@ function InfohubScreenContent() {
                         </View>
                         <Text style={styles.reactionCount}>
                           <Text>{getReactionCount(post.post_reactions)}</Text>
-                          <Text> {getReactionCount(post.post_reactions) === 1 ? t.reaction : t.reactions}</Text>
+                          <Text> {getReactionCount(post.post_reactions) === 1 ? commonT('reaction') : commonT('reactions')}</Text>
                         </Text>
                       </TouchableOpacity>
                     ) : (
@@ -425,27 +423,27 @@ function InfohubScreenContent() {
       >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t.createUpdate}</Text>
+            <Text style={styles.modalTitle}>{commonT('createUpdate')}</Text>
             <TouchableOpacity onPress={() => {
               setModalVisible(false);
               setNewPost({ title: '', content: '', imageUrl: '' });
             }}>
-              <Text style={styles.cancelText}>{t.cancel}</Text>
+              <Text style={styles.cancelText}>{commonT('cancel')}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.modalToggle}>
-            <Text style={styles.modalToggleLabel}>{t.postTo}</Text>
+            <Text style={styles.modalToggleLabel}>{commonT('postTo')}</Text>
             <View style={styles.selectedPostType}>
               {postableTab === 'organization' ? (
                 <View style={styles.postTypeDisplay}>
                   <Building2 size={16} color="#1A1A1A" strokeWidth={1.5} />
-                  <Text style={styles.postTypeText}>{t.organization}</Text>
+                  <Text style={styles.postTypeText}>{commonT('organization')}</Text>
                 </View>
               ) : (
                 <View style={styles.postTypeDisplay}>
                   <Users size={16} color="#1A1A1A" strokeWidth={1.5} />
-                  <Text style={styles.postTypeText}>{t.teams}</Text>
+                  <Text style={styles.postTypeText}>{commonT('teams')}</Text>
                 </View>
               )}
             </View>
@@ -453,7 +451,7 @@ function InfohubScreenContent() {
 
           <TextInput
             style={styles.titleInput}
-            placeholder={t.updateTitle}
+            placeholder={commonT('updateTitle')}
             value={newPost.title}
             onChangeText={(text) => setNewPost({ ...newPost, title: text })}
             placeholderTextColor="#8E8E93"
@@ -478,7 +476,7 @@ function InfohubScreenContent() {
             style={styles.publishButton}
             onPress={handleCreatePost}
           >
-            <Text style={styles.publishButtonText}>{t.publishUpdate}</Text>
+            <Text style={styles.publishButtonText}>{commonT('publishUpdate')}</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -494,12 +492,12 @@ function InfohubScreenContent() {
       >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t.postDetails || 'Post Details'}</Text>
+            <Text style={styles.modalTitle}>{commonT('postDetails')}</Text>
             <TouchableOpacity onPress={() => {
               setPostModalVisible(false);
               setSelectedPostForModal(null);
             }}>
-              <Text style={styles.cancelText}>{t.close}</Text>
+              <Text style={styles.cancelText}>{commonT('close')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -512,7 +510,10 @@ function InfohubScreenContent() {
                 </Text>
                 <View style={styles.postModalType}>
                   <Text style={styles.postModalTypeText}>
-                    {selectedPostForModal.post_type === 'organization' ? t.organization : t.teams}
+                    {selectedPostForModal.post_type === 'organization' 
+                      ? commonT('organization') 
+                      : commonT('teams')
+                    }
                   </Text>
                 </View>
               </View>
@@ -538,7 +539,7 @@ function InfohubScreenContent() {
 
               {/* Post Reactions */}
               <View style={styles.postModalReactions}>
-                <Text style={styles.postModalReactionsTitle}>{t.reactions}</Text>
+                <Text style={styles.postModalReactionsTitle}>{commonT('reactions')}</Text>
                 <View style={styles.postModalReactionsList}>
                   {Array.isArray(selectedPostForModal.post_reactions) && selectedPostForModal.post_reactions.length > 0 ? (
                     getTopReactions(selectedPostForModal.post_reactions).map(([emoji, count]) => (
@@ -548,7 +549,7 @@ function InfohubScreenContent() {
                       </View>
                     ))
                   ) : (
-                    <Text style={styles.postModalNoReactions}>{t.noReactionsYet || 'No reactions yet'}</Text>
+                    <Text style={styles.postModalNoReactions}>{commonT('noReactionsYet')}</Text>
                   )}
                 </View>
               </View>
@@ -586,15 +587,15 @@ function InfohubScreenContent() {
           ) : (
             <View style={styles.postModalContent}>
               <View style={styles.postModalError}>
-                <Text style={styles.postModalErrorTitle}>Post Not Found</Text>
+                <Text style={styles.postModalErrorTitle}>{commonT('error')}</Text>
                 <Text style={styles.postModalErrorText}>
-                  The selected post could not be loaded. Please try again.
+                  {commonT('somethingWentWrong')}
                 </Text>
                 <TouchableOpacity 
                   style={styles.postModalErrorButton}
                   onPress={() => setPostModalVisible(false)}
                 >
-                  <Text style={styles.postModalErrorButtonText}>Close</Text>
+                  <Text style={styles.postModalErrorButtonText}>{commonT('close')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
