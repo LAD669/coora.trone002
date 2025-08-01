@@ -7,6 +7,9 @@ interface PlayerCardProps {
   jerseyNumber?: number;
   profile_picture?: string;
   backgroundColor?: string;
+  goals?: number;
+  assists?: number;
+  trainingsAccepted?: number;
   onPress?: () => void;
 }
 
@@ -15,7 +18,10 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   position,
   jerseyNumber,
   profile_picture,
-  backgroundColor = '#FFFFFF',
+  backgroundColor = '#F8F9FA',
+  goals,
+  assists,
+  trainingsAccepted,
   onPress,
 }) => {
   const getInitials = (name: string) => {
@@ -49,19 +55,15 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
       {/* Stats row */}
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>12</Text>
+          <Text style={styles.statValue}>{goals || 0}</Text>
           <Text style={styles.statLabel}>Goals</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>8</Text>
+          <Text style={styles.statValue}>{assists || 0}</Text>
           <Text style={styles.statLabel}>Assists</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>15</Text>
-          <Text style={styles.statLabel}>Matches</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>18</Text>
+          <Text style={styles.statValue}>{trainingsAccepted || 0}</Text>
           <Text style={styles.statLabel}>Trainings</Text>
         </View>
       </View>
@@ -86,22 +88,21 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
 const styles = StyleSheet.create({
   touchableContainer: {
     marginBottom: 16,
-    width: '100%',
+    marginHorizontal: 16,
+    width: 'auto',
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 4,
-    width: '100%',
-    padding: 20,
-    paddingBottom: 16,
+    elevation: 3,
+    padding: 16,
   },
   mainRow: {
     flexDirection: 'row',
@@ -109,18 +110,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   profileImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#F0F0F0',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#E9ECEF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   profileInitials: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: '#495057',
     fontFamily: 'Urbanist-Bold',
   },
   infoContainer: {
@@ -128,26 +129,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   name: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: '#212529',
     fontFamily: 'Urbanist-Bold',
     marginBottom: 2,
   },
   position: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666666',
+    color: '#6C757D',
     fontFamily: 'Urbanist-Medium',
   },
   numberPill: {
-    backgroundColor: '#1A1A1A',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    backgroundColor: '#212529',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
   },
   numberText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
     fontFamily: 'Urbanist-Bold',
@@ -157,23 +158,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: '#E9ECEF',
   },
   statItem: {
     alignItems: 'center',
     flex: 1,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: '#212529',
     fontFamily: 'Urbanist-Bold',
     marginBottom: 2,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
-    color: '#666666',
+    color: '#6C757D',
     fontFamily: 'Urbanist-Medium',
   },
 });

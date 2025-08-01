@@ -17,7 +17,7 @@ import PlayerCard from '@/components/PlayerCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Users, Target, Plus, X, User, Phone, Calendar, Ruler, Weight, Trophy, Activity, Clock, Hash, ChevronDown } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeamUsers, createPlayer } from '@/lib/supabase';
+import { getTeamUsers, createPlayer, supabase } from '@/lib/supabase';
 import { getSafeKey } from '@/lib/helpers';
 
 const { width } = Dimensions.get('window');
@@ -226,14 +226,60 @@ export default function PlayerboardScreen() {
         user_id: user.id, // For UI compatibility
       }));
       
-      console.log('✅ Successfully loaded team users:', {
+      // Load stats for all players
+      const playersWithStats = await Promise.all(
+        playersWithComputedName.map(async (player) => {
+          try {
+            // Load match stats
+            const { data: matchStatsData, error: matchStatsError } = await supabase
+              .from('match_stats')
+              .select('goals, assists')
+              .eq('user_id', player.id);
+
+            let goals = 0;
+            let assists = 0;
+            if (!matchStatsError && matchStatsData && matchStatsData.length > 0) {
+              goals = matchStatsData.reduce((sum: number, stat: any) => sum + (stat.goals || 0), 0);
+              assists = matchStatsData.reduce((sum: number, stat: any) => sum + (stat.assists || 0), 0);
+            }
+
+            // Load event participation
+            const { data: eventData, error: eventError } = await supabase
+              .from('event_participation')
+              .select('status')
+              .eq('user_id', player.id);
+
+            let trainingsAccepted = 0;
+            if (!eventError && eventData) {
+              trainingsAccepted = eventData.filter((event: any) => event.status === 'accepted').length;
+            }
+
+            return {
+              ...player,
+              goals,
+              assists,
+              trainingsAccepted,
+            };
+          } catch (error) {
+            console.error(`Error loading stats for player ${player.id}:`, error);
+            return {
+              ...player,
+              goals: 0,
+              assists: 0,
+              trainingsAccepted: 0,
+            };
+          }
+        })
+      );
+      
+      console.log('✅ Successfully loaded team users with stats:', {
         teamId,
-        totalCount: playersWithComputedName.length,
-        trainerCount: playersWithComputedName.filter(u => u.role === 'trainer').length,
-        playerCount: playersWithComputedName.filter(u => u.role === 'player').length
+        totalCount: playersWithStats.length,
+        trainerCount: playersWithStats.filter(u => u.role === 'trainer').length,
+        playerCount: playersWithStats.filter(u => u.role === 'player').length
       });
       
-      setPlayers(playersWithComputedName);
+      setPlayers(playersWithStats);
       
       if (!data || data.length === 0) {
         console.warn('⚠️ No team members found for team:', teamId);
@@ -271,15 +317,13 @@ export default function PlayerboardScreen() {
   };
 
   const handlePlayerPress = (player: any) => {
-    const playerId = player.id || player.user_id;
-    if (playerId) {
-      router.push(`/players/${playerId}`);
-    } else {
-      console.warn('No player ID available for navigation');
-      // Fallback to modal if no ID available
-      setSelectedPlayer(player);
-      setPlayerModalVisible(true);
-    }
+    console.log('Player tapped:', `${player.first_name} ${player.last_name}`);
+    router.push({
+      pathname: '/PlayerDetailScreen',
+      params: {
+        player: JSON.stringify(player)
+      }
+    });
   };
 
   const handlePositionPress = (position: any, index: number) => {
@@ -293,13 +337,6 @@ export default function PlayerboardScreen() {
   };
 
   const renderListView = () => {
-    // Debug log to inspect players data
-    console.log('🔍 renderListView - Current players state:', {
-      playersCount: players.length,
-      samplePlayer: players[0],
-      roles: players.map(p => p.role)
-    });
-
     if (isLoading) {
       return (
         <View style={styles.centerContainer}>
@@ -320,6 +357,13 @@ export default function PlayerboardScreen() {
       );
     }
 
+    // Sort players: trainers first, then players
+    const sortedPlayers = [...players].sort((a, b) => {
+      if (a.role === 'trainer' && b.role !== 'trainer') return -1;
+      if (a.role !== 'trainer' && b.role === 'trainer') return 1;
+      return 0;
+    });
+
     return (
       <View style={styles.listWrapper}>
         <ScrollView 
@@ -327,76 +371,19 @@ export default function PlayerboardScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.playersListContainer}
         >
-          {/* Debug logs to verify players array */}
-          {(() => {
-            console.log('🔍 Debug - Players array:', {
-              totalPlayers: players.length,
-              samplePlayer: players[0],
-              allRoles: players.map(p => p.role),
-              uniqueRoles: [...new Set(players.map(p => p.role))],
-              trainerCount: players.filter(p => p.role === 'trainer').length,
-              playerCount: players.filter(p => p.role === 'player').length,
-              adminCount: players.filter(p => p.role === 'admin').length,
-            });
-            return null;
-          })()}
-
-          {/* Trainers Section */}
-          {players.filter(player => player.role === 'trainer').length > 0 && (
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Trainers ({players.filter(player => player.role === 'trainer').length})</Text>
-              {players
-                .filter(player => player.role === 'trainer')
-                .map((player, index) => (
-                  <PlayerCard
-                    key={getSafeKey(player, index, 'trainer')}
-                    name={player.name}
-                    position={player.position}
-                    jerseyNumber={player.jersey_number}
-                    backgroundColor="#F2F2F7"
-                    onPress={() => handlePlayerPress(player)}
-                  />
-                ))}
-            </View>
-          )}
-
-          {/* Players Section */}
-          {players.filter(player => player.role === 'player').length > 0 && (
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Players ({players.filter(player => player.role === 'player').length})</Text>
-              {players
-                .filter(player => player.role === 'player')
-                .map((player, index) => (
-                  <PlayerCard
-                    key={getSafeKey(player, index, 'player')}
-                    name={player.name}
-                    position={player.position}
-                    jerseyNumber={player.jersey_number}
-                    backgroundColor="#F8F9FA"
-                    onPress={() => handlePlayerPress(player)}
-                  />
-                ))}
-            </View>
-          )}
-
-          {/* Fallback: Show all players if no filtering works */}
-          {players.filter(player => player.role === 'trainer').length === 0 && 
-           players.filter(player => player.role === 'player').length === 0 && 
-           players.length > 0 && (
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>All Team Members ({players.length})</Text>
-              {players.map((player, index) => (
-                <PlayerCard
-                  key={getSafeKey(player, index, 'fallback')}
-                  name={player.name}
-                  position={player.position}
-                  jerseyNumber={player.jersey_number}
-                  backgroundColor="#F8F9FA"
-                  onPress={() => handlePlayerPress(player)}
-                />
-              ))}
-            </View>
-          )}
+          {sortedPlayers.map((player, index) => (
+            <PlayerCard
+              key={getSafeKey(player, index, player.role)}
+              name={`${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown User'}
+              position={player.position}
+              jerseyNumber={player.jersey_number}
+              backgroundColor={player.role === 'trainer' ? '#E6E6E6' : '#F8F8F8'}
+              goals={player.goals}
+              assists={player.assists}
+              trainingsAccepted={player.trainingsAccepted}
+              onPress={() => handlePlayerPress(player)}
+            />
+          ))}
         </ScrollView>
       </View>
     );
@@ -490,7 +477,7 @@ export default function PlayerboardScreen() {
                     activeOpacity={0.8}
                   >
                     <Text style={styles.positionText}>
-                      {assignedPlayers[index] ? getInitials(assignedPlayers[index].name) : pos.role}
+                      {assignedPlayers[index] ? getInitials(`${assignedPlayers[index].first_name || ''} ${assignedPlayers[index].last_name || ''}`.trim()) : pos.role}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -682,6 +669,7 @@ export default function PlayerboardScreen() {
             <Text style={styles.sectionTitle}>Select Player</Text>
             <View style={styles.availablePlayersList}>
               {players
+                .filter(player => player.role === 'player')
                 .filter(player => !Object.values(assignedPlayers).some(assigned => assigned?.id === player.id))
                 .map((player, index) => (
                 <TouchableOpacity
@@ -691,11 +679,11 @@ export default function PlayerboardScreen() {
                 >
                   <View style={styles.availablePlayerAvatar}>
                     <Text style={styles.availablePlayerInitials}>
-                      {getInitials(player.name)}
+                      {getInitials(`${player.first_name || ''} ${player.last_name || ''}`.trim())}
                     </Text>
                   </View>
                   <View style={styles.availablePlayerInfo}>
-                    <Text style={styles.availablePlayerName}>{player.name}</Text>
+                    <Text style={styles.availablePlayerName}>{`${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player'}</Text>
                     <Text style={styles.availablePlayerPosition}>{player.position}</Text>
                   </View>
                   <View style={styles.availablePlayerNumber}>
@@ -706,10 +694,10 @@ export default function PlayerboardScreen() {
             </View>
 
             {/* Show message if no available players */}
-            {players.filter(player => !Object.values(assignedPlayers).some(assigned => assigned?.id === player.id)).length === 0 && (
+            {players.filter(player => player.role === 'player').filter(player => !Object.values(assignedPlayers).some(assigned => assigned?.id === player.id)).length === 0 && (
               <View style={styles.noPlayersAvailable}>
                 <Users size={32} color="#E5E5E7" strokeWidth={1} />
-                <Text style={styles.noPlayersText}>All players are assigned</Text>
+                <Text style={styles.noPlayersText}>No players available for assignment</Text>
               </View>
             )}
           </ScrollView>
@@ -770,7 +758,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
   },
   listView: {
     paddingBottom: 100,
@@ -1331,7 +1318,6 @@ const styles = StyleSheet.create({
   },
   listWrapper: {
     flex: 1,
-    paddingHorizontal: 24,
   },
   playersListContainer: {
     paddingTop: 20,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import { Settings, Bell } from 'lucide-react-native';
+import { Settings, Bell, ArrowLeft } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
@@ -9,9 +9,11 @@ import { getNotifications } from '@/lib/supabase';
 
 interface HeaderProps {
   title: string;
+  showBackButton?: boolean;
+  onBackPress?: () => void;
 }
 
-export default function Header({ title }: HeaderProps) {
+export default function Header({ title, showBackButton, onBackPress }: HeaderProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -49,6 +51,14 @@ export default function Header({ title }: HeaderProps) {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.leftSection}>
+          {showBackButton && (
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={onBackPress || (() => router.back())}
+            >
+              <ArrowLeft size={20} color="#1A1A1A" strokeWidth={1.5} />
+            </TouchableOpacity>
+          )}
           <Text style={styles.title}>{title}</Text>
         </View>
         
@@ -92,6 +102,14 @@ const styles = StyleSheet.create({
   },
   leftSection: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
   },
   title: {
     fontSize: 28,
