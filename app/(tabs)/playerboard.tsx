@@ -164,7 +164,8 @@ const formations = [
 export default function PlayerboardScreen() {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const [view, setView] = useState<'list' | 'lineup'>('list');
+  // const [view, setView] = useState<'list' | 'lineup'>('list'); // LINEUP VIEW DEACTIVATED
+  const [view, setView] = useState<'list' | 'lineup'>('list'); // Force list view only
   const [selectedFormation, setSelectedFormation] = useState(formations[1]);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [selectedPosition, setSelectedPosition] = useState<any>(null);
@@ -393,7 +394,8 @@ export default function PlayerboardScreen() {
     <View style={styles.container}>
       <Header title="Players" />
 
-      {/* Toggle Section */}
+      {/* Toggle Section - LINEUP VIEW DEACTIVATED */}
+      {/* 
       <View style={styles.toggleContainer}>
         <View style={styles.toggle}>
           <TouchableOpacity
@@ -429,10 +431,15 @@ export default function PlayerboardScreen() {
           </TouchableOpacity>
         </View>
       </View>
+      */}
 
       {/* Main Content */}
       <View style={styles.content}>
-        {view === 'list' ? renderListView() : (
+        {/* Always show list view - LINEUP VIEW DEACTIVATED */}
+        {renderListView()}
+        
+        {/* LINEUP VIEW DEACTIVATED - Commented out for future reactivation
+        {view === 'lineup' ? (
           // Lineup view remains in ScrollView since it's not a list
           <ScrollView style={styles.lineupView} showsVerticalScrollIndicator={false}>
             <View style={styles.formationHeader}>
@@ -445,24 +452,17 @@ export default function PlayerboardScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Football Field */}
             <View style={styles.fieldContainer}>
               <View style={styles.field}>
-                {/* Field markings */}
                 <View style={styles.fieldMarkings}>
-                  {/* Center circle */}
                   <View style={styles.centerCircle} />
-                  {/* Goal areas */}
                   <View style={[styles.goalArea, styles.topGoalArea]} />
                   <View style={[styles.goalArea, styles.bottomGoalArea]} />
-                  {/* Penalty areas */}
                   <View style={[styles.penaltyArea, styles.topPenaltyArea]} />
                   <View style={[styles.penaltyArea, styles.bottomPenaltyArea]} />
-                  {/* Center line */}
                   <View style={styles.centerLine} />
                 </View>
 
-                {/* Player positions */}
                 {selectedFormation.positions.map((pos, index) => (
                   <TouchableOpacity
                     key={getSafeKey({ id: `${selectedFormation.id}-${pos.role}` }, index, 'position')}
@@ -484,7 +484,8 @@ export default function PlayerboardScreen() {
               </View>
             </View>
           </ScrollView>
-        )}
+        ) : renderListView()
+        */}
       </View>
 
       {/* Player Details Modal */}
@@ -585,7 +586,8 @@ export default function PlayerboardScreen() {
         </View>
       </Modal>
 
-      {/* Formation Dropdown Modal */}
+      {/* Formation Dropdown Modal - LINEUP VIEW DEACTIVATED */}
+      {/* 
       <Modal
         isVisible={isFormationDropdownVisible}
         onBackdropPress={() => setFormationDropdownVisible(false)}
@@ -628,9 +630,10 @@ export default function PlayerboardScreen() {
           </ScrollView>
         </View>
       </Modal>
+      */}
 
-
-      {/* Position Assignment Modal */}
+      {/* Position Assignment Modal - LINEUP VIEW DEACTIVATED */}
+      {/* 
       <Modal
         isVisible={isPositionModalVisible}
         onBackdropPress={() => setPositionModalVisible(false)}
@@ -647,7 +650,6 @@ export default function PlayerboardScreen() {
           </View>
 
           <ScrollView style={styles.playerSelection} showsVerticalScrollIndicator={false}>
-            {/* Clear Position Option */}
             {assignedPlayers[selectedPosition?.index] && (
               <TouchableOpacity 
                 style={styles.clearPositionButton}
@@ -665,7 +667,6 @@ export default function PlayerboardScreen() {
               </TouchableOpacity>
             )}
 
-            {/* Available Players */}
             <Text style={styles.sectionTitle}>Select Player</Text>
             <View style={styles.availablePlayersList}>
               {players
@@ -693,7 +694,6 @@ export default function PlayerboardScreen() {
               ))}
             </View>
 
-            {/* Show message if no available players */}
             {players.filter(player => player.role === 'player').filter(player => !Object.values(assignedPlayers).some(assigned => assigned?.id === player.id)).length === 0 && (
               <View style={styles.noPlayersAvailable}>
                 <Users size={32} color="#E5E5E7" strokeWidth={1} />
@@ -703,6 +703,7 @@ export default function PlayerboardScreen() {
           </ScrollView>
         </View>
       </Modal>
+      */}
     </View>
   );
 }
