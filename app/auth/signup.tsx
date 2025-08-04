@@ -13,7 +13,7 @@ import {
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Eye, EyeOff, Mail, Lock, User, Key, ArrowRight, ArrowLeft } from 'lucide-react-native';
+import { Eye, EyeOff, Mail, Lock, User, Key, ArrowRight, ArrowLeft, LogIn } from 'lucide-react-native';
 
 export default function SignUpScreen() {
   const { t } = useLanguage();
@@ -73,6 +73,10 @@ export default function SignUpScreen() {
     } catch (error) {
       Alert.alert(t.error, error instanceof Error ? error.message : t.somethingWentWrong);
     }
+  };
+
+  const handleNavigateToLogin = () => {
+    router.replace('/(auth)/login');
   };
 
   const updateFormData = (field: keyof typeof formData, value: string) => {
@@ -217,10 +221,19 @@ export default function SignUpScreen() {
             <View style={styles.dividerLine} />
           </View>
 
+          {/* Sign In Button */}
+          <TouchableOpacity
+            style={styles.signInButton}
+            onPress={handleNavigateToLogin}
+          >
+            <LogIn size={20} color="#007AFF" strokeWidth={1.5} />
+            <Text style={styles.signInButtonText}>Sign In</Text>
+          </TouchableOpacity>
+
           {/* Sign In Link */}
           <View style={styles.signInContainer}>
             <Text style={styles.signInText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => router.push('/auth/login')}>
+            <TouchableOpacity onPress={handleNavigateToLogin}>
               <Text style={styles.signInLink}>{t.signIn}</Text>
             </TouchableOpacity>
           </View>
@@ -375,6 +388,24 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
     marginHorizontal: 16,
+  },
+  signInButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginBottom: 24,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  signInButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#007AFF',
+    fontFamily: 'Urbanist-SemiBold',
   },
   signInContainer: {
     flexDirection: 'row',

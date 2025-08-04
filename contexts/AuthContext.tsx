@@ -6,6 +6,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { Alert } from 'react-native';
 import { storage } from '@/lib/storage';
 import { useNavigationGuard } from '@/hooks/useNavigationGuard';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 interface User {
   id: string;
@@ -45,15 +46,39 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
   const navigationAttempted = useRef(false);
+  const rootLayoutMounted = useRef(false);
   const router = useRouter();
   const { safeReplace } = useNavigationGuard(isAppReady);
+
+  // Set root layout mounted ref after a small timeout
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      rootLayoutMounted.current = true;
+      console.log('Root layout mounted, navigation enabled');
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Verify and set user data (no navigation)
   const verifyAndSetUser = async (userId: string): Promise<boolean> => {
     try {
       console.log('Verifying user data for:', userId);
       
-      // First verify the user is still valid
+      // First check if a session exists before calling getUser()
+      const { data: { session: sessionData }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Error getting session:', sessionError);
+        throw new Error('Failed to get session');
+      }
+      
+      if (!sessionData?.session) {
+        console.log('No active session found, skipping user verification');
+        return false;
+      }
+      
+      // Only call getUser() if session exists
       const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !currentUser) {
@@ -81,21 +106,25 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
     }
   };
 
-  // Navigate to login with loop prevention
+  // Navigate to login with loop prevention and root layout check
   const navigateToLogin = () => {
-    if (!navigationAttempted.current) {
+    if (!navigationAttempted.current && rootLayoutMounted.current && isAppReady) {
       navigationAttempted.current = true;
       console.log('Navigating to login screen');
       safeReplace('/auth/login');
+    } else {
+      console.log('Navigation blocked - root layout not ready or navigation already attempted');
     }
   };
 
-  // Navigate to home with loop prevention
+  // Navigate to home with loop prevention and root layout check
   const navigateToHome = () => {
-    if (!navigationAttempted.current) {
+    if (!navigationAttempted.current && rootLayoutMounted.current && isAppReady) {
       navigationAttempted.current = true;
       console.log('Navigating to home screen');
       safeReplace('/(tabs)');
+    } else {
+      console.log('Navigation blocked - root layout not ready or navigation already attempted');
     }
   };
 
@@ -131,23 +160,39 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         // Safe navigation to home if verification successful
         navigateToHome();
       } else {
-        // Try to get user directly as fallback
-        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+        // Only try getUser() as fallback if we have a session
+        const { data: { session: fallbackSession }, error: fallbackError } = await supabase.auth.getSession();
         
-        if (userError) {
-          console.error('Error getting user:', userError);
+        if (fallbackError) {
+          console.error('Error getting fallback session:', fallbackError);
         }
         
-        if (currentUser) {
-          console.log('User found via getUser(), verifying...');
-          const success = await verifyAndSetUser(currentUser.id);
-          if (!success) {
-            throw new Error('Failed to verify user from getUser()');
+        if (fallbackSession?.session) {
+          console.log('Fallback session found, trying getUser()...');
+          const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+          
+          if (userError) {
+            console.error('Error getting user:', userError);
           }
-          setIsSessionRestoreFailed(false);
-          setRetryCount(0);
-          // Safe navigation to home if verification successful
-          navigateToHome();
+          
+          if (currentUser) {
+            console.log('User found via getUser(), verifying...');
+            const success = await verifyAndSetUser(currentUser.id);
+            if (!success) {
+              throw new Error('Failed to verify user from getUser()');
+            }
+            setIsSessionRestoreFailed(false);
+            setRetryCount(0);
+            // Safe navigation to home if verification successful
+            navigateToHome();
+          } else {
+            console.log('No user found in fallback session');
+            setUser(null);
+            setIsSessionRestoreFailed(false);
+            setRetryCount(0);
+            // Safe navigation to login
+            navigateToLogin();
+          }
         } else {
           console.log('No stored session found, setting user to null');
           setUser(null);
@@ -414,19 +459,23 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
     }
 
     return (
-      <LoadingScreen 
-        message={loadingMessage} 
-        isError={isError}
-        showRetry={isSessionRestoreFailed && retryCount < maxRetries}
-        onRetry={retrySessionRestore}
-      />
+      <LanguageProvider>
+        <LoadingScreen 
+          message={loadingMessage} 
+          isError={isError}
+          showRetry={isSessionRestoreFailed && retryCount < maxRetries}
+          onRetry={retrySessionRestore}
+        />
+      </LanguageProvider>
     );
   }
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+    <LanguageProvider>
+      <AuthContext.Provider value={value}>
+        {children}
+      </AuthContext.Provider>
+    </LanguageProvider>
   );
 }
 

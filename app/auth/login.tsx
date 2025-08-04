@@ -14,7 +14,7 @@ import {
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react-native';
+import { Eye, EyeOff, Mail, Lock, ArrowRight, UserPlus } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const { t } = useLanguage();
@@ -50,6 +50,10 @@ export default function LoginScreen() {
     } catch (error) {
       Alert.alert(t.error, error instanceof Error ? error.message : t.somethingWentWrong);
     }
+  };
+
+  const handleNavigateToSignup = () => {
+    router.replace('/(auth)/signup');
   };
 
   return (
@@ -153,10 +157,19 @@ export default function LoginScreen() {
             <View style={styles.dividerLine} />
           </View>
 
+          {/* Sign Up Button */}
+          <TouchableOpacity
+            style={styles.signUpButton}
+            onPress={handleNavigateToSignup}
+          >
+            <UserPlus size={20} color="#007AFF" strokeWidth={1.5} />
+            <Text style={styles.signUpButtonText}>Create Account</Text>
+          </TouchableOpacity>
+
           {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => router.push('/auth/signup')}>
+            <TouchableOpacity onPress={handleNavigateToSignup}>
               <Text style={styles.signUpLink}>{t.signUp}</Text>
             </TouchableOpacity>
           </View>
@@ -297,6 +310,24 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
     marginHorizontal: 16,
+  },
+  signUpButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginBottom: 24,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  signUpButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#007AFF',
+    fontFamily: 'Urbanist-SemiBold',
   },
   signUpContainer: {
     flexDirection: 'row',
