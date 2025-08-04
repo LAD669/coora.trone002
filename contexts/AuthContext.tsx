@@ -354,18 +354,39 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
     
     try {
       console.log('Attempting sign in for:', email);
+      
+      // Step 1: Log the user in with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase auth error:', error);
+        throw new Error(`Authentication failed: ${error.message}`);
+      }
 
-      if (data.user) {
-        const success = await verifyAndSetUser(data.user.id);
-        if (!success) {
-          throw new Error('Failed to verify user after sign in');
-        }
+      if (!data.user) {
+        console.error('No user data returned from Supabase auth');
+        throw new Error('Authentication failed: No user data received');
+      }
+
+      console.log('User authenticated successfully, verifying profile...');
+      
+      // Step 2: Attempt to verify the user using getUserProfile
+      try {
+        const userProfile = await getUserProfile(data.user.id);
+        console.log('User profile verified successfully:', userProfile.name);
+        
+        // Set user in context
+        setUser({
+          id: userProfile.id,
+          name: userProfile.name,
+          email: userProfile.email,
+          role: userProfile.role,
+          teamId: userProfile.team_id || undefined,
+          clubId: userProfile.club_id || undefined,
+        });
         
         // Ensure navigation state is reset before attempting navigation
         resetNavigationState();
@@ -373,13 +394,45 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         // Force a small delay to ensure state is properly set
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // Navigate to dashboard tab after successful login and user verification
+        // Step 3: Navigate to dashboard on successful verification
         console.log('Login successful, navigating to dashboard tab');
         safeReplace('/(tabs)/dashboard');
+        
+      } catch (verificationError) {
+        console.error('User verification failed:', verificationError);
+        
+        // Step 4: If verification fails, sign out the user and navigate back to login
+        console.log('Signing out user due to verification failure...');
+        
+        try {
+          await supabase.auth.signOut();
+          await storage.removeItem('supabase.auth.token');
+          await storage.removeItem('supabase.auth.refreshToken');
+          setUser(null);
+          setIsSessionRestoreFailed(false);
+          setRetryCount(0);
+          console.log('User signed out successfully after verification failure');
+          
+          // Navigate back to login
+          safeReplace('/auth/login');
+          
+        } catch (signOutError) {
+          console.error('Error during sign out after verification failure:', signOutError);
+          // Force user state reset even if sign out fails
+          setUser(null);
+          setIsSessionRestoreFailed(false);
+          setRetryCount(0);
+          safeReplace('/auth/login');
+        }
+        
+        // Don't throw the verification error, just log it
+        console.error('Login failed due to user verification error:', verificationError);
       }
+      
     } catch (error) {
       console.error('Sign in error:', error);
-      throw error;
+      // Don't throw raw errors, just log them
+      console.error('Login process failed:', error);
     } finally {
       setIsLoading(false);
     }
