@@ -23,6 +23,7 @@ interface AuthContextType {
   isInitialized: boolean;
   isAuthenticated: boolean;
   sessionError: string | null;
+  session: any; // Add session to the context
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string, accessCode?: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -43,6 +44,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
   const [isInitialized, setIsInitialized] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [isSessionRestoreFailed, setIsSessionRestoreFailed] = useState(false);
+  const [session, setSession] = useState<any>(null); // Add session state
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
   const navigationAttempted = useRef(false);
@@ -65,7 +67,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
     try {
       console.log('Verifying user data for:', userId);
       
-      // First check if a session exists before calling getUser()
+      // Step 1: Check if a session exists before calling getUser()
       const { data: { session: sessionData }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -73,17 +75,37 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         throw new Error('Failed to get session');
       }
       
-      if (!sessionData?.session) {
+      // Step 2: If session is missing or expired, return null and do not call getUser()
+      if (!sessionData) {
         console.log('No active session found, skipping user verification');
         return false;
       }
       
-      // Only call getUser() if session exists
+      // Step 3: Check if session is expired
+      const now = Math.floor(Date.now() / 1000);
+      if (sessionData.expires_at && sessionData.expires_at < now) {
+        console.log('Session expired, skipping user verification');
+        return false;
+      }
+      
+      // Step 4: Ensure session user ID is present before proceeding
+      if (!sessionData.user?.id) {
+        console.log('Session user ID not available, skipping user verification');
+        return false;
+      }
+      
+      // Step 5: Only call getUser() if a valid session exists
+      console.log('Valid session found, calling getUser()...');
       const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
       
-      if (userError || !currentUser) {
-        console.error('User verification failed:', userError);
-        throw new Error('Failed to verify user');
+      if (userError) {
+        console.error('Supabase getUser() error:', userError);
+        throw new Error(`Failed to get user: ${userError.message}`);
+      }
+      
+      if (!currentUser) {
+        console.error('No user returned from getUser()');
+        throw new Error('No user found in session');
       }
 
       console.log('User verified, fetching profile...');
@@ -141,7 +163,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
     resetNavigationState();
 
     try {
-      // Check for active session using getSession()
+      // Step 1: Check for active session using getSession()
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
@@ -149,58 +171,69 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         throw error;
       }
 
-      if (session?.user) {
+      // Set session state
+      setSession(session);
+
+      // Step 2: If session is missing or expired, do not call getUser()
+      if (!session) {
+        console.log('No stored session found, setting user to null');
+        setUser(null);
+        setIsSessionRestoreFailed(false);
+        setRetryCount(0);
+        // Safe navigation to login
+        navigateToLogin();
+        return;
+      }
+
+      // Step 3: Check if session is expired
+      const now = Math.floor(Date.now() / 1000);
+      if (session.expires_at && session.expires_at < now) {
+        console.log('Session expired, setting user to null');
+        setUser(null);
+        setIsSessionRestoreFailed(false);
+        setRetryCount(0);
+        // Safe navigation to login
+        navigateToLogin();
+        return;
+      }
+
+      // Step 4: Ensure session user ID is present before proceeding
+      if (!session.user?.id) {
+        console.log('Session user ID not available, setting user to null');
+        setUser(null);
+        setIsSessionRestoreFailed(false);
+        setRetryCount(0);
+        // Safe navigation to login
+        navigateToLogin();
+        return;
+      }
+
+      // Step 5: Only proceed if we have a valid session with user
+      if (session.user) {
         console.log('Active session found, verifying user...');
         const success = await verifyAndSetUser(session.user.id);
         if (!success) {
-          throw new Error('Failed to verify user from active session');
-        }
-        setIsSessionRestoreFailed(false);
-        setRetryCount(0);
-        // Safe navigation to home if verification successful
-        navigateToHome();
-      } else {
-        // Only try getUser() as fallback if we have a session
-        const { data: { session: fallbackSession }, error: fallbackError } = await supabase.auth.getSession();
-        
-        if (fallbackError) {
-          console.error('Error getting fallback session:', fallbackError);
-        }
-        
-        if (fallbackSession?.session) {
-          console.log('Fallback session found, trying getUser()...');
-          const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
-          
-          if (userError) {
-            console.error('Error getting user:', userError);
-          }
-          
-          if (currentUser) {
-            console.log('User found via getUser(), verifying...');
-            const success = await verifyAndSetUser(currentUser.id);
-            if (!success) {
-              throw new Error('Failed to verify user from getUser()');
-            }
-            setIsSessionRestoreFailed(false);
-            setRetryCount(0);
-            // Safe navigation to home if verification successful
-            navigateToHome();
-          } else {
-            console.log('No user found in fallback session');
-            setUser(null);
-            setIsSessionRestoreFailed(false);
-            setRetryCount(0);
-            // Safe navigation to login
-            navigateToLogin();
-          }
-        } else {
-          console.log('No stored session found, setting user to null');
+          console.log('User verification failed, setting user to null');
           setUser(null);
           setIsSessionRestoreFailed(false);
           setRetryCount(0);
           // Safe navigation to login
           navigateToLogin();
+          return;
         }
+        
+        console.log('User verification successful');
+        setIsSessionRestoreFailed(false);
+        setRetryCount(0);
+        // Safe navigation to home if verification successful
+        navigateToHome();
+      } else {
+        console.log('Session exists but no user found, setting user to null');
+        setUser(null);
+        setIsSessionRestoreFailed(false);
+        setRetryCount(0);
+        // Safe navigation to login
+        navigateToLogin();
       }
     } catch (error) {
       console.error('Error during session check:', error);
@@ -246,20 +279,46 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
 
   // Listen for auth state changes
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, sessionData) => {
       console.log('Auth state changed:', event);
+      
+      // Early return if session is null or undefined
+      if (!sessionData) {
+        console.log('Session is null/undefined, clearing user state');
+        setSession(null);
+        setUser(null);
+        setIsLoading(false);
+        setIsSessionRestoreFailed(false);
+        setRetryCount(0);
+        return;
+      }
+      
+      setSession(sessionData); // Update session state
       resetNavigationState();
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // Delay any fetchUser logic until session?.user?.id is definitely present
+        if (!sessionData?.user?.id) {
+          console.log('Session user ID not available yet, skipping user verification');
+          setIsLoading(false);
+          return;
+        }
+        
         setIsLoading(true);
         try {
-          if (session?.user) {
-            const success = await verifyAndSetUser(session.user.id);
-            if (!success) {
-              throw new Error('Failed to verify user after auth state change');
-            }
+          console.log('Session user ID available, verifying user...');
+          const success = await verifyAndSetUser(sessionData.user.id);
+          if (!success) {
+            console.log('User verification failed, clearing user state');
+            setUser(null);
+            setSessionError('Session expired. Please sign in again.');
+            setIsSessionRestoreFailed(true);
+            // Don't navigate here - let the layout handle navigation
+          } else {
+            console.log('User verification successful');
             setIsSessionRestoreFailed(false);
             setRetryCount(0);
+            // Navigate to home after successful verification
             navigateToHome();
           }
         } catch (error) {
@@ -267,7 +326,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
           setUser(null);
           setSessionError('Session expired. Please sign in again.');
           setIsSessionRestoreFailed(true);
-          navigateToLogin();
+          // Don't navigate here - let the layout handle navigation
         } finally {
           setIsLoading(false);
         }
@@ -277,7 +336,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         setIsLoading(false);
         setIsSessionRestoreFailed(false);
         setRetryCount(0);
-        navigateToLogin();
+        // Don't navigate here - let the layout handle navigation
       }
     });
 
@@ -307,6 +366,16 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         if (!success) {
           throw new Error('Failed to verify user after sign in');
         }
+        
+        // Ensure navigation state is reset before attempting navigation
+        resetNavigationState();
+        
+        // Force a small delay to ensure state is properly set
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Navigate to dashboard tab after successful login and user verification
+        console.log('Login successful, navigating to dashboard tab');
+        safeReplace('/(tabs)/dashboard');
       }
     } catch (error) {
       console.error('Sign in error:', error);
@@ -435,6 +504,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
     isInitialized,
     isAuthenticated: !!user,
     sessionError,
+    session: session, // Add session to the context
     signIn,
     signUp,
     signOut,
@@ -486,3 +556,11 @@ export function useAuth(): AuthContextType {
   }
   return context;
 }
+
+export const useSession = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useSession must be used within an AuthProvider');
+  }
+  return context.session;
+};
