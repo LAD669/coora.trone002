@@ -338,6 +338,28 @@ export const getTeamUsers = async (teamId: string): Promise<TransformedTeamMembe
   return sortedData;
 };
 
+export const getAllViewTeamUsers = async (): Promise<any[]> => {
+  console.log('🔍 getAllViewTeamUsers called - loading all data from team_user_view');
+  
+  const { data, error } = await supabase
+    .from('team_user_view')
+    .select('*');
+
+  if (error) {
+    console.error('❌ Error fetching all team_user_view data:', error);
+    throw error;
+  }
+
+  console.log('🔍 Raw data from team_user_view:', {
+    totalRows: data?.length || 0,
+    sampleData: data?.slice(0, 3) || [],
+    columns: data && data.length > 0 ? Object.keys(data[0]) : []
+  });
+
+  // Return raw data without any transformation or filtering
+  return data || [];
+};
+
 export const createPlayer = async (player: {
   name: string;
   position: string;

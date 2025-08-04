@@ -11,9 +11,10 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { X, User, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight, Key, Lock, UserPlus } from 'lucide-react-native';
+import { X, User, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight, Key, Lock, UserPlus, Camera } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import LanguageSelector from '@/components/LanguageSelector';
@@ -41,6 +42,7 @@ interface SettingItemProps {
 export default function SettingsScreen() {
   const { language, setLanguage, t } = useLanguage();
   const { user, signOut } = useAuth();
+  const { permissions, requestPermission, isLoading: permissionsLoading } = usePermissions();
   const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [twoFactorAuth, setTwoFactorAuth] = useState(false);
@@ -148,6 +150,20 @@ export default function SettingsScreen() {
       t('settings.languageChanged'),
       t('settings.languageChangedMessage', { language: languageName })
     );
+  };
+
+  const handleRequestNotificationPermissions = async () => {
+    const granted = await requestPermission('notifications', false);
+    if (granted) {
+      Alert.alert('Success', 'Notification permissions granted!');
+    }
+  };
+
+  const handleRequestCameraPermissions = async () => {
+    const granted = await requestPermission('camera', false);
+    if (granted) {
+      Alert.alert('Success', 'Camera permissions granted!');
+    }
   };
 
   const handleToggle2FA = () => {
@@ -336,6 +352,51 @@ export default function SettingsScreen() {
               title="Add Another Account"
               subtitle="Sign in with a different account"
               onPress={addNewAccount}
+            />
+          </View>
+        </View>
+
+        {/* Permissions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Permissions</Text>
+          <View style={styles.settingsGroup}>
+            <SettingItem
+              icon={Bell}
+              title="Notifications"
+              subtitle={permissions.notifications ? "Granted" : "Not granted"}
+              onPress={handleRequestNotificationPermissions}
+              rightComponent={
+                permissionsLoading ? (
+                  <ActivityIndicator size="small" color="#007AFF" />
+                ) : (
+                  <Text style={[
+                    styles.permissionStatus,
+                    { color: permissions.notifications ? '#34C759' : '#FF3B30' }
+                  ]}>
+                    {permissions.notifications ? "Granted" : "Request"}
+                  </Text>
+                )
+              }
+              showChevron={false}
+            />
+            <SettingItem
+              icon={Camera}
+              title="Camera"
+              subtitle={permissions.camera ? "Granted" : "Not granted"}
+              onPress={handleRequestCameraPermissions}
+              rightComponent={
+                permissionsLoading ? (
+                  <ActivityIndicator size="small" color="#007AFF" />
+                ) : (
+                  <Text style={[
+                    styles.permissionStatus,
+                    { color: permissions.camera ? '#34C759' : '#FF3B30' }
+                  ]}>
+                    {permissions.camera ? "Granted" : "Request"}
+                  </Text>
+                )
+              }
+              showChevron={false}
             />
           </View>
         </View>
@@ -588,5 +649,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '500',
     fontFamily: 'Urbanist-Medium',
+  },
+  permissionStatus: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

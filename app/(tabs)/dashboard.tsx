@@ -14,7 +14,7 @@ import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleChe
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeamGoals, createTeamGoal, getTeamStats, getClubStats, getTeamPlayers, getTeamEvents, submitMatchResult } from '@/lib/supabase';
+import { getTeamGoals, createTeamGoal, getTeamStats, getClubStats, getTeamUsers, getTeamEvents, submitMatchResult } from '@/lib/supabase';
 import { sendPushNotification } from '@/lib/notifications';
 
 // Default stats structure - always visible with zero values
@@ -100,6 +100,125 @@ export default function DashboardScreen() {
     goals: [] as any[],
     assists: [] as any[],
   });
+
+  // Separate selection state for goals and assists - using objects for better isolation
+  const [selectedGoalUsers, setSelectedGoalUsers] = useState<Record<number, string>>({});
+  const [selectedAssistUsers, setSelectedAssistUsers] = useState<Record<number, string>>({});
+
+  // Function to update goal player selection
+  const updateGoalPlayer = (goalIndex: number, user_id: string) => {
+    const player = teamPlayers.find(p => p.user_id === user_id);
+    console.log('🎯 Updating goal player:', {
+      goalIndex,
+      user_id,
+      playerName: player?.name || player?.first_name || player?.last_name,
+      currentSelectedGoalUsers: selectedGoalUsers
+    });
+    
+    // Update the separate selection state - only update the specific index
+    // If the same user is already selected, deselect them (toggle behavior)
+    setSelectedGoalUsers(prev => {
+      if (prev[goalIndex] === user_id) {
+        // Deselect if already selected
+        const newState = { ...prev };
+        delete newState[goalIndex];
+        return newState;
+      } else {
+        // Select the new user
+        return {
+          ...prev,
+          [goalIndex]: user_id
+        };
+      }
+    });
+    
+    // Also update the matchResult for submission
+    setMatchResult(prev => {
+      const updatedGoals = prev.goals.map((goal, index) => 
+        index === goalIndex ? { 
+          ...goal, 
+          playerId: user_id || '', 
+          playerName: player?.name || `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'Unknown Player' 
+        } : goal
+      );
+      
+      console.log('🎯 Updated goals state:', {
+        goalIndex,
+        selectedUserId: user_id,
+        allGoals: updatedGoals.map((g, i) => ({ 
+          index: i, 
+          playerId: g.playerId, 
+          playerName: g.playerName 
+        }))
+      });
+      
+      return {
+        ...prev,
+        goals: updatedGoals
+      };
+    });
+  };
+
+  // Function to update assist player selection
+  const updateAssistPlayer = (assistIndex: number, user_id: string) => {
+    const player = teamPlayers.find(p => p.user_id === user_id);
+    console.log('🎯 Updating assist player:', {
+      assistIndex,
+      user_id,
+      playerName: player?.name || player?.first_name || player?.last_name,
+      currentSelectedAssistUsers: selectedAssistUsers
+    });
+    
+    // Update the separate selection state - only update the specific index
+    // If the same user is already selected, deselect them (toggle behavior)
+    setSelectedAssistUsers(prev => {
+      if (prev[assistIndex] === user_id) {
+        // Deselect if already selected
+        const newState = { ...prev };
+        delete newState[assistIndex];
+        return newState;
+      } else {
+        // Select the new user
+        return {
+          ...prev,
+          [assistIndex]: user_id
+        };
+      }
+    });
+    
+    // Also update the matchResult for submission
+    setMatchResult(prev => {
+      const updatedAssists = prev.assists.map((assist, index) => 
+        index === assistIndex ? { 
+          ...assist, 
+          playerId: user_id || '', 
+          playerName: player?.name || `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'Unknown Player' 
+        } : assist
+      );
+      
+      console.log('🎯 Updated assists state:', {
+        assistIndex,
+        selectedUserId: user_id,
+        allAssists: updatedAssists.map((a, i) => ({ 
+          index: i, 
+          playerId: a.playerId, 
+          playerName: a.playerName 
+        }))
+      });
+      
+      return {
+        ...prev,
+        assists: updatedAssists
+      };
+    });
+  };
+
+  // Function to generate unique player keys
+  const generatePlayerKey = (type: 'goal' | 'assist', typeIndex: number, player: any, playerIndex: number) => {
+    const user_id = player.user_id || `unknown-${playerIndex}`;
+    const playerName = player.name || player.first_name || player.last_name || `player-${playerIndex}`;
+    return `${type}-${typeIndex}-player-${user_id}-${playerName}`;
+  };
   const [teamPlayers, setTeamPlayers] = useState<any[]>([]);
   const [potmVotes, setPotmVotes] = useState<{
     first: string | null;
@@ -260,19 +379,33 @@ export default function DashboardScreen() {
       const events = await getTeamEvents(user.teamId);
       const now = new Date();
       
-      // Filter for completed matches that don't have results yet
-      const completed = events.filter(event => 
+      // Filter for all completed matches (past matches only)
+      const allPastMatches = events.filter(event => 
         event.event_type === 'match' && 
-        new Date(event.event_date) < now &&
-        (!event.match_results || event.match_results.length === 0) // No results submitted yet
+        new Date(event.event_date) < now
       );
       
-      // Filter for completed matches that already have results
-      const withResults = events.filter(event => 
-        event.event_type === 'match' && 
-        new Date(event.event_date) < now &&
-        event.match_results && event.match_results.length > 0 // Has results submitted
+      // Sort all past matches by most recent first
+      const sortedPastMatches = allPastMatches.sort((a, b) => 
+        new Date(b.event_date).getTime() - new Date(a.event_date).getTime()
       );
+      
+      // Separate matches that don't have results yet
+      const completed = sortedPastMatches.filter(event => 
+        !event.match_results || event.match_results.length === 0
+      );
+      
+      // Separate matches that already have results
+      const withResults = sortedPastMatches.filter(event => 
+        event.match_results && event.match_results.length > 0
+      );
+      
+      console.log('📊 Loaded past matches:', {
+        totalPastMatches: sortedPastMatches.length,
+        matchesNeedingResults: completed.length,
+        matchesWithResults: withResults.length,
+        sampleMatch: sortedPastMatches[0]
+      });
       
       setCompletedMatches(completed);
       setMatchesWithResults(withResults);
@@ -282,13 +415,50 @@ export default function DashboardScreen() {
   };
 
   const loadTeamPlayers = async () => {
-    if (!user?.teamId) return;
+    if (!user) {
+      console.warn('⚠️ Cannot load players: No user object available');
+      return;
+    }
 
+    // Use teamId from the User interface (AuthContext maps Supabase's team_id to this)
+    const teamId = user.teamId;
+    if (!teamId) {
+      console.warn('⚠️ Cannot load players: No team assigned to user:', {
+        userId: user.id,
+        email: user.email,
+        role: user.role
+      });
+      return;
+    }
+    
+    console.log('📊 Fetching team users for team:', teamId);
+    
     try {
-      const players = await getTeamPlayers(user.teamId);
-      setTeamPlayers(players || []);
+      const data = await getTeamUsers(teamId);
+      
+      // getTeamUsers already returns properly transformed and sorted data
+      // Just add the computed 'name' field for UI consistency
+      const playersWithComputedName = (data || []).map(user => ({
+        ...user,
+        name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User',
+        user_id: user.id, // For UI compatibility
+      }));
+      
+      console.log('✅ Successfully loaded team users:', {
+        teamId,
+        totalCount: playersWithComputedName.length,
+        trainerCount: playersWithComputedName.filter(u => u.role === 'trainer').length,
+        playerCount: playersWithComputedName.filter(u => u.role === 'player').length
+      });
+      
+      setTeamPlayers(playersWithComputedName);
+      
+      if (!data || data.length === 0) {
+        console.warn('⚠️ No team members found for team:', teamId);
+      }
     } catch (error) {
-      console.error('Error loading team players:', error);
+      console.error('❌ Error loading team members:', error);
+      setTeamPlayers([]);
     }
   };
 
@@ -378,9 +548,25 @@ export default function DashboardScreen() {
       goals: [],
       assists: [],
     });
+    
+    // Reset selection state for new match
+    setSelectedGoalUsers({});
+    setSelectedAssistUsers({});
   };
 
   const addGoal = () => {
+    // Check if we can add more goals based on the team score
+    const currentGoalsCount = matchResult.goals.length;
+    const maxGoals = matchResult.teamScore;
+    
+    if (currentGoalsCount >= maxGoals) {
+      Alert.alert(
+        commonT('error'), 
+        `Cannot add more goals. Team score is ${maxGoals}, so you can only assign ${maxGoals} goal scorer${maxGoals === 1 ? '' : 's'}.`
+      );
+      return;
+    }
+    
     setMatchResult(prev => ({
       ...prev,
       goals: [...prev.goals, { playerId: '', playerName: '', minute: '' }]
@@ -401,9 +587,36 @@ export default function DashboardScreen() {
       ...prev,
       goals: prev.goals.filter((_, i) => i !== index)
     }));
+    
+    // Clean up selection state for removed goal
+    setSelectedGoalUsers(prev => {
+      const newState = { ...prev };
+      delete newState[index];
+      // Shift down selections for goals after the removed one
+      Object.keys(newState).forEach(key => {
+        const keyIndex = parseInt(key);
+        if (keyIndex > index) {
+          newState[keyIndex - 1] = newState[keyIndex];
+          delete newState[keyIndex];
+        }
+      });
+      return newState;
+    });
   };
 
   const addAssist = () => {
+    // Check if we can add more assists based on the team score
+    const currentAssistsCount = matchResult.assists.length;
+    const maxAssists = matchResult.teamScore; // Allow up to same number as goals
+    
+    if (currentAssistsCount >= maxAssists) {
+      Alert.alert(
+        commonT('error'), 
+        `Cannot add more assists. Team score is ${maxAssists}, so you can only assign up to ${maxAssists} assist provider${maxAssists === 1 ? '' : 's'}.`
+      );
+      return;
+    }
+    
     setMatchResult(prev => ({
       ...prev,
       assists: [...prev.assists, { playerId: '', playerName: '', minute: '' }]
@@ -424,6 +637,21 @@ export default function DashboardScreen() {
       ...prev,
       assists: prev.assists.filter((_, i) => i !== index)
     }));
+    
+    // Clean up selection state for removed assist
+    setSelectedAssistUsers(prev => {
+      const newState = { ...prev };
+      delete newState[index];
+      // Shift down selections for assists after the removed one
+      Object.keys(newState).forEach(key => {
+        const keyIndex = parseInt(key);
+        if (keyIndex > index) {
+          newState[keyIndex - 1] = newState[keyIndex];
+          delete newState[keyIndex];
+        }
+      });
+      return newState;
+    });
   };
 
   const handleSubmitMatchResult = async () => {
@@ -441,21 +669,50 @@ export default function DashboardScreen() {
       return;
     }
 
-    // Validate goals have players selected
-    const invalidGoals = matchResult.goals.some(goal => !goal.playerId);
-    if (invalidGoals) {
-      Alert.alert(commonT('error'), commonT('selectPlayerGoal'));
+    // Validate that number of goals matches team score
+    if (matchResult.goals.length !== matchResult.teamScore) {
+      Alert.alert(
+        commonT('error'), 
+        `Team score is ${matchResult.teamScore}, but you have assigned ${matchResult.goals.length} goal scorer${matchResult.goals.length === 1 ? '' : 's'}. Please assign exactly ${matchResult.teamScore} goal scorer${matchResult.teamScore === 1 ? '' : 's'}.`
+      );
+      return;
+    }
+
+    // Validate that all goals have players selected
+    const goalsWithoutPlayers = matchResult.goals.filter(goal => !goal.playerId);
+    if (goalsWithoutPlayers.length > 0) {
+      Alert.alert(commonT('error'), 'Please select players for all goals.');
+      return;
+    }
+
+    // Validate that assists don't exceed goals
+    if (matchResult.assists.length > matchResult.goals.length) {
+      Alert.alert(
+        commonT('error'), 
+        `You have ${matchResult.assists.length} assist${matchResult.assists.length === 1 ? '' : 's'} but only ${matchResult.goals.length} goal${matchResult.goals.length === 1 ? '' : 's'}. You cannot have more assists than goals.`
+      );
       return;
     }
 
     try {
+      // Goals and assists already have individual player assignments
+      const goalsWithPlayer = matchResult.goals.map((goal, index) => ({
+        ...goal,
+        minute: goal.minute || ''
+      }));
+      
+      const assistsWithPlayer = matchResult.assists.map((assist, index) => ({
+        ...assist,
+        minute: assist.minute || ''
+      }));
+
       await submitMatchResult({
         eventId: selectedMatch.id,
         teamScore: matchResult.teamScore,
         opponentScore: matchResult.opponentScore,
         opponentName: matchResult.opponentName,
-        goals: matchResult.goals,
-        assists: matchResult.assists,
+        goals: goalsWithPlayer,
+        assists: assistsWithPlayer,
         otherStats: {},
         submittedBy: user.id,
         teamId: user.teamId,
@@ -650,7 +907,8 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Team Goals Section */}
+        {/* Team Goals Section - DEACTIVATED */}
+        {/* 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{commonT('teamGoals')}</Text>
@@ -757,7 +1015,6 @@ export default function DashboardScreen() {
                     </View>
                   </View>
 
-                  {/* Expanded Task List */}
                   {selectedGoal === goal.id && goal.goal_tasks && (
                     <View style={styles.tasksList}>
                       <Text style={styles.tasksTitle}>{commonT('tasks')}:</Text>
@@ -783,8 +1040,25 @@ export default function DashboardScreen() {
             </View>
           )}
         </View>
+        */}
 
-
+        {/* Match Results Section - KEPT ACTIVE */}
+        {canManagePlayers && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Match Results</Text>
+              <TouchableOpacity 
+                style={styles.matchResultsButton}
+                onPress={() => setMatchResultsModalVisible(true)}
+              >
+                <Trophy size={16} color="#FF9500" strokeWidth={2} />
+                <Text style={styles.matchResultsText}>
+                  {completedMatches.length > 0 ? 'Enter Results' : 'View Results'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
@@ -999,10 +1273,43 @@ export default function DashboardScreen() {
                     <TextInput
                       style={styles.scoreField}
                       value={matchResult.teamScore.toString()}
-                      onChangeText={(text) => setMatchResult(prev => ({
-                        ...prev,
-                        teamScore: parseInt(text) || 0
-                      }))}
+                      onChangeText={(text) => {
+                        const newScore = parseInt(text) || 0;
+                        setMatchResult(prev => {
+                          // If score is reduced, remove excess goals and assists
+                          const adjustedGoals = prev.goals.slice(0, newScore);
+                          const adjustedAssists = prev.assists.slice(0, newScore);
+                          
+                          // Also update selection objects to match
+                          setSelectedGoalUsers(prev => {
+                            const newState = { ...prev };
+                            Object.keys(newState).forEach(key => {
+                              const keyIndex = parseInt(key);
+                              if (keyIndex >= newScore) {
+                                delete newState[keyIndex];
+                              }
+                            });
+                            return newState;
+                          });
+                          setSelectedAssistUsers(prev => {
+                            const newState = { ...prev };
+                            Object.keys(newState).forEach(key => {
+                              const keyIndex = parseInt(key);
+                              if (keyIndex >= newScore) {
+                                delete newState[keyIndex];
+                              }
+                            });
+                            return newState;
+                          });
+                          
+                          return {
+                            ...prev,
+                            teamScore: newScore,
+                            goals: adjustedGoals,
+                            assists: adjustedAssists
+                          };
+                        });
+                      }}
                       keyboardType="numeric"
                       placeholder="0"
                     />
@@ -1024,6 +1331,8 @@ export default function DashboardScreen() {
                 </View>
               </View>
 
+
+
               {/* Goals Section */}
               <View style={styles.statsInputSection}>
                 <View style={styles.statsInputHeader}>
@@ -1033,31 +1342,67 @@ export default function DashboardScreen() {
                     <Text style={styles.addStatText}>{commonT('addGoal')}</Text>
                   </TouchableOpacity>
                 </View>
-                {matchResult.goals.map((goal, index) => (
-                  <View key={index} style={styles.statInputRow}>
-                    <View style={styles.playerSelectContainer}>
-                      <Text style={styles.playerSelectLabel}>{commonT('player')}:</Text>
+                <Text style={styles.limitText}>
+                  {matchResult.goals.length}/{matchResult.teamScore} goal scorer{matchResult.teamScore === 1 ? '' : 's'} assigned
+                </Text>
+                {matchResult.goals.map((goal, index) => {
+                  console.log(`🎯 Rendering goal ${index}:`, {
+                    goalIndex: index,
+                    goalPlayerId: goal.playerId,
+                    goalPlayerName: goal.playerName,
+                    allGoals: matchResult.goals.map(g => ({ playerId: g.playerId, playerName: g.playerName }))
+                  });
+                  
+                  return (
+                    <View key={`goal-${index}`} style={styles.statInputRow}>
+                      <View style={styles.playerSelectContainer}>
+                        <Text style={styles.playerSelectLabel}>Goal {index + 1}:</Text>
+                        <Text style={styles.selectedPlayerText}>
+                          {selectedGoalUsers[index] ? 
+                            teamPlayers.find(p => p.user_id === selectedGoalUsers[index])?.name || 
+                            'Unknown Player' 
+                            : 'No player selected'
+                          }
+                        </Text>
                       <View style={styles.playerSelect}>
-                        {teamPlayers.map((player) => (
-                          <TouchableOpacity
-                            key={player.id}
-                            style={[
-                              styles.playerOption,
-                              goal.playerId === player.id && styles.playerOptionSelected
-                            ]}
-                            onPress={() => {
-                              updateGoal(index, 'playerId', player.id);
-                              updateGoal(index, 'playerName', player.name);
-                            }}
-                          >
-                            <Text style={[
-                              styles.playerOptionText,
-                              goal.playerId === player.id && styles.playerOptionTextSelected
-                            ]}>
-                              {player.name}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
+                        {(() => {
+                          console.log(`🎯 Rendering goal ${index} players:`, {
+                            totalTeamPlayers: teamPlayers.length,
+                            players: teamPlayers.map(p => ({
+                              user_id: p.user_id,
+                              name: p.name,
+                              role: p.role
+                            }))
+                          });
+                          return teamPlayers.map((player, playerIndex) => {
+                            const isSelected = selectedGoalUsers[index] === player.user_id;
+                            console.log(`🎯 Goal ${index} - Player ${player.user_id}:`, {
+                              goalIndex: index,
+                              playerUserId: player.user_id,
+                              selectedGoalUsers: selectedGoalUsers,
+                              isSelected,
+                              playerName: player.name
+                            });
+                            
+                            return (
+                              <TouchableOpacity
+                                key={generatePlayerKey('goal', index, player, playerIndex)}
+                                style={[
+                                  styles.playerOption,
+                                  isSelected && styles.playerOptionSelected
+                                ]}
+                                onPress={() => updateGoalPlayer(index, player.user_id)}
+                              >
+                                <Text style={[
+                                  styles.playerOptionText,
+                                  isSelected && styles.playerOptionTextSelected
+                                ]}>
+                                  {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player'}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          });
+                        })()}
                       </View>
                     </View>
                     <TouchableOpacity 
@@ -1067,7 +1412,8 @@ export default function DashboardScreen() {
                       <X size={16} color="#FF3B30" strokeWidth={1.5} />
                     </TouchableOpacity>
                   </View>
-                ))}
+                );
+                })}
               </View>
 
               {/* Assists Section */}
@@ -1079,31 +1425,59 @@ export default function DashboardScreen() {
                     <Text style={styles.addStatText}>{commonT('addAssist')}</Text>
                   </TouchableOpacity>
                 </View>
+                <Text style={styles.limitText}>
+                  {matchResult.assists.length}/{matchResult.teamScore} assist provider{matchResult.teamScore === 1 ? '' : 's'} assigned (max {matchResult.teamScore})
+                </Text>
                 {matchResult.assists.map((assist, index) => (
                   <View key={index} style={styles.statInputRow}>
                     <View style={styles.playerSelectContainer}>
-                      <Text style={styles.playerSelectLabel}>{commonT('player')}:</Text>
+                      <Text style={styles.playerSelectLabel}>Assist {index + 1}:</Text>
+                                              <Text style={styles.selectedPlayerText}>
+                          {selectedAssistUsers[index] ? 
+                            teamPlayers.find(p => p.user_id === selectedAssistUsers[index])?.name || 
+                            'Unknown Player' 
+                            : 'No player selected'
+                          }
+                        </Text>
                       <View style={styles.playerSelect}>
-                        {teamPlayers.map((player) => (
-                          <TouchableOpacity
-                            key={player.id}
-                            style={[
-                              styles.playerOption,
-                              assist.playerId === player.id && styles.playerOptionSelected
-                            ]}
-                            onPress={() => {
-                              updateAssist(index, 'playerId', player.id);
-                              updateAssist(index, 'playerName', player.name);
-                            }}
-                          >
-                            <Text style={[
-                              styles.playerOptionText,
-                              assist.playerId === player.id && styles.playerOptionTextSelected
-                            ]}>
-                              {player.name}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
+                        {(() => {
+                          console.log(`🎯 Rendering assist ${index} players:`, {
+                            totalTeamPlayers: teamPlayers.length,
+                            players: teamPlayers.map(p => ({
+                              user_id: p.user_id,
+                              name: p.name,
+                              role: p.role
+                            }))
+                          });
+                          return teamPlayers.map((player, playerIndex) => {
+                            const isSelected = selectedAssistUsers[index] === player.user_id;
+                            console.log(`🎯 Assist ${index} - Player ${player.user_id}:`, {
+                              assistIndex: index,
+                              playerUserId: player.user_id,
+                              selectedAssistUsers: selectedAssistUsers,
+                              isSelected,
+                              playerName: player.name
+                            });
+                            
+                            return (
+                              <TouchableOpacity
+                                key={generatePlayerKey('assist', index, player, playerIndex)}
+                                style={[
+                                  styles.playerOption,
+                                  isSelected && styles.playerOptionSelected
+                                ]}
+                                onPress={() => updateAssistPlayer(index, player.user_id)}
+                              >
+                                <Text style={[
+                                  styles.playerOptionText,
+                                  isSelected && styles.playerOptionTextSelected
+                                ]}>
+                                  {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player'}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          });
+                        })()}
                       </View>
                     </View>
                     <TouchableOpacity 
@@ -1575,6 +1949,31 @@ const styles = StyleSheet.create({
   addStatText: {
     fontSize: 14,
     color: '#007AFF',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
+  },
+  limitText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  selectedPlayerText: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-Medium',
+    fontWeight: '500',
+  },
+  clearSelectionButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#FFF5F5',
+    borderRadius: 8,
+  },
+  clearSelectionText: {
+    fontSize: 12,
+    color: '#FF3B30',
     fontWeight: '500',
     fontFamily: 'Urbanist-Medium',
   },

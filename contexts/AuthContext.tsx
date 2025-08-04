@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { router, useRouter } from 'expo-router';
 import { validateAccessCode, getUserProfile, getCurrentUser, restoreSession } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { Alert } from 'react-native';
 import { storage } from '@/lib/storage';
+import { useNavigationGuard } from '@/hooks/useNavigationGuard';
 
 interface User {
   id: string;
@@ -20,36 +21,34 @@ interface AuthContextType {
   isLoading: boolean;
   isInitialized: boolean;
   isAuthenticated: boolean;
+  sessionError: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string, accessCode?: string) => Promise<void>;
   signOut: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  retrySessionRestore: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
   children: ReactNode;
+  isAppReady?: boolean;
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children, isAppReady = false }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const [isSessionRestoreFailed, setIsSessionRestoreFailed] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+  const navigationAttempted = useRef(false);
   const router = useRouter();
+  const { safeReplace } = useNavigationGuard(isAppReady);
 
-  // Clear stored session data and redirect to login
-  const handleSessionError = async (error: any) => {
-    console.error('Session restoration failed:', error);
-    await storage.removeItem('supabase.auth.token');
-    await storage.removeItem('supabase.auth.refreshToken');
-    setUser(null);
-    setSessionError('Session expired. Please sign in again.');
-    router.replace('/auth/login');
-  };
-
-  // Verify and set user data
+  // Verify and set user data (no navigation)
   const verifyAndSetUser = async (userId: string): Promise<boolean> => {
     try {
       console.log('Verifying user data for:', userId);
@@ -82,62 +81,129 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const checkAuthState = async () => {
-    console.log('Starting session restoration...');
-    setSessionError(null);
-    setIsLoading(true);
-
-    try {
-      // First check for active session
-      console.log('Checking for active session...');
-      const { data: { session: activeSession } } = await supabase.auth.getSession();
-      
-      if (activeSession?.user) {
-        console.log('Active session found, verifying user...');
-        const success = await verifyAndSetUser(activeSession.user.id);
-        if (!success) {
-          throw new Error('Failed to verify user from active session');
-        }
-        // Navigate to home if verification successful
-        router.replace('/(tabs)');
-      } else {
-        // Try to restore session from storage
-        console.log('No active session, attempting to restore from storage...');
-        const session = await restoreSession();
-        
-        if (session?.user) {
-          console.log('Session restored, verifying user...');
-          const success = await verifyAndSetUser(session.user.id);
-          if (!success) {
-            throw new Error('Failed to verify user after session restoration');
-          }
-          // Navigate to home if restoration successful
-          router.replace('/(tabs)');
-        } else {
-          console.log('No stored session found');
-          setUser(null);
-          router.replace('/auth/login');
-        }
-      }
-    } catch (error) {
-      console.error('Error during session restoration:', error);
-      handleSessionError(error);
-    } finally {
-      setIsLoading(false);
-      setIsInitialized(true);
-      console.log('Session restoration process completed');
+  // Navigate to login with loop prevention
+  const navigateToLogin = () => {
+    if (!navigationAttempted.current) {
+      navigationAttempted.current = true;
+      console.log('Navigating to login screen');
+      safeReplace('/auth/login');
     }
   };
 
-  // Check for existing session on app start
+  // Navigate to home with loop prevention
+  const navigateToHome = () => {
+    if (!navigationAttempted.current) {
+      navigationAttempted.current = true;
+      console.log('Navigating to home screen');
+      safeReplace('/(tabs)');
+    }
+  };
+
+  // Reset navigation state
+  const resetNavigationState = () => {
+    navigationAttempted.current = false;
+  };
+
+  // Check for stored session on mount (no navigation until app is ready)
+  const checkStoredSession = async (isRetry = false) => {
+    console.log('Checking for stored session...', isRetry ? '(retry)' : '');
+    setSessionError(null);
+    setIsLoading(true);
+    resetNavigationState();
+
+    try {
+      // Check for active session using getSession()
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Error getting session:', error);
+        throw error;
+      }
+
+      if (session?.user) {
+        console.log('Active session found, verifying user...');
+        const success = await verifyAndSetUser(session.user.id);
+        if (!success) {
+          throw new Error('Failed to verify user from active session');
+        }
+        setIsSessionRestoreFailed(false);
+        setRetryCount(0);
+        // Safe navigation to home if verification successful
+        navigateToHome();
+      } else {
+        // Try to get user directly as fallback
+        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) {
+          console.error('Error getting user:', userError);
+        }
+        
+        if (currentUser) {
+          console.log('User found via getUser(), verifying...');
+          const success = await verifyAndSetUser(currentUser.id);
+          if (!success) {
+            throw new Error('Failed to verify user from getUser()');
+          }
+          setIsSessionRestoreFailed(false);
+          setRetryCount(0);
+          // Safe navigation to home if verification successful
+          navigateToHome();
+        } else {
+          console.log('No stored session found, setting user to null');
+          setUser(null);
+          setIsSessionRestoreFailed(false);
+          setRetryCount(0);
+          // Safe navigation to login
+          navigateToLogin();
+        }
+      }
+    } catch (error) {
+      console.error('Error during session check:', error);
+      setUser(null);
+      
+      if (isRetry && retryCount >= maxRetries) {
+        setSessionError('Session restore failed. Please sign in again.');
+        setIsSessionRestoreFailed(true);
+      } else if (isRetry) {
+        setRetryCount(prev => prev + 1);
+        setSessionError(`Session restore failed. Retrying... (${retryCount + 1}/${maxRetries})`);
+      } else {
+        setSessionError('Session expired. Please sign in again.');
+        setIsSessionRestoreFailed(true);
+      }
+      
+      // Safe navigation to login
+      navigateToLogin();
+    } finally {
+      setIsLoading(false);
+      setIsInitialized(true);
+      console.log('Session check completed');
+    }
+  };
+
+  // Retry session restore function
+  const retrySessionRestore = async () => {
+    if (retryCount < maxRetries) {
+      console.log('Retrying session restore...');
+      await checkStoredSession(true);
+    } else {
+      console.log('Max retries reached, navigating to login');
+      setSessionError('Session restore failed. Please sign in again.');
+      setIsSessionRestoreFailed(true);
+      navigateToLogin();
+    }
+  };
+
+  // Check for stored session on mount
   useEffect(() => {
-    checkAuthState();
+    checkStoredSession();
   }, []);
 
   // Listen for auth state changes
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event);
+      resetNavigationState();
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         setIsLoading(true);
@@ -147,11 +213,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (!success) {
               throw new Error('Failed to verify user after auth state change');
             }
-            router.replace('/(tabs)');
+            setIsSessionRestoreFailed(false);
+            setRetryCount(0);
+            navigateToHome();
           }
         } catch (error) {
           console.error('Error updating user state:', error);
-          handleSessionError(error);
+          setUser(null);
+          setSessionError('Session expired. Please sign in again.');
+          setIsSessionRestoreFailed(true);
+          navigateToLogin();
         } finally {
           setIsLoading(false);
         }
@@ -159,7 +230,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('User signed out');
         setUser(null);
         setIsLoading(false);
-        router.replace('/auth/login');
+        setIsSessionRestoreFailed(false);
+        setRetryCount(0);
+        navigateToLogin();
       }
     });
 
@@ -171,6 +244,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     setSessionError(null);
+    setIsSessionRestoreFailed(false);
+    setRetryCount(0);
+    resetNavigationState();
+    
     try {
       console.log('Attempting sign in for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -197,6 +274,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signUp = async (email: string, password: string, name: string, accessCode?: string) => {
     setIsLoading(true);
     setSessionError(null);
+    setIsSessionRestoreFailed(false);
+    setRetryCount(0);
+    resetNavigationState();
+    
     try {
       // Validate access code if provided
       if (accessCode) {
@@ -260,7 +341,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
 
           // Reload auth state to get the complete user profile
-          await checkAuthState();
+          await checkStoredSession();
         } catch (profileError) {
           console.error('Profile creation error:', profileError);
           // Clean up auth user if profile creation fails
@@ -278,19 +359,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signOut = async () => {
     setIsLoading(true);
+    resetNavigationState();
+    
     try {
       console.log('Starting sign out process...');
       await supabase.auth.signOut();
       await storage.removeItem('supabase.auth.token');
       await storage.removeItem('supabase.auth.refreshToken');
       setUser(null);
+      setIsSessionRestoreFailed(false);
+      setRetryCount(0);
       console.log('Sign out completed successfully');
-      router.replace('/auth/login');
+      navigateToLogin();
     } catch (error) {
       console.error('Sign out error:', error);
       // Force sign out even if there's an error
       setUser(null);
-      router.replace('/auth/login');
+      setIsSessionRestoreFailed(false);
+      setRetryCount(0);
+      navigateToLogin();
       throw new Error(error instanceof Error ? error.message : 'Failed to sign out');
     } finally {
       setIsLoading(false);
@@ -302,18 +389,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     isInitialized,
     isAuthenticated: !!user,
+    sessionError,
     signIn,
     signUp,
     signOut,
     setUser,
+    retrySessionRestore,
   };
 
-  // Show loading screen only during initial load or auth state changes
+  // Show loading screen with fallback handling
   if (!isInitialized || isLoading) {
+    let loadingMessage = "Loading...";
+    let isError = false;
+
+    if (sessionError) {
+      loadingMessage = sessionError;
+      isError = true;
+    } else if (isSessionRestoreFailed) {
+      loadingMessage = "Session restore failed. Please sign in again.";
+      isError = true;
+    } else if (retryCount > 0) {
+      loadingMessage = `Retrying session restore... (${retryCount}/${maxRetries})`;
+      isError = false;
+    }
+
     return (
       <LoadingScreen 
-        message={sessionError || "Loading..."} 
-        isError={!!sessionError}
+        message={loadingMessage} 
+        isError={isError}
+        showRetry={isSessionRestoreFailed && retryCount < maxRetries}
+        onRetry={retrySessionRestore}
       />
     );
   }

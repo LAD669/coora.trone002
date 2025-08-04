@@ -38,8 +38,7 @@
         "expo-notifications",
         {
           "icon": "./images/coora.icon.png",
-          "color": "#ffffff",
-          "sounds": ["./assets/notification.wav"]
+          "color": "#ffffff"
         }
       ]
     ],
