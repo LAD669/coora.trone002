@@ -89,7 +89,7 @@ export default function SettingsScreen() {
       setCurrentSession(session);
 
       // Refresh the page to update the UI
-      router.replace('/(tabs)');
+      router.replace('/(app)/(tabs)');
     } catch (error) {
       Alert.alert('Error', 'Failed to switch account. Please try again.');
     } finally {
@@ -112,7 +112,7 @@ export default function SettingsScreen() {
       };
       
       // Navigate to login screen
-      router.push('/auth/login');
+      router.push('/(auth)/login');
     }
   };
 
@@ -219,7 +219,7 @@ export default function SettingsScreen() {
     return (
       <TouchableOpacity 
         style={styles.profileCard}
-        onPress={() => router.push('/EditProfileScreen')}
+        onPress={() => router.push('/(app)/EditProfileScreen')}
       >
         <View style={styles.profileAvatarContainer}>
           <View style={styles.profileInitialsContainer}>

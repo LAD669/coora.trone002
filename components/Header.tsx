@@ -44,7 +44,7 @@ export default function Header({ title, showBackButton, onBackPress }: HeaderPro
   };
 
   const handleNotifications = () => {
-    router.push('/notifications');
+            router.push('/(app)/notifications');
   };
 
   return (
@@ -78,7 +78,7 @@ export default function Header({ title, showBackButton, onBackPress }: HeaderPro
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.iconButton}
-            onPress={() => router.push('/settings')}
+            onPress={() => router.push('/(app)/settings')}
           >
             <Settings size={20} color="#1A1A1A" strokeWidth={1.5} />
           </TouchableOpacity>

@@ -38,7 +38,7 @@ export default function TabLayout() {
   };
 
   const handleNotifications = () => {
-    router.push('/notifications');
+            router.push('/(app)/notifications');
   };
 
   const HeaderRight = () => (
@@ -58,7 +58,7 @@ export default function TabLayout() {
       </TouchableOpacity>
       <TouchableOpacity 
         style={styles.iconButton}
-        onPress={() => router.push('/settings')}
+        onPress={() => router.push('/(app)/settings')}
       >
         <Settings size={20} color="#1A1A1A" strokeWidth={1.5} />
       </TouchableOpacity>

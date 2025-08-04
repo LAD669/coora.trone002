@@ -69,14 +69,13 @@ export default function SignUpScreen() {
 
     try {
       await signUp(formData.email, formData.password, formData.name);
-      router.replace('/(tabs)');
     } catch (error) {
       Alert.alert(t.error, error instanceof Error ? error.message : t.somethingWentWrong);
     }
   };
 
   const handleNavigateToLogin = () => {
-    router.replace('/(auth)/login');
+    router.push('/(auth)/login');
   };
 
   const updateFormData = (field: keyof typeof formData, value: string) => {

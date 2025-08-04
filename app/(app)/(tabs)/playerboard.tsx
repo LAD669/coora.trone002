@@ -320,7 +320,7 @@ export default function PlayerboardScreen() {
   const handlePlayerPress = (player: any) => {
     console.log('Player tapped:', `${player.first_name} ${player.last_name}`);
     router.push({
-      pathname: '/PlayerDetailScreen',
+      pathname: '/(app)/PlayerDetailScreen',
       params: {
         player: JSON.stringify(player)
       }

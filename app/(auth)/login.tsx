@@ -46,14 +46,13 @@ export default function LoginScreen() {
 
     try {
       await signIn(email, password);
-      router.replace('/(tabs)');
     } catch (error) {
       Alert.alert(t.error, error instanceof Error ? error.message : t.somethingWentWrong);
     }
   };
 
   const handleNavigateToSignup = () => {
-    router.replace('/(auth)/signup');
+    router.push('/(auth)/signup');
   };
 
   return (
