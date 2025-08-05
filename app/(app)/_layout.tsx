@@ -44,20 +44,14 @@ function AppContent() {
   );
 }
 
-function AppLayoutWithAuth() {
-  return (
-    <AuthProvider>
-      <AppContent />
-      <StatusBar style="auto" />
-    </AuthProvider>
-  );
-}
-
 export default function AppLayout() {
   return (
     <SafeAreaProvider>
       <LanguageProvider>
-        <AppLayoutWithAuth />
+        <AuthProvider>
+          <AppContent />
+          <StatusBar style="auto" />
+        </AuthProvider>
       </LanguageProvider>
     </SafeAreaProvider>
   );

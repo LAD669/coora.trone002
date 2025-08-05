@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Alert, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { Camera } from 'expo-camera';
+import { checkNotificationPermissions as checkNotificationPermissionsLib, requestNotificationPermissions as requestNotificationPermissionsLib } from '@/lib/notifications';
 
 export interface PermissionStatus {
   notifications: boolean;
@@ -21,8 +22,7 @@ export function usePermissions() {
   // Check notification permissions without requesting them
   const checkNotificationPermissions = useCallback(async (): Promise<boolean> => {
     try {
-      const { status } = await Notifications.getPermissionsAsync();
-      const isGranted = status === 'granted';
+      const isGranted = await checkNotificationPermissionsLib();
       setPermissions(prev => ({ ...prev, notifications: isGranted }));
       return isGranted;
     } catch (error) {
@@ -36,18 +36,7 @@ export function usePermissions() {
     try {
       setIsLoading(true);
       
-      // Set up notification channel for Android
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'default',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF231F7C',
-        });
-      }
-
-      const { status } = await Notifications.requestPermissionsAsync();
-      const isGranted = status === 'granted';
+      const isGranted = await requestNotificationPermissionsLib();
       
       setPermissions(prev => ({ ...prev, notifications: isGranted }));
       

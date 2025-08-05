@@ -15,6 +15,7 @@ import { Plus, MoveHorizontal as MoreHorizontal, Heart, MessageCircle, Building2
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTeamPosts, createPost, addPostReaction, removePostReaction } from '@/lib/supabase';
+import { useRouter } from 'expo-router';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Coora for Sport",
     "slug": "coora-for-sport",
-    "version": "1.0.2",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./images/coora.icon.png",
     "scheme": "myapp",
@@ -24,7 +24,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.coora.app.cooraforsport",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "This app uses the camera to take photos for team posts and profile pictures.",
+        "NSUserNotificationUsageDescription": "This app sends notifications to keep you updated about team activities, posts, and important events."
       }
     },
     "android": {

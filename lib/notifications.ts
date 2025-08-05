@@ -85,7 +85,39 @@ export async function setupNotificationChannel(): Promise<boolean> {
   }
 }
 
-export async function registerForPushNotificationsAsync(): Promise<string | null> {
+// Check notification permissions safely
+export async function checkNotificationPermissions(): Promise<boolean> {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    const isGranted = status === 'granted';
+    console.log('Notification permissions status:', status);
+    return isGranted;
+  } catch (error) {
+    console.error('Error checking notification permissions:', error);
+    return false;
+  }
+}
+
+// Request notification permissions safely
+export async function requestNotificationPermissions(): Promise<boolean> {
+  try {
+    // Set up notification channel for Android before requesting permissions
+    if (Platform.OS === 'android') {
+      await setupNotificationChannel();
+    }
+
+    const { status } = await Notifications.requestPermissionsAsync();
+    const isGranted = status === 'granted';
+    console.log('Notification permissions request result:', status);
+    return isGranted;
+  } catch (error) {
+    console.error('Error requesting notification permissions:', error);
+    return false;
+  }
+}
+
+// Get Expo push token with proper permission handling
+export async function getExpoPushTokenAsync(): Promise<string | null> {
   try {
     // Validate configuration first
     if (!validateNotificationsConfig()) {
@@ -93,37 +125,25 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
       return null;
     }
 
-    // Configure notification handler
-    configureNotificationHandler();
-
-    // Setup Android notification channel
-    const channelSetup = await setupNotificationChannel();
-    if (!channelSetup) {
-      console.error('Failed to setup notification channel');
-      return null;
+    // Check permissions first
+    const hasPermission = await checkNotificationPermissions();
+    if (!hasPermission) {
+      console.log('Notification permissions not granted, requesting...');
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        console.log('Notification permissions denied by user');
+        return null;
+      }
     }
 
-    // Check permissions
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    
-    if (finalStatus !== 'granted') {
-      console.log('Notification permissions not granted');
-      return null;
-    }
-    
-    // Get the token that uniquely identifies this device
+    // Get the project ID
     const projectId = process.env.EXPO_PROJECT_ID;
     if (!projectId) {
       console.error('EXPO_PROJECT_ID is not configured');
       return null;
     }
 
+    // Get the token that uniquely identifies this device
     const tokenResponse = await Notifications.getExpoPushTokenAsync({
       projectId: projectId,
     });
@@ -133,10 +153,73 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
       return null;
     }
     
-    console.log('Push token registered successfully:', tokenResponse.data);
+    console.log('Push token retrieved successfully:', tokenResponse.data);
     return tokenResponse.data;
   } catch (error) {
+    console.error('Error getting Expo push token:', error);
+    return null;
+  }
+}
+
+// Get device push token with proper permission handling (for native push notifications)
+export async function getDevicePushTokenAsync(): Promise<string | null> {
+  try {
+    // Check permissions first
+    const hasPermission = await checkNotificationPermissions();
+    if (!hasPermission) {
+      console.log('Notification permissions not granted, requesting...');
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        console.log('Notification permissions denied by user');
+        return null;
+      }
+    }
+
+    // Get device push token
+    const tokenResponse = await Notifications.getDevicePushTokenAsync();
+    
+    if (!tokenResponse?.data) {
+      console.error('Failed to get device push token');
+      return null;
+    }
+    
+    console.log('Device push token retrieved successfully:', tokenResponse.data);
+    return tokenResponse.data;
+  } catch (error) {
+    console.error('Error getting device push token:', error);
+    return null;
+  }
+}
+
+// Legacy function - now uses the new permission-aware token retrieval
+export async function registerForPushNotificationsAsync(): Promise<string | null> {
+  try {
+    // Configure notification handler
+    configureNotificationHandler();
+
+    // Use the new permission-aware token retrieval
+    return await getExpoPushTokenAsync();
+  } catch (error) {
     console.error('Error registering for push notifications:', error);
+    return null;
+  }
+}
+
+// Safe token retrieval function that ensures permissions are granted before getting tokens
+export async function getNotificationTokenSafely(): Promise<string | null> {
+  try {
+    // Check if permissions are granted first
+    const hasPermission = await checkNotificationPermissions();
+    
+    if (!hasPermission) {
+      console.log('Notification permissions not granted, cannot retrieve token');
+      return null;
+    }
+
+    // Get the token
+    return await getExpoPushTokenAsync();
+  } catch (error) {
+    console.error('Error getting notification token safely:', error);
     return null;
   }
 }
@@ -257,31 +340,8 @@ export async function cancelAllScheduledNotificationsAsync(): Promise<boolean> {
   }
 }
 
-export async function checkNotificationPermissions(): Promise<boolean> {
-  try {
-    const { status } = await Notifications.getPermissionsAsync();
-    const isGranted = status === 'granted';
-    console.log('Notification permissions status:', status);
-    return isGranted;
-  } catch (error) {
-    console.error('Error checking notification permissions:', error);
-    return false;
-  }
-}
-
-export async function requestNotificationPermissions(): Promise<boolean> {
-  try {
-    const { status } = await Notifications.requestPermissionsAsync();
-    const isGranted = status === 'granted';
-    console.log('Notification permissions request result:', status);
-    return isGranted;
-  } catch (error) {
-    console.error('Error requesting notification permissions:', error);
-    return false;
-  }
-}
-
 // Initialize notifications safely on app startup
+// This function only sets up the notification system, it does NOT request tokens
 export async function initializeNotifications(): Promise<boolean> {
   try {
     console.log('Initializing notifications...');
@@ -316,4 +376,104 @@ export function cleanupNotifications(): void {
   } catch (error) {
     console.error('Error cleaning up notifications:', error);
   }
-} 
+}
+
+/*
+NOTIFICATION SYSTEM USAGE GUIDE
+
+This refactored notification system ensures that:
+1. No token requests happen without proper permission checks
+2. All token requests are wrapped in try/catch blocks
+3. Permissions are requested before token retrieval
+4. No token fetching runs on app startup without permission checks
+
+PROPER USAGE PATTERNS:
+
+1. App Startup (Safe - No Token Requests):
+   ```typescript
+   import { initializeNotifications } from '@/lib/notifications';
+   
+   // In your app startup
+   useEffect(() => {
+     initializeNotifications(); // Only sets up the system, no token requests
+   }, []);
+   ```
+
+2. Requesting Permissions (User Interaction Required):
+   ```typescript
+   import { requestNotificationPermissions } from '@/lib/notifications';
+   
+   const handleRequestPermissions = async () => {
+     const granted = await requestNotificationPermissions();
+     if (granted) {
+       // Now safe to get tokens
+       const token = await getNotificationTokenSafely();
+     }
+   };
+   ```
+
+3. Getting Tokens Safely (After Permissions Granted):
+   ```typescript
+   import { getNotificationTokenSafely } from '@/lib/notifications';
+   
+   const getToken = async () => {
+     const token = await getNotificationTokenSafely();
+     if (token) {
+       // Use token for push notifications
+       console.log('Token:', token);
+     }
+   };
+   ```
+
+4. Checking Permissions Without Requesting:
+   ```typescript
+   import { checkNotificationPermissions } from '@/lib/notifications';
+   
+   const checkPermissions = async () => {
+     const hasPermission = await checkNotificationPermissions();
+     if (hasPermission) {
+       // Safe to get tokens
+       const token = await getNotificationTokenSafely();
+     }
+   };
+   ```
+
+5. Complete Permission + Token Flow:
+   ```typescript
+   import { 
+     checkNotificationPermissions, 
+     requestNotificationPermissions, 
+     getNotificationTokenSafely 
+   } from '@/lib/notifications';
+   
+   const setupNotifications = async () => {
+     try {
+       // Check current permissions
+       let hasPermission = await checkNotificationPermissions();
+       
+       // Request if not granted
+       if (!hasPermission) {
+         hasPermission = await requestNotificationPermissions();
+       }
+       
+       // Get token if permissions granted
+       if (hasPermission) {
+         const token = await getNotificationTokenSafely();
+         if (token) {
+           // Store token or send to server
+           console.log('Notification token:', token);
+         }
+       }
+     } catch (error) {
+       console.error('Error setting up notifications:', error);
+     }
+   };
+   ```
+
+IMPORTANT NOTES:
+- Never call token functions on app startup without user interaction
+- Always check permissions before requesting tokens
+- Use try/catch blocks around all notification operations
+- The system will automatically handle permission requests when needed
+- All functions are safe and will not crash the app if permissions are denied
+*/ 
