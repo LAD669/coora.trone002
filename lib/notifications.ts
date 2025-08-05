@@ -355,13 +355,16 @@ export async function initializeNotifications(): Promise<boolean> {
     // Configure notification handler
     configureNotificationHandler();
 
-    // Setup Android notification channel
-    await setupNotificationChannel();
+    // Setup Android notification channel (iOS doesn't need this)
+    if (Platform.OS === 'android') {
+      await setupNotificationChannel();
+    }
 
     console.log('Notifications initialized successfully');
     return true;
   } catch (error) {
     console.error('Error initializing notifications:', error);
+    // Don't throw - allow app to continue without notifications
     return false;
   }
 }

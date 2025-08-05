@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Alert, Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import { Camera } from 'expo-camera';
-import { checkNotificationPermissions as checkNotificationPermissionsLib, requestNotificationPermissions as requestNotificationPermissionsLib } from '@/lib/notifications';
+import { SafePermissions } from '@/lib/permissions';
 
 export interface PermissionStatus {
   notifications: boolean;
@@ -22,7 +20,7 @@ export function usePermissions() {
   // Check notification permissions without requesting them
   const checkNotificationPermissions = useCallback(async (): Promise<boolean> => {
     try {
-      const isGranted = await checkNotificationPermissionsLib();
+      const isGranted = await SafePermissions.checkNotificationPermissions();
       setPermissions(prev => ({ ...prev, notifications: isGranted }));
       return isGranted;
     } catch (error) {
@@ -36,7 +34,7 @@ export function usePermissions() {
     try {
       setIsLoading(true);
       
-      const isGranted = await requestNotificationPermissionsLib();
+      const isGranted = await SafePermissions.requestNotificationPermissions();
       
       setPermissions(prev => ({ ...prev, notifications: isGranted }));
       
@@ -63,8 +61,7 @@ export function usePermissions() {
   // Check camera permissions without requesting them
   const checkCameraPermissions = useCallback(async (): Promise<boolean> => {
     try {
-      const { status } = await Camera.getCameraPermissionsAsync();
-      const isGranted = status === 'granted';
+      const isGranted = await SafePermissions.checkCameraPermissions();
       setPermissions(prev => ({ ...prev, camera: isGranted }));
       return isGranted;
     } catch (error) {
@@ -78,8 +75,7 @@ export function usePermissions() {
     try {
       setIsLoading(true);
       
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      const isGranted = status === 'granted';
+      const isGranted = await SafePermissions.requestCameraPermissions();
       
       setPermissions(prev => ({ ...prev, camera: isGranted }));
       

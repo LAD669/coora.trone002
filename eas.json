@@ -4,6 +4,16 @@
     "promptToConfigurePushNotifications": false
   },
   "build": {
+    "development": {
+      "ios": {
+        "distribution": "internal",
+        "developmentClient": true,
+        "simulator": false
+      },
+      "env": {
+        "EXPO_NO_NEW_ARCH": "1"
+      }
+    },
     "production": {
       "ios": {
         "distribution": "store"

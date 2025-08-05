@@ -2,7 +2,7 @@
   "expo": {
     "name": "Coora for Sport",
     "slug": "coora-for-sport",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./images/coora.icon.png",
     "scheme": "myapp",
@@ -26,7 +26,14 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "This app uses the camera to take photos for team posts and profile pictures.",
-        "NSUserNotificationUsageDescription": "This app sends notifications to keep you updated about team activities, posts, and important events."
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to save and share team photos.",
+        "NSLocationWhenInUseUsageDescription": "This app may use location services to show nearby events and team activities.",
+        "NSUserTrackingUsageDescription": "This app uses tracking to provide personalized team experiences and notifications.",
+        "NSUserNotificationUsageDescription": "This app sends notifications to keep you updated about team activities, posts, and important events.",
+        "UIBackgroundModes": [
+          "remote-notification",
+          "background-processing"
+        ]
       }
     },
     "android": {

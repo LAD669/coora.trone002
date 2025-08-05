@@ -7,6 +7,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import AppInitializer from '@/components/AppInitializer';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 function AppContent() {
   const { session, isLoading } = useSession();
@@ -46,13 +48,17 @@ function AppContent() {
 
 export default function AppLayout() {
   return (
-    <SafeAreaProvider>
-      <LanguageProvider>
-        <AuthProvider>
-          <AppContent />
-          <StatusBar style="auto" />
-        </AuthProvider>
-      </LanguageProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppInitializer>
+              <AppContent />
+              <StatusBar style="auto" />
+            </AppInitializer>
+          </AuthProvider>
+        </LanguageProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 } 
