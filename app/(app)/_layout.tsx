@@ -2,28 +2,29 @@ import React from 'react';
 import { Stack } from 'expo-router';
 import { Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
-import { useSession } from '@/contexts/AuthContext';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { LanguageProvider } from '@/contexts/LanguageContext';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import AppInitializer from '@/components/AppInitializer';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import { useSession, useAuth } from '@/contexts/AuthContext';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 function AppContent() {
-  const { session, isLoading } = useSession();
+  const { session, isLoading, isInitialized } = useSession();
+  const { user } = useAuth();
 
-  // Show loading state
-  if (isLoading) {
+  // Add safety logging
+  console.log('AppContent: isInitialized:', isInitialized, 'isLoading:', isLoading, 'session:', session ? 'exists' : 'null', 'session user ID:', session?.user?.id, 'user:', user ? 'exists' : 'null', 'user ID:', user?.id);
+
+  // Show loading state while initializing or loading
+  if (!isInitialized || isLoading) {
+    console.log('AppContent: Showing loading state');
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Loading...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+        <LoadingScreen message="Initializing COORA..." />
       </View>
     );
   }
 
-  // Redirect to auth login if no session
-  if (!session) {
+  // Redirect to auth login if no session or no valid user
+  if (!session || !session.user?.id || !user || !user.id) {
+    console.log('AppContent: No valid session or user found, redirecting to login');
     return <Redirect href="/(auth)/login" />;
   }
 
@@ -47,18 +48,5 @@ function AppContent() {
 }
 
 export default function AppLayout() {
-  return (
-    <ErrorBoundary>
-      <SafeAreaProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <AppInitializer>
-              <AppContent />
-              <StatusBar style="auto" />
-            </AppInitializer>
-          </AuthProvider>
-        </LanguageProvider>
-      </SafeAreaProvider>
-    </ErrorBoundary>
-  );
+  return <AppContent />;
 } 

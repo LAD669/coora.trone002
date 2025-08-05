@@ -51,7 +51,7 @@ export function useFrameworkReady() {
         clearInterval(readyCheckInterval.current);
         readyCheckInterval.current = null;
       }
-    }, 10000); // 10 second timeout
+    }, 15000); // 15 second timeout - increased for safety
   }, [checkNavigationReady]);
 
   // Cleanup function

@@ -39,12 +39,14 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children, isAppReady = false }: AuthProviderProps) {
+  console.log('AuthProvider initialized with isAppReady:', isAppReady);
+  
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [isSessionRestoreFailed, setIsSessionRestoreFailed] = useState(false);
-  const [session, setSession] = useState<any>(null); // Add session state
+  const [session, setSession] = useState<any>(null); // Initialize session as null
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
   const navigationAttempted = useRef(false);
@@ -52,15 +54,50 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
   const router = useRouter();
   const { safeReplace } = useNavigationGuard(isAppReady);
 
-  // Set root layout mounted ref after a small timeout
+  // Safety function to safely set session
+  const safeSetSession = (newSession: any) => {
+    console.log('Setting session:', newSession ? 'exists' : 'null', 'user ID:', newSession?.user?.id);
+    console.log('Previous session state:', session ? 'exists' : 'null');
+    setSession(newSession);
+  };
+
+  // Set root layout mounted ref after a longer timeout to ensure proper mounting
   useEffect(() => {
     const timer = setTimeout(() => {
       rootLayoutMounted.current = true;
       console.log('Root layout mounted, navigation enabled');
-    }, 200);
+    }, 1000); // Increased delay to ensure proper mounting
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Log when isAppReady changes
+  useEffect(() => {
+    console.log('isAppReady changed to:', isAppReady);
+  }, [isAppReady]);
+
+  // Log when session changes
+  useEffect(() => {
+    console.log('Session state changed:', session ? 'exists' : 'null', 'user ID:', session?.user?.id);
+  }, [session]);
+
+  // Check if user state is valid and redirect to login if not
+  useEffect(() => {
+    // Only check after initialization is complete and not loading
+    if (isInitialized && !isLoading && user && !user.id) {
+      console.log('User exists but has no ID, redirecting to login');
+      setUser(null);
+      // Add delay to ensure navigation is safe
+      setTimeout(() => {
+        navigateToLogin();
+      }, 500);
+    }
+  }, [user, isInitialized, isLoading]);
+
+  // Helper function to validate user state
+  const isValidUser = (user: User | null): boolean => {
+    return user !== null && user.id !== undefined && user.id !== null && user.id !== '';
+  };
 
   // Verify and set user data (no navigation)
   const verifyAndSetUser = async (userId: string): Promise<boolean> => {
@@ -83,13 +120,13 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
       
       // Step 3: Check if session is expired
       const now = Math.floor(Date.now() / 1000);
-      if (sessionData.expires_at && sessionData.expires_at < now) {
+      if (sessionData?.expires_at && sessionData.expires_at < now) {
         console.log('Session expired, skipping user verification');
         return false;
       }
       
       // Step 4: Ensure session user ID is present before proceeding
-      if (!sessionData.user?.id) {
+      if (!sessionData?.user?.id) {
         console.log('Session user ID not available, skipping user verification');
         return false;
       }
@@ -111,6 +148,12 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
       console.log('User verified, fetching profile...');
       const userProfile = await getUserProfile(userId);
       
+      // Safety check: ensure userProfile has an ID
+      if (!userProfile || !userProfile.id) {
+        console.error('User profile has no ID, verification failed');
+        return false;
+      }
+      
       setUser({
         id: userProfile.id,
         name: userProfile.name,
@@ -130,10 +173,14 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
 
   // Navigate to login with loop prevention and root layout check
   const navigateToLogin = () => {
+    console.log('navigateToLogin called - navigationAttempted:', navigationAttempted.current, 'rootLayoutMounted:', rootLayoutMounted.current, 'isAppReady:', isAppReady);
     if (!navigationAttempted.current && rootLayoutMounted.current && isAppReady) {
       navigationAttempted.current = true;
       console.log('Navigating to login screen');
-      safeReplace('/auth/login');
+      // Add a small delay to ensure navigation is safe
+      setTimeout(() => {
+        safeReplace('/(auth)/login');
+      }, 100);
     } else {
       console.log('Navigation blocked - root layout not ready or navigation already attempted');
     }
@@ -141,10 +188,21 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
 
   // Navigate to home with loop prevention and root layout check
   const navigateToHome = () => {
+    console.log('navigateToHome called - navigationAttempted:', navigationAttempted.current, 'rootLayoutMounted:', rootLayoutMounted.current, 'isAppReady:', isAppReady, 'session:', session ? 'exists' : 'null', 'user:', user ? 'exists' : 'null', 'user ID:', user?.id);
+    
+    // Additional safety check - only navigate if we have a valid session and user
+    if (!session || !session.user?.id || !user || !user.id) {
+      console.log('Navigation blocked - no valid session or user');
+      return;
+    }
+    
     if (!navigationAttempted.current && rootLayoutMounted.current && isAppReady) {
       navigationAttempted.current = true;
       console.log('Navigating to home screen');
-      safeReplace('/(tabs)');
+      // Add a small delay to ensure navigation is safe
+      setTimeout(() => {
+        safeReplace('/(app)/(tabs)');
+      }, 100);
     } else {
       console.log('Navigation blocked - root layout not ready or navigation already attempted');
     }
@@ -171,8 +229,8 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         throw error;
       }
 
-      // Set session state
-      setSession(session);
+      // Set session state (can be null)
+      safeSetSession(session);
 
       // Step 2: If session is missing or expired, do not call getUser()
       if (!session) {
@@ -187,7 +245,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
 
       // Step 3: Check if session is expired
       const now = Math.floor(Date.now() / 1000);
-      if (session.expires_at && session.expires_at < now) {
+      if (session?.expires_at && session.expires_at < now) {
         console.log('Session expired, setting user to null');
         setUser(null);
         setIsSessionRestoreFailed(false);
@@ -198,7 +256,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
       }
 
       // Step 4: Ensure session user ID is present before proceeding
-      if (!session.user?.id) {
+      if (!session?.user?.id) {
         console.log('Session user ID not available, setting user to null');
         setUser(null);
         setIsSessionRestoreFailed(false);
@@ -209,7 +267,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
       }
 
       // Step 5: Only proceed if we have a valid session with user
-      if (session.user) {
+      if (session?.user) {
         console.log('Active session found, verifying user...');
         const success = await verifyAndSetUser(session.user.id);
         if (!success) {
@@ -280,21 +338,34 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
   // Listen for auth state changes
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, sessionData) => {
-      console.log('Auth state changed:', event);
+      console.log('Auth state changed:', event, 'sessionData:', sessionData ? 'exists' : 'null');
+      
+      // Always update session state first (can be null)
+      safeSetSession(sessionData);
+      resetNavigationState();
+      
+      // Small delay to ensure session state is updated
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       // Early return if session is null or undefined
       if (!sessionData) {
         console.log('Session is null/undefined, clearing user state');
-        setSession(null);
         setUser(null);
         setIsLoading(false);
         setIsSessionRestoreFailed(false);
         setRetryCount(0);
         return;
       }
-      
-      setSession(sessionData); // Update session state
-      resetNavigationState();
+
+      // Additional check for invalid session data
+      if (!sessionData.user?.id) {
+        console.log('Session exists but has no user ID, clearing user state');
+        setUser(null);
+        setIsLoading(false);
+        setIsSessionRestoreFailed(false);
+        setRetryCount(0);
+        return;
+      }
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         // Delay any fetchUser logic until session?.user?.id is definitely present
@@ -318,8 +389,13 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
             console.log('User verification successful');
             setIsSessionRestoreFailed(false);
             setRetryCount(0);
-            // Navigate to home after successful verification
-            navigateToHome();
+            // Only navigate to home if we have a valid session
+            if (sessionData && sessionData.user?.id) {
+              console.log('Session is valid, navigating to home');
+              navigateToHome();
+            } else {
+              console.log('Session is not valid, not navigating to home');
+            }
           }
         } catch (error) {
           console.error('Error updating user state:', error);
@@ -378,6 +454,12 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         const userProfile = await getUserProfile(data.user.id);
         console.log('User profile verified successfully:', userProfile.name);
         
+        // Safety check: ensure userProfile has an ID
+        if (!userProfile || !userProfile.id) {
+          console.error('User profile has no ID, login failed');
+          throw new Error('User profile verification failed');
+        }
+        
         // Set user in context
         setUser({
           id: userProfile.id,
@@ -394,9 +476,14 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         // Force a small delay to ensure state is properly set
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // Step 3: Navigate to dashboard on successful verification
+                      // Step 3: Navigate to dashboard on successful verification
         console.log('Login successful, navigating to dashboard tab');
-        safeReplace('/(tabs)/dashboard');
+        console.log('About to call safeReplace with /(app)/(tabs)/dashboard');
+        // Add a small delay to ensure navigation is safe
+        setTimeout(() => {
+          safeReplace('/(app)/(tabs)/dashboard');
+          console.log('safeReplace called successfully');
+        }, 100);
         
       } catch (verificationError) {
         console.error('User verification failed:', verificationError);
@@ -414,7 +501,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
           console.log('User signed out successfully after verification failure');
           
           // Navigate back to login
-          safeReplace('/auth/login');
+          safeReplace('/(auth)/login');
           
         } catch (signOutError) {
           console.error('Error during sign out after verification failure:', signOutError);
@@ -422,7 +509,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
           setUser(null);
           setIsSessionRestoreFailed(false);
           setRetryCount(0);
-          safeReplace('/auth/login');
+          safeReplace('/(auth)/login');
         }
         
         // Don't throw the verification error, just log it
@@ -551,13 +638,16 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
     }
   };
 
+  // Ensure session is properly initialized even if null
+  const safeSession = session || null;
+
   const value: AuthContextType = {
     user,
     isLoading,
     isInitialized,
-    isAuthenticated: !!user,
+    isAuthenticated: isValidUser(user),
     sessionError,
-    session: session, // Add session to the context
+    session: safeSession, // Use safe session
     signIn,
     signUp,
     signOut,
@@ -567,7 +657,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
 
   // Show loading screen with fallback handling
   if (!isInitialized || isLoading) {
-    let loadingMessage = "Loading...";
+    let loadingMessage = "Initializing COORA...";
     let isError = false;
 
     if (sessionError) {
@@ -607,6 +697,12 @@ export function useAuth(): AuthContextType {
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  
+  // Add safety check for user ID
+  if (context.user && !context.user.id) {
+    console.log('useAuth: User exists but has no ID, this should trigger a redirect');
+  }
+  
   return context;
 }
 
@@ -615,5 +711,19 @@ export const useSession = () => {
   if (!context) {
     throw new Error('useSession must be used within an AuthProvider');
   }
-  return context.session;
+  
+  // Add safety logging for debugging
+  if (context.session === null) {
+    console.log('useSession: Session is null');
+  } else if (context.session === undefined) {
+    console.log('useSession: Session is undefined');
+  } else {
+    console.log('useSession: Session exists', context.session.user?.id ? 'with user' : 'without user');
+  }
+  
+  return {
+    session: context.session,
+    isLoading: context.isLoading,
+    isInitialized: context.isInitialized
+  };
 };
