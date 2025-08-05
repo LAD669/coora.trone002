@@ -4,6 +4,7 @@
     "error": "Error",
     "success": "Success",
     "save": "Save",
+    "saveChanges": "Save Changes",
     "cancel": "Cancel",
     "confirm": "Confirm",
     "delete": "Delete",
@@ -33,6 +34,7 @@
     "players_one": "{{count}} player",
     "players_other": "{{count}} players",
     "fillAllFields": "Please fill in all required fields",
+    "validEmailRequired": "Please enter a valid email address",
     "somethingWentWrong": "Something went wrong. Please try again.",
     "goalCreated": "Goal created successfully",
     "welcomeBack": "Welcome back",
@@ -100,7 +102,12 @@
     "updateTitle": "Update Title",
     "publishUpdate": "Publish Update",
     "postDetails": "Post Details",
-    "noReactionsYet": "No reactions yet"
+    "noReactionsYet": "No reactions yet",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "signIn": "Sign In",
+    "signUp": "Sign Up"
   },
   "auth": {
     "signIn": "Sign In",
@@ -112,7 +119,8 @@
     "forgotPassword": "Forgot Password?",
     "loginSuccess": "Successfully logged in",
     "signupSuccess": "Successfully signed up",
-    "signOutDescription": "Sign out of your account"
+    "signOutDescription": "Sign out of your account",
+    "signOut": "Sign Out"
   },
   "tabs": {
     "home": "Home",
@@ -143,12 +151,25 @@
     "enableTwoFactor": "Enable Two-Factor Authentication",
     "enableTwoFactorMessage": "This will add an extra layer of security to your account. You'll need to verify your identity with a second factor when signing in.",
     "disableTwoFactor": "Disable Two-Factor Authentication",
-    "disableTwoFactorMessage": "This will remove the extra security layer from your account. Are you sure?"
+    "disableTwoFactorMessage": "This will remove the extra security layer from your account. Are you sure?",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
   },
   "profile": {
     "title": "Profile",
     "editProfile": "Edit Profile",
     "personalInfo": "Personal Information",
     "preferences": "Preferences"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark All as Read",
+    "all": "All",
+    "unread": "Unread",
+    "loading": "Loading notifications...",
+    "noUnreadNotifications": "No unread notifications",
+    "noNotifications": "No notifications",
+    "allCaughtUp": "All caught up!",
+    "teamUpdatesHere": "Team updates will appear here"
   }
 } 
