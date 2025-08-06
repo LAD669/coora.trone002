@@ -23,6 +23,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.coora.app.cooraforsport",
+      "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "This app uses the camera to take photos for team posts and profile pictures.",
@@ -32,8 +33,10 @@
         "NSUserNotificationUsageDescription": "This app sends notifications to keep you updated about team activities, posts, and important events.",
         "UIBackgroundModes": [
           "remote-notification",
-          "background-processing"
-        ]
+          "background-fetch"
+        ],
+        "CFBundleDisplayName": "COORA for Sport",
+        "CFBundleName": "COORA for Sport"
       }
     },
     "android": {

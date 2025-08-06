@@ -16,7 +16,8 @@
     },
     "production": {
       "ios": {
-        "distribution": "store"
+        "distribution": "store",
+        "buildConfiguration": "Release"
       },
       "env": {
         "EXPO_NO_NEW_ARCH": "1"
