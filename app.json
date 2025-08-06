@@ -32,8 +32,7 @@
         "NSUserTrackingUsageDescription": "This app uses tracking to provide personalized team experiences and notifications.",
         "NSUserNotificationUsageDescription": "This app sends notifications to keep you updated about team activities, posts, and important events.",
         "UIBackgroundModes": [
-          "remote-notification",
-          "background-fetch"
+          "remote-notification"
         ],
         "CFBundleDisplayName": "COORA for Sport",
         "CFBundleName": "COORA for Sport"

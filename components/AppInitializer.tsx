@@ -37,7 +37,16 @@ export default function AppInitializer({ children, onInitializationComplete }: A
       }
     };
 
+    // Add a timeout to prevent infinite initialization
+    const timeout = setTimeout(() => {
+      console.warn('App initialization timeout, forcing completion');
+      setIsInitialized(true);
+      onInitializationComplete?.();
+    }, 5000); // 5 second timeout
+
     initializeApp();
+
+    return () => clearTimeout(timeout);
   }, [onInitializationComplete]);
 
   // Show loading state during initialization

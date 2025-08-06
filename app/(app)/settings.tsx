@@ -73,6 +73,11 @@ export default function SettingsScreen() {
   };
 
   const switchToAccount = async (session: StoredSession) => {
+    if (!session || !session.access_token || !session.refresh_token) {
+      Alert.alert('Error', 'Invalid session data. Please try again.');
+      return;
+    }
+
     try {
       setIsLoading(true);
       
@@ -331,22 +336,30 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Accounts</Text>
           <View style={styles.settingsGroup}>
-            {storedSessions.map((session) => (
-              <SettingItem
-                key={session.id}
-                icon={User}
-                title={session.user.name}
-                subtitle={session.user.email}
-                onPress={() => switchToAccount(session)}
-                rightComponent={
-                  currentSession?.id === session.id && (
-                    <View style={styles.activeAccountBadge}>
-                      <Text style={styles.activeAccountText}>Active</Text>
-                    </View>
-                  )
-                }
-              />
-            ))}
+            {storedSessions.map((session) => {
+              // Safe session access
+              if (!session?.user) return null;
+              
+              // Store user in variable for safe access
+              const sessionUser = session.user;
+              
+              return (
+                <SettingItem
+                  key={session?.id || 'unknown'}
+                  icon={User}
+                  title={sessionUser.name || 'Unknown User'}
+                  subtitle={sessionUser.email || 'No email'}
+                  onPress={() => session && switchToAccount(session)}
+                  rightComponent={
+                    currentSession?.id === session?.id && (
+                      <View style={styles.activeAccountBadge}>
+                        <Text style={styles.activeAccountText}>Active</Text>
+                      </View>
+                    )
+                  }
+                />
+              );
+            })}
             <SettingItem
               icon={UserPlus}
               title="Add Another Account"

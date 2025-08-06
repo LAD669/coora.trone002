@@ -1,3 +1,8 @@
+/**
+ * @deprecated This file is deprecated. Use @/contexts/AuthProvider instead.
+ * The new AuthProvider provides better session handling and prevents crashes.
+ */
+
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { router, useRouter } from 'expo-router';
 import { validateAccessCode, getUserProfile, getCurrentUser, restoreSession } from '@/lib/supabase';
@@ -238,8 +243,10 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         setUser(null);
         setIsSessionRestoreFailed(false);
         setRetryCount(0);
-        // Safe navigation to login
-        navigateToLogin();
+        // Only navigate if app is ready
+        if (isAppReady) {
+          navigateToLogin();
+        }
         return;
       }
 
@@ -250,8 +257,10 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         setUser(null);
         setIsSessionRestoreFailed(false);
         setRetryCount(0);
-        // Safe navigation to login
-        navigateToLogin();
+        // Only navigate if app is ready
+        if (isAppReady) {
+          navigateToLogin();
+        }
         return;
       }
 
@@ -261,13 +270,15 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         setUser(null);
         setIsSessionRestoreFailed(false);
         setRetryCount(0);
-        // Safe navigation to login
-        navigateToLogin();
+        // Only navigate if app is ready
+        if (isAppReady) {
+          navigateToLogin();
+        }
         return;
       }
 
       // Step 5: Only proceed if we have a valid session with user
-      if (session?.user) {
+      if (session?.user?.id) {
         console.log('Active session found, verifying user...');
         const success = await verifyAndSetUser(session.user.id);
         if (!success) {
@@ -275,23 +286,29 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
           setUser(null);
           setIsSessionRestoreFailed(false);
           setRetryCount(0);
-          // Safe navigation to login
-          navigateToLogin();
+          // Only navigate if app is ready
+          if (isAppReady) {
+            navigateToLogin();
+          }
           return;
         }
         
         console.log('User verification successful');
         setIsSessionRestoreFailed(false);
         setRetryCount(0);
-        // Safe navigation to home if verification successful
-        navigateToHome();
+        // Only navigate if app is ready
+        if (isAppReady) {
+          navigateToHome();
+        }
       } else {
         console.log('Session exists but no user found, setting user to null');
         setUser(null);
         setIsSessionRestoreFailed(false);
         setRetryCount(0);
-        // Safe navigation to login
-        navigateToLogin();
+        // Only navigate if app is ready
+        if (isAppReady) {
+          navigateToLogin();
+        }
       }
     } catch (error) {
       console.error('Error during session check:', error);
@@ -308,8 +325,10 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
         setIsSessionRestoreFailed(true);
       }
       
-      // Safe navigation to login
-      navigateToLogin();
+      // Only navigate if app is ready
+      if (isAppReady) {
+        navigateToLogin();
+      }
     } finally {
       setIsLoading(false);
       setIsInitialized(true);
@@ -334,6 +353,36 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
   useEffect(() => {
     checkStoredSession();
   }, []);
+
+  // Handle navigation when app becomes ready
+  useEffect(() => {
+    if (isAppReady && isInitialized && !isLoading) {
+      console.log('App is ready, checking if navigation is needed...');
+      
+      // If we have no session or no user, navigate to login
+      if (!session || !session.user?.id || !user || !user.id) {
+        console.log('No valid session or user, navigating to login');
+        navigateToLogin();
+      } else {
+        console.log('Valid session and user found, navigating to home');
+        navigateToHome();
+      }
+    }
+  }, [isAppReady, isInitialized, isLoading, session, user]);
+
+  // Safety timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!isInitialized || isLoading) {
+        console.warn('Initialization timeout reached, forcing completion');
+        setIsLoading(false);
+        setIsInitialized(true);
+        setSessionError('Initialization timeout. Please try again.');
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [isInitialized, isLoading]);
 
   // Listen for auth state changes
   useEffect(() => {
@@ -670,6 +719,15 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
       loadingMessage = `Retrying session restore... (${retryCount}/${maxRetries})`;
       isError = false;
     }
+
+    console.log('AuthProvider: Showing loading screen', {
+      isInitialized,
+      isLoading,
+      isAppReady,
+      sessionError,
+      isSessionRestoreFailed,
+      retryCount
+    });
 
     return (
       <LanguageProvider>

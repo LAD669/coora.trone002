@@ -2,19 +2,19 @@ import React from 'react';
 import { Stack } from 'expo-router';
 import { Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
-import { useSession, useAuth } from '@/contexts/AuthContext';
+import { useSession, useAuth } from '@/contexts/AuthProvider';
 import { LoadingScreen } from '@/components/LoadingScreen';
 
 function AppContent() {
-  const { session, isLoading, isInitialized } = useSession();
+  const { session, loading, userId } = useSession();
   const { user } = useAuth();
 
   // Add safety logging
-  console.log('AppContent: isInitialized:', isInitialized, 'isLoading:', isLoading, 'session:', session ? 'exists' : 'null', 'session user ID:', session?.user?.id, 'user:', user ? 'exists' : 'null', 'user ID:', user?.id);
+  console.log('AppContent: loading:', loading, 'session:', session === undefined ? 'initializing' : session ? 'exists' : 'null', 'userId:', userId, 'user:', user ? 'exists' : 'null');
 
-  // Show loading state while initializing or loading
-  if (!isInitialized || isLoading) {
-    console.log('AppContent: Showing loading state');
+  // Show loading state while still initializing
+  if (session === undefined) {
+    console.log('AppContent: Session still initializing, showing loading screen');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
         <LoadingScreen message="Initializing COORA..." />
@@ -22,11 +22,23 @@ function AppContent() {
     );
   }
 
-  // Redirect to auth login if no session or no valid user
-  if (!session || !session.user?.id || !user || !user.id) {
+  // Show loading state while loading (additional safety)
+  if (loading) {
+    console.log('AppContent: Showing loading state');
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+        <LoadingScreen message="Loading..." />
+      </View>
+    );
+  }
+
+  // Redirect to auth login if no session (null) or no valid user
+  if (session === null || !session?.user || !userId || !user?.id) {
     console.log('AppContent: No valid session or user found, redirecting to login');
     return <Redirect href="/(auth)/login" />;
   }
+
+  console.log('AppContent: Valid session found, rendering app');
 
   // Render Stack with all screens when session exists
   return (
