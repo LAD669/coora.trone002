@@ -1,13 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/database';
 import { storage } from './storage';
+import Constants from 'expo-constants';
 
-// Ensure environment variables are loaded
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+// Get environment variables from Expo Constants
+const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl;
+const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+  throw new Error('Missing Supabase environment variables. Please check your app.config.js file.');
 }
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
