@@ -117,9 +117,7 @@ export default function EditProfileScreen() {
       // Update local user state
       // Note: setUser is not available in AuthProvider, user updates are handled internally
       // The user will be automatically updated when the profile is saved
-        ...user,
-        name: updatedProfile.name,
-      });
+      // No need to manually update user state - it will be updated automatically
 
       Alert.alert(t.success, t.profileUpdated);
       safeBack();
