@@ -1,6 +1,7 @@
 // Re-export the supabase client from the safe client file
-export { supabase } from './supabaseClient';
+import { supabase } from './supabaseClient';
 import { storage } from './storage';
+export { supabase };
 
 // Helper functions for common operations
 export const getCurrentUser = async () => {

@@ -107,7 +107,12 @@
     "password": "Password",
     "fullName": "Full Name",
     "signIn": "Sign In",
-    "signUp": "Sign Up"
+    "signUp": "Sign Up",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phoneNumber": "Phone Number",
+    "role": "Role",
+    "profileUpdated": "Profile updated successfully"
   },
   "auth": {
     "signIn": "Sign In",
