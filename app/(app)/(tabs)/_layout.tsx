@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { Tabs, router } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { MessageSquare, Calendar, Users, ChartBar as BarChart3, Zap, Settings, Bell } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { getNotifications } from '@/lib/supabase';
 
 export default function TabLayout() {
   const { t: tabsT } = useTranslation('tabs');
   const { t: commonT } = useTranslation('common');
   const { user } = useAuth();
+  const { safePush } = useNavigationReady();
+  
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
+  
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Load notifications and count unread ones
@@ -38,7 +46,7 @@ export default function TabLayout() {
   };
 
   const handleNotifications = () => {
-            router.push('/(app)/notifications');
+            safePush('/(app)/notifications');
   };
 
   const HeaderRight = () => (
@@ -58,7 +66,7 @@ export default function TabLayout() {
       </TouchableOpacity>
       <TouchableOpacity 
         style={styles.iconButton}
-        onPress={() => router.push('/(app)/settings')}
+        onPress={() => safePush('/(app)/settings')}
       >
         <Settings size={20} color="#1A1A1A" strokeWidth={1.5} />
       </TouchableOpacity>

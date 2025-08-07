@@ -5,7 +5,8 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useNavigationReady } from '@/hooks/useNavigationReady';
 import Header from '@/components/Header';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { User, Phone, Mail, Hash, Ruler, Weight, Calendar } from 'lucide-react-native';
@@ -13,6 +14,7 @@ import { User, Phone, Mail, Hash, Ruler, Weight, Calendar } from 'lucide-react-n
 export default function PlayerDetailScreen() {
   const { t } = useLanguage();
   const params = useLocalSearchParams();
+  const { safeBack } = useNavigationReady();
   const player = params.player ? JSON.parse(params.player as string) : null;
 
   const getInitials = (name: string) => {
@@ -39,7 +41,7 @@ export default function PlayerDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <Header title="Player Details" showBackButton onBackPress={() => router.back()} />
+      <Header title="Player Details" showBackButton onBackPress={() => safeBack()} />
       
       <ScrollView 
         style={styles.scrollView}

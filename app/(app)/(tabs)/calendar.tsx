@@ -72,6 +72,12 @@ const isToday = (date: Date) => {
 
 export default function CalendarScreen() {
   const { user } = useAuth();
+  
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
+  
   const [events, setEvents] = useState<Event[]>([]);
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());

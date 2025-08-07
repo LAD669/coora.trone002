@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { X, Bell, Calendar, Users, Trophy, MessageSquare, CircleCheck as CheckCircle, Circle, Trash2 } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
@@ -18,6 +18,13 @@ import { getNotifications } from '@/lib/supabase';
 export default function NotificationsScreen() {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const { safeBack } = useNavigationReady();
+  
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
+  
   const [notifications, setNotifications] = useState<any[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -197,7 +204,7 @@ export default function NotificationsScreen() {
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.closeButton}
-          onPress={() => router.back()}
+                      onPress={() => safeBack()}
         >
           <X size={24} color="#1A1A1A" strokeWidth={1.5} />
         </TouchableOpacity>

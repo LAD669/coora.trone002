@@ -9,8 +9,8 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { X, Save } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { updateUserProfile, checkUserProfile, createUserProfile } from '@/lib/supabase';
@@ -18,6 +18,13 @@ import { updateUserProfile, checkUserProfile, createUserProfile } from '@/lib/su
 export default function EditProfileScreen() {
   const { language, t } = useLanguage();
   const { user, setUser } = useAuth();
+  const { safeBack } = useNavigationReady();
+  
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
+  
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState({
     first_name: '',
@@ -114,7 +121,7 @@ export default function EditProfileScreen() {
       });
 
       Alert.alert(t.success, t.profileUpdated);
-      router.back();
+      safeBack();
     } catch (error) {
       console.error('Error updating profile:', error);
       const errorMessage = error instanceof Error ? error.message : t.somethingWentWrong;
@@ -151,7 +158,7 @@ export default function EditProfileScreen() {
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.closeButton}
-          onPress={() => router.back()}
+                      onPress={() => safeBack()}
         >
           <X size={24} color="#1A1A1A" strokeWidth={1.5} />
         </TouchableOpacity>

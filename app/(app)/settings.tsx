@@ -9,12 +9,12 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { X, User, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight, Key, Lock, UserPlus, Camera } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import LanguageSelector from '@/components/LanguageSelector';
@@ -42,6 +42,13 @@ interface SettingItemProps {
 export default function SettingsScreen() {
   const { language, setLanguage, t } = useLanguage();
   const { user, signOut } = useAuth();
+  const { safeReplace, safePush } = useNavigationReady();
+  
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
+  
   const { permissions, requestPermission, isLoading: permissionsLoading } = usePermissions();
   const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState(true);
@@ -94,7 +101,7 @@ export default function SettingsScreen() {
       setCurrentSession(session);
 
       // Refresh the page to update the UI
-      router.replace('/(app)/(tabs)');
+      safeReplace('/(app)/(tabs)');
     } catch (error) {
       Alert.alert('Error', 'Failed to switch account. Please try again.');
     } finally {
@@ -117,7 +124,7 @@ export default function SettingsScreen() {
       };
       
       // Navigate to login screen
-      router.push('/(auth)/login');
+      safePush('/(auth)/login');
     }
   };
 
@@ -224,7 +231,7 @@ export default function SettingsScreen() {
     return (
       <TouchableOpacity 
         style={styles.profileCard}
-        onPress={() => router.push('/(app)/EditProfileScreen')}
+                      onPress={() => safePush('/(app)/EditProfileScreen')}
       >
         <View style={styles.profileAvatarContainer}>
           <View style={styles.profileInitialsContainer}>
@@ -301,7 +308,7 @@ export default function SettingsScreen() {
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.closeButton}
-          onPress={() => router.back()}
+                      onPress={() => safePush('/(app)/(tabs)')}
         >
           <X size={24} color="#1A1A1A" strokeWidth={1.5} />
         </TouchableOpacity>

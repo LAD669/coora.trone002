@@ -11,10 +11,10 @@ import {
   Alert,
 } from 'react-native';
 import Modal from 'react-native-modal';
-import { router } from 'expo-router';
 import Header from '@/components/Header';
 import PlayerCard from '@/components/PlayerCard';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { Users, Target, Plus, X, User, Phone, Calendar, Ruler, Weight, Trophy, Activity, Clock, Hash, ChevronDown } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTeamUsers, createPlayer, supabase } from '@/lib/supabase';
@@ -164,6 +164,13 @@ const formations = [
 export default function PlayerboardScreen() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { safePush } = useNavigationReady();
+  
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
+  
   // const [view, setView] = useState<'list' | 'lineup'>('list'); // LINEUP VIEW DEACTIVATED
   const [view, setView] = useState<'list' | 'lineup'>('list'); // Force list view only
   const [selectedFormation, setSelectedFormation] = useState(formations[1]);
@@ -319,7 +326,7 @@ export default function PlayerboardScreen() {
 
   const handlePlayerPress = (player: any) => {
     console.log('Player tapped:', `${player.first_name} ${player.last_name}`);
-    router.push({
+    safePush({
       pathname: '/(app)/PlayerDetailScreen',
       params: {
         player: JSON.stringify(player)

@@ -11,14 +11,15 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, UserPlus } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const { t } = useLanguage();
   const { signIn, isLoading } = useAuth();
+  const { safePush } = useNavigationReady();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -52,7 +53,7 @@ export default function LoginScreen() {
   };
 
   const handleNavigateToSignup = () => {
-    router.push('/(auth)/signup');
+    safePush('/(auth)/signup');
   };
 
   return (

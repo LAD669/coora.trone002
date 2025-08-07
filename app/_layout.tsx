@@ -6,9 +6,10 @@ import { StatusBar } from 'expo-status-bar';
 import AppInitializer from '@/components/AppInitializer';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
+import { NavigationContainer } from '@react-navigation/native';
 
 export default function RootLayout() {
-  const { isAppReady } = useFrameworkReady();
+  const { isAppReady, navigationRef } = useFrameworkReady();
 
   console.log('RootLayout: isAppReady =', isAppReady);
 
@@ -18,8 +19,10 @@ export default function RootLayout() {
         <LanguageProvider>
           <AuthProvider>
             <AppInitializer>
-              <Slot />
-              <StatusBar style="auto" />
+              <NavigationContainer ref={navigationRef}>
+                <Slot />
+                <StatusBar style="auto" />
+              </NavigationContainer>
             </AppInitializer>
           </AuthProvider>
         </LanguageProvider>

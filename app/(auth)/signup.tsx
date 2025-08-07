@@ -10,14 +10,15 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { Eye, EyeOff, Mail, Lock, User, Key, ArrowRight, ArrowLeft, LogIn } from 'lucide-react-native';
 
 export default function SignUpScreen() {
   const { t } = useLanguage();
   const { signUp, isLoading } = useAuth();
+  const { safePush } = useNavigationReady();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -75,7 +76,7 @@ export default function SignUpScreen() {
   };
 
   const handleNavigateToLogin = () => {
-    router.push('/(auth)/login');
+    safePush('/(auth)/login');
   };
 
   const updateFormData = (field: keyof typeof formData, value: string) => {
@@ -99,7 +100,7 @@ export default function SignUpScreen() {
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => safePush('/(auth)/login')}
           >
             <ArrowLeft size={24} color="#1A1A1A" strokeWidth={1.5} />
           </TouchableOpacity>
