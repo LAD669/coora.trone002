@@ -386,23 +386,23 @@ export default function DashboardScreen() {
       const now = new Date();
       
       // Filter for all completed matches (past matches only)
-      const allPastMatches = events.filter(event => 
+      const allPastMatches = events.filter((event: any) => 
         event.event_type === 'match' && 
         new Date(event.event_date) < now
       );
       
       // Sort all past matches by most recent first
-      const sortedPastMatches = allPastMatches.sort((a, b) => 
+      const sortedPastMatches = allPastMatches.sort((a: any, b: any) => 
         new Date(b.event_date).getTime() - new Date(a.event_date).getTime()
       );
       
       // Separate matches that don't have results yet
-      const completed = sortedPastMatches.filter(event => 
+      const completed = sortedPastMatches.filter((event: any) => 
         !event.match_results || event.match_results.length === 0
       );
       
       // Separate matches that already have results
-      const withResults = sortedPastMatches.filter(event => 
+      const withResults = sortedPastMatches.filter((event: any) => 
         event.match_results && event.match_results.length > 0
       );
       

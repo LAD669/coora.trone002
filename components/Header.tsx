@@ -31,7 +31,7 @@ export default function Header({ title, showBackButton, onBackPress }: HeaderPro
     try {
       const data = await getNotifications(user.teamId);
       // Count truly unread notifications (where user ID is not in read_by array)
-      const unread = (data || []).filter(notification => {
+      const unread = (data || []).filter((notification: any) => {
         const readBy = notification.read_by || [];
         return !readBy.includes(user.id);
       }).length;

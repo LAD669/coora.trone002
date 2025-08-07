@@ -43,7 +43,7 @@ export default function NotificationsScreen() {
     try {
       const data = await getNotifications(user.teamId);
       // Transform Supabase data to match component expectations
-      const transformedData = (data || []).map(notification => ({
+      const transformedData = (data || []).map((notification: any) => ({
         id: notification.id,
         type: notification.notification_type === 'event_reminder' ? 'event' : 
               notification.notification_type === 'post_match' ? 'achievement' : 'message',
@@ -182,7 +182,7 @@ export default function NotificationsScreen() {
       language === 'de' ? 'Alle Benachrichtigungen löschen' : 'Clear All Notifications',
       language === 'de' ? 'Bist du sicher, dass du alle Benachrichtigungen löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.' : 'Are you sure you want to clear all notifications? This action cannot be undone.',
       [
-        { text: t.cancel, style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         { 
           text: language === 'de' ? 'Alle löschen' : 'Clear All', 
           style: 'destructive',
@@ -208,7 +208,7 @@ export default function NotificationsScreen() {
         >
           <X size={24} color="#1A1A1A" strokeWidth={1.5} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t.notifications}</Text>
+        <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
         <TouchableOpacity 
           style={styles.headerAction}
           onPress={markAllAsRead}
@@ -218,7 +218,7 @@ export default function NotificationsScreen() {
             styles.headerActionText,
             unreadCount === 0 && styles.headerActionTextDisabled
           ]}>
-            {t.markAllRead}
+            {t('notifications.markAllRead')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -237,7 +237,7 @@ export default function NotificationsScreen() {
               styles.filterTabText,
               filter === 'all' && styles.filterTabTextActive
             ]}>
-              {t.all} ({notifications.length})
+              {t('notifications.all')} ({notifications.length})
             </Text>
           </TouchableOpacity>
           
@@ -252,7 +252,7 @@ export default function NotificationsScreen() {
               styles.filterTabText,
               filter === 'unread' && styles.filterTabTextActive
             ]}>
-              {t.unread} ({unreadCount})
+              {t('notifications.unread')} ({unreadCount})
             </Text>
           </TouchableOpacity>
         </View>
@@ -270,18 +270,18 @@ export default function NotificationsScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>{t.loading}</Text>
+            <Text style={styles.loadingText}>{t('notifications.loading')}</Text>
           </View>
         ) : filteredNotifications.length === 0 ? (
           <View style={styles.emptyState}>
             <Bell size={48} color="#E5E5E7" strokeWidth={1} />
             <Text style={styles.emptyStateTitle}>
-              {filter === 'unread' ? t.noUnreadNotifications : t.noNotifications}
+              {filter === 'unread' ? t('notifications.noUnreadNotifications') : t('notifications.noNotifications')}
             </Text>
             <Text style={styles.emptyStateSubtitle}>
               {filter === 'unread' 
-                ? t.allCaughtUp
-                : t.teamUpdatesHere
+                ? t('notifications.allCaughtUp')
+                : t('notifications.teamUpdatesHere')
               }
             </Text>
           </View>

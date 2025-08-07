@@ -88,7 +88,7 @@ export default function EditProfileScreen() {
       }
     } catch (error) {
       console.error('Error loading/creating profile:', error);
-      Alert.alert(t.error, t.somethingWentWrong);
+      Alert.alert(t('common.error'), t('common.somethingWentWrong'));
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +99,7 @@ export default function EditProfileScreen() {
 
     // Validate required fields
     if (!profile.first_name.trim() || !profile.last_name.trim()) {
-      Alert.alert(t.error, t.fillAllFields);
+      Alert.alert(t('common.error'), t('common.fillAllFields'));
       return;
     }
 
@@ -119,12 +119,12 @@ export default function EditProfileScreen() {
       // The user will be automatically updated when the profile is saved
       // No need to manually update user state - it will be updated automatically
 
-      Alert.alert(t.success, t.profileUpdated);
+      Alert.alert(t('common.success'), t('common.profileUpdated'));
       safeBack();
     } catch (error) {
       console.error('Error updating profile:', error);
-      const errorMessage = error instanceof Error ? error.message : t.somethingWentWrong;
-      Alert.alert(t.error, errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('common.somethingWentWrong');
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +135,7 @@ export default function EditProfileScreen() {
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#1A1A1A" />
-          <Text style={styles.loadingText}>{t.loading}</Text>
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
         </View>
       </View>
     );
@@ -145,7 +145,7 @@ export default function EditProfileScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{t.error}</Text>
+          <Text style={styles.loadingText}>{t('common.error')}</Text>
         </View>
       </View>
     );
@@ -161,7 +161,7 @@ export default function EditProfileScreen() {
         >
           <X size={24} color="#1A1A1A" strokeWidth={1.5} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t.editProfile}</Text>
+        <Text style={styles.headerTitle}>{t('profile.editProfile')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -169,34 +169,34 @@ export default function EditProfileScreen() {
         {/* Form Section */}
         <View style={styles.formSection}>
           <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>{t.firstName} *</Text>
+            <Text style={styles.formLabel}>{t('common.firstName')} *</Text>
             <TextInput
               style={styles.formInput}
               value={profile.first_name}
               onChangeText={(text) => setProfile(prev => ({ ...prev, first_name: text }))}
-              placeholder={t.firstName}
+              placeholder={t('common.firstName')}
               placeholderTextColor="#8E8E93"
             />
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>{t.lastName} *</Text>
+            <Text style={styles.formLabel}>{t('common.lastName')} *</Text>
             <TextInput
               style={styles.formInput}
               value={profile.last_name}
               onChangeText={(text) => setProfile(prev => ({ ...prev, last_name: text }))}
-              placeholder={t.lastName}
+              placeholder={t('common.lastName')}
               placeholderTextColor="#8E8E93"
             />
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>{t.phoneNumber}</Text>
+            <Text style={styles.formLabel}>{t('common.phoneNumber')}</Text>
             <TextInput
               style={styles.formInput}
               value={profile.phone_number}
               onChangeText={(text) => setProfile(prev => ({ ...prev, phone_number: text }))}
-              placeholder={t.phoneNumber}
+              placeholder={t('common.phoneNumber')}
               placeholderTextColor="#8E8E93"
               keyboardType="phone-pad"
             />
@@ -204,14 +204,14 @@ export default function EditProfileScreen() {
 
           {/* Read-only fields */}
           <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>{t.email}</Text>
+            <Text style={styles.formLabel}>{t('common.email')}</Text>
             <View style={styles.readOnlyField}>
               <Text style={styles.readOnlyText}>{profile.email}</Text>
             </View>
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>{t.role}</Text>
+            <Text style={styles.formLabel}>{t('common.role')}</Text>
             <View style={styles.readOnlyField}>
               <Text style={styles.readOnlyText}>{profile.role.toUpperCase()}</Text>
             </View>
@@ -226,7 +226,7 @@ export default function EditProfileScreen() {
         >
           <Save size={16} color="#FFFFFF" strokeWidth={1.5} />
           <Text style={styles.saveButtonText}>
-            {loading ? t.loading : t.saveChanges}
+            {loading ? t('common.loading') : t('common.saveChanges')}
           </Text>
         </TouchableOpacity>
       </ScrollView>

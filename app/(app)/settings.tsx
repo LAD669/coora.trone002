@@ -191,7 +191,7 @@ export default function SettingsScreen() {
               setTwoFactorAuth(true);
               Alert.alert(
                 t('common.success'),
-                `${t('settings.twoFactorAuth')} ${t('settings.enabled').toLowerCase()}!`
+                `${t('settings.twoFactorAuth')} ${t('common.enabled').toLowerCase()}!`
               );
             }
           }
@@ -210,7 +210,7 @@ export default function SettingsScreen() {
               setTwoFactorAuth(false);
               Alert.alert(
                 t('settings.disabled'),
-                `${t('settings.twoFactorAuth')} ${t('settings.disabled').toLowerCase()}.`
+                `${t('settings.twoFactorAuth')} ${t('common.disabled').toLowerCase()}.`
               );
             }
           }

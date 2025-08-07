@@ -35,7 +35,7 @@ export default function ExampleSessionUsage() {
 
   // Now we can safely access session.user properties
   const sessionUser = session.user;
-  const userName = sessionUser.name || 'Unknown User';
+  const userName = (sessionUser as any).name || 'Unknown User';
   const userEmail = sessionUser.email || 'No email';
 
   return (

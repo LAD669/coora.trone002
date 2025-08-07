@@ -131,7 +131,7 @@ export default function CalendarScreen() {
     try {
       const data = await getTeamEvents(user.teamId);
       // Transform Supabase data to match component expectations
-      const transformedEvents = (data || []).map(event => ({
+      const transformedEvents = (data || []).map((event: any) => ({
         id: event.id,
         title: event.title,
         type: event.event_type,
@@ -1175,8 +1175,8 @@ export default function CalendarScreen() {
                 <Text style={styles.responsesListTitle}>
                   {selectedEvent.type === 'match' ? 'Player Availability' : 'Training Responses'}
                 </Text>
-                {selectedEvent.event_responses && selectedEvent.event_responses.length > 0 ? (
-                  selectedEvent.event_responses.map((responseData: any) => {
+                {selectedEvent.responses && Object.keys(selectedEvent.responses).length > 0 ? (
+                  Object.entries(selectedEvent.responses).map(([userId, responseData]: [string, any]) => {
                     const ResponseIcon = getResponseIcon(responseData.response);
                     return (
                       <View key={responseData.user_id} style={styles.responseItem}>

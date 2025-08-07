@@ -42,7 +42,7 @@ type Language = 'en' | 'de';
 interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
-  t: TFunction<'common' | 'auth' | 'settings' | 'tabs' | 'profile' | 'notifications'>;
+  t: TFunction;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);

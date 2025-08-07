@@ -42,23 +42,23 @@ export default function SignUpScreen() {
     } = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = t.fillAllFields;
+      newErrors.name = t('common.fillAllFields');
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = t.fillAllFields;
+      newErrors.email = t('common.fillAllFields');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = t.validEmailRequired;
+              newErrors.email = t('common.validEmailRequired');
     }
 
     if (!formData.password.trim()) {
-      newErrors.password = t.fillAllFields;
+      newErrors.password = t('common.fillAllFields');
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
 
     if (!formData.accessCode.trim()) {
-      newErrors.accessCode = t.fillAllFields;
+      newErrors.accessCode = t('common.fillAllFields');
     }
 
     setErrors(newErrors);
@@ -71,7 +71,7 @@ export default function SignUpScreen() {
     try {
       await signUp(formData.email, formData.password, formData.name);
     } catch (error) {
-      Alert.alert(t.error, error instanceof Error ? error.message : t.somethingWentWrong);
+      Alert.alert(t('common.error'), error instanceof Error ? error.message : t('common.somethingWentWrong'));
     }
   };
 
@@ -119,12 +119,12 @@ export default function SignUpScreen() {
         <View style={styles.form}>
           {/* Name Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t.fullName}</Text>
+            <Text style={styles.inputLabel}>{t('common.fullName')}</Text>
             <View style={[styles.inputContainer, errors.name && styles.inputError]}>
               <User size={20} color="#8E8E93" strokeWidth={1.5} />
               <TextInput
                 style={styles.input}
-                placeholder={t.fullName}
+                placeholder={t('common.fullName')}
                 value={formData.name}
                 onChangeText={(text) => updateFormData('name', text)}
                 autoCapitalize="words"
@@ -136,12 +136,12 @@ export default function SignUpScreen() {
 
           {/* Email Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t.email}</Text>
+            <Text style={styles.inputLabel}>{t('common.email')}</Text>
             <View style={[styles.inputContainer, errors.email && styles.inputError]}>
               <Mail size={20} color="#8E8E93" strokeWidth={1.5} />
               <TextInput
                 style={styles.input}
-                placeholder={t.email}
+                placeholder={t('common.email')}
                 value={formData.email}
                 onChangeText={(text) => updateFormData('email', text)}
                 keyboardType="email-address"
@@ -155,12 +155,12 @@ export default function SignUpScreen() {
 
           {/* Password Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t.password}</Text>
+            <Text style={styles.inputLabel}>{t('common.password')}</Text>
             <View style={[styles.inputContainer, errors.password && styles.inputError]}>
               <Lock size={20} color="#8E8E93" strokeWidth={1.5} />
               <TextInput
                 style={styles.input}
-                placeholder={t.password}
+                placeholder={t('common.password')}
                 value={formData.password}
                 onChangeText={(text) => updateFormData('password', text)}
                 secureTextEntry={!showPassword}
@@ -207,7 +207,7 @@ export default function SignUpScreen() {
                           disabled={loading}
           >
             <Text style={styles.signUpButtonText}>
-              {loading ? t.loading : t.signUp}
+              {loading ? t('common.loading') : t('auth.signUp')}
             </Text>
                           {!loading && (
               <ArrowRight size={20} color="#FFFFFF" strokeWidth={1.5} />
@@ -234,7 +234,7 @@ export default function SignUpScreen() {
           <View style={styles.signInContainer}>
             <Text style={styles.signInText}>Already have an account? </Text>
             <TouchableOpacity onPress={handleNavigateToLogin}>
-              <Text style={styles.signInLink}>{t.signIn}</Text>
+              <Text style={styles.signInLink}>{t('auth.signIn')}</Text>
             </TouchableOpacity>
           </View>
         </View>

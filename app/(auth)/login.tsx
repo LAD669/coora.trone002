@@ -29,13 +29,13 @@ export default function LoginScreen() {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email.trim()) {
-      newErrors.email = t.fillAllFields;
+      newErrors.email = t('common.fillAllFields');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = t.validEmailRequired;
+      newErrors.email = t('common.validEmailRequired');
     }
 
     if (!password.trim()) {
-      newErrors.password = t.fillAllFields;
+      newErrors.password = t('common.fillAllFields');
     }
 
     setErrors(newErrors);
@@ -48,7 +48,7 @@ export default function LoginScreen() {
     try {
       await signIn(email, password);
     } catch (error) {
-      Alert.alert(t.error, error instanceof Error ? error.message : t.somethingWentWrong);
+      Alert.alert(t('common.error'), error instanceof Error ? error.message : t('common.somethingWentWrong'));
     }
   };
 
@@ -86,12 +86,12 @@ export default function LoginScreen() {
         <View style={styles.form}>
           {/* Email Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t.email}</Text>
+            <Text style={styles.inputLabel}>{t('common.email')}</Text>
             <View style={[styles.inputContainer, errors.email && styles.inputError]}>
               <Mail size={20} color="#8E8E93" strokeWidth={1.5} />
               <TextInput
                 style={styles.input}
-                placeholder={t.email}
+                placeholder={t('common.email')}
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
@@ -108,12 +108,12 @@ export default function LoginScreen() {
 
           {/* Password Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t.password}</Text>
+            <Text style={styles.inputLabel}>{t('common.password')}</Text>
             <View style={[styles.inputContainer, errors.password && styles.inputError]}>
               <Lock size={20} color="#8E8E93" strokeWidth={1.5} />
               <TextInput
                 style={styles.input}
-                placeholder={t.password}
+                placeholder={t('common.password')}
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
@@ -143,7 +143,7 @@ export default function LoginScreen() {
                           disabled={loading}
           >
             <Text style={styles.signInButtonText}>
-              {loading ? t.loading : t.signIn}
+              {loading ? t('common.loading') : t('auth.signIn')}
             </Text>
                           {!loading && (
               <ArrowRight size={20} color="#FFFFFF" strokeWidth={1.5} />
@@ -170,7 +170,7 @@ export default function LoginScreen() {
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
             <TouchableOpacity onPress={handleNavigateToSignup}>
-              <Text style={styles.signUpLink}>{t.signUp}</Text>
+              <Text style={styles.signUpLink}>{t('auth.signUp')}</Text>
             </TouchableOpacity>
           </View>
         </View>
