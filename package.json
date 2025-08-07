@@ -53,6 +53,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@babel/plugin-transform-nullish-coalescing-operator": "^7.25.2",
+    "@babel/plugin-transform-optional-chaining": "^7.25.2",
+    "@babel/plugin-transform-class-properties": "^7.25.2",
     "@types/react": "~18.3.12",
     "cross-env": "^10.0.0",
     "typescript": "~5.8.3"
