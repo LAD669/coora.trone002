@@ -10,14 +10,14 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { Eye, EyeOff, Mail, Lock, User, Key, ArrowRight, ArrowLeft, LogIn } from 'lucide-react-native';
 
 export default function SignUpScreen() {
   const { t } = useLanguage();
-  const { signUp, isLoading } = useAuth();
+  const { signUp, loading } = useAuth();
   const { safePush } = useNavigationReady();
   const [formData, setFormData] = useState({
     name: '',
@@ -202,14 +202,14 @@ export default function SignUpScreen() {
 
           {/* Sign Up Button */}
           <TouchableOpacity
-            style={[styles.signUpButton, isLoading && styles.signUpButtonDisabled]}
+            style={[styles.signUpButton, loading && styles.signUpButtonDisabled]}
             onPress={handleSignUp}
-            disabled={isLoading}
+                          disabled={loading}
           >
             <Text style={styles.signUpButtonText}>
-              {isLoading ? t.loading : t.signUp}
+              {loading ? t.loading : t.signUp}
             </Text>
-            {!isLoading && (
+                          {!loading && (
               <ArrowRight size={20} color="#FFFFFF" strokeWidth={1.5} />
             )}
           </TouchableOpacity>

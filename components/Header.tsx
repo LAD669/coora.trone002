@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Settings, Bell, ArrowLeft } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthProvider';
 import { useState, useEffect } from 'react';
 import { getNotifications } from '@/lib/supabase';
 

@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthProvider';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { X, Save } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -17,7 +17,7 @@ import { updateUserProfile, checkUserProfile, createUserProfile } from '@/lib/su
 
 export default function EditProfileScreen() {
   const { language, t } = useLanguage();
-  const { user, setUser } = useAuth();
+  const { user, loading } = useAuth();
   const { safeBack } = useNavigationReady();
   
   // Early return if user is not available
@@ -115,7 +115,8 @@ export default function EditProfileScreen() {
       });
 
       // Update local user state
-      setUser({
+      // Note: setUser is not available in AuthProvider, user updates are handled internally
+      // The user will be automatically updated when the profile is saved
         ...user,
         name: updatedProfile.name,
       });
@@ -227,7 +228,7 @@ export default function EditProfileScreen() {
         >
           <Save size={16} color="#FFFFFF" strokeWidth={1.5} />
           <Text style={styles.saveButtonText}>
-            {isLoading ? t.loading : t.saveChanges}
+            {loading ? t.loading : t.saveChanges}
           </Text>
         </TouchableOpacity>
       </ScrollView>

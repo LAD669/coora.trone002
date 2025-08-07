@@ -13,7 +13,7 @@ import Modal from 'react-native-modal';
 import Header from '@/components/Header';
 import { Plus, MoveHorizontal as MoreHorizontal, Heart, MessageCircle, Building2, Users, Smile } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamPosts, createPost, addPostReaction, removePostReaction } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 

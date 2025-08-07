@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthProvider';
 import { X, User, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight, Key, Lock, UserPlus, Camera } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';

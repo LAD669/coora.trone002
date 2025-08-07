@@ -3,7 +3,7 @@ import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { MessageSquare, Calendar, Users, ChartBar as BarChart3, Zap, Settings, Bell } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthProvider';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { getNotifications } from '@/lib/supabase';
 

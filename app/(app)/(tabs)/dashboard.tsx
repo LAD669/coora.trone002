@@ -13,7 +13,7 @@ import Header from '@/components/Header';
 import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleCheck, Circle, Plus, ChevronRight, Clock, X, CalendarDays, Zap } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamGoals, createTeamGoal, getTeamStats, getClubStats, getTeamUsers, getTeamEvents, submitMatchResult } from '@/lib/supabase';
 import { sendPushNotification } from '@/lib/notifications';
 

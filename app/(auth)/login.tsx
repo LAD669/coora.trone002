@@ -11,14 +11,14 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, UserPlus } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const { t } = useLanguage();
-  const { signIn, isLoading } = useAuth();
+  const { signIn, loading } = useAuth();
   const { safePush } = useNavigationReady();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -138,14 +138,14 @@ export default function LoginScreen() {
 
           {/* Sign In Button */}
           <TouchableOpacity
-            style={[styles.signInButton, isLoading && styles.signInButtonDisabled]}
+            style={[styles.signInButton, loading && styles.signInButtonDisabled]}
             onPress={handleLogin}
-            disabled={isLoading}
+                          disabled={loading}
           >
             <Text style={styles.signInButtonText}>
-              {isLoading ? t.loading : t.signIn}
+              {loading ? t.loading : t.signIn}
             </Text>
-            {!isLoading && (
+                          {!loading && (
               <ArrowRight size={20} color="#FFFFFF" strokeWidth={1.5} />
             )}
           </TouchableOpacity>

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthProvider';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { X, Bell, Calendar, Users, Trophy, MessageSquare, CircleCheck as CheckCircle, Circle, Trash2 } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';

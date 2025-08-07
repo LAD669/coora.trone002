@@ -16,7 +16,7 @@ import PlayerCard from '@/components/PlayerCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { Users, Target, Plus, X, User, Phone, Calendar, Ruler, Weight, Trophy, Activity, Clock, Hash, ChevronDown } from 'lucide-react-native';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamUsers, createPlayer, supabase } from '@/lib/supabase';
 import { getSafeKey } from '@/lib/helpers';
 
