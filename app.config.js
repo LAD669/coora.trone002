@@ -4,7 +4,7 @@ export default {
   expo: {
     name: "Coora for Sport",
     slug: "coora-for-sport",
-    version: "1.0.8",
+    version: "1.1.0",
     orientation: "portrait",
     icon: "./images/coora.icon.png",
     scheme: "myapp",
