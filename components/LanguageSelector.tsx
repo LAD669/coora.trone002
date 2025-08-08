@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   Modal,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import { X, Check } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import DynamicText from './DynamicText';
 
 interface LanguageSelectorProps {
   isVisible: boolean;
@@ -21,7 +21,7 @@ const languages = [
 ] as const;
 
 export default function LanguageSelector({ isVisible, onClose }: LanguageSelectorProps) {
-  const { language: currentLanguage, setLanguage, t } = useLanguage();
+  const { language: currentLanguage, setLanguage } = useLanguage();
 
   const handleLanguageSelect = async (languageCode: 'en' | 'de') => {
     await setLanguage(languageCode);
@@ -41,7 +41,12 @@ export default function LanguageSelector({ isVisible, onClose }: LanguageSelecto
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <X size={24} color="#1A1A1A" strokeWidth={1.5} />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>{t('settings.selectLanguage')}</Text>
+            <DynamicText
+              translationKey="settings.selectLanguage"
+              fallbackText="Select Language"
+              style={styles.modalTitle}
+              preserveHeight={true}
+            />
             <View style={styles.headerSpacer} />
           </View>
 
@@ -52,7 +57,12 @@ export default function LanguageSelector({ isVisible, onClose }: LanguageSelecto
                 style={styles.languageItem}
                 onPress={() => handleLanguageSelect(lang.code)}
               >
-                <Text style={styles.languageName}>{lang.name}</Text>
+                <DynamicText
+                  translationKey={`languages.${lang.code}`}
+                  fallbackText={lang.name}
+                  style={styles.languageName}
+                  preserveHeight={true}
+                />
                 {currentLanguage === lang.code && (
                   <Check size={20} color="#34C759" strokeWidth={1.5} />
                 )}

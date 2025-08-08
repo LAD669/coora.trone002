@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TextInput,
   Image,
   Alert,
+  Animated,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import Header from '@/components/Header';
@@ -62,6 +63,104 @@ function ErrorFallback({ error, retry }: { error: Error; retry: () => void }) {
     </View>
   );
 }
+
+// Animated Reaction Button Component
+const AnimatedReactionButton = ({ 
+  emoji, 
+  count, 
+  isActive, 
+  onPress, 
+  style 
+}: { 
+  emoji: string; 
+  count: number; 
+  isActive: boolean; 
+  onPress: () => void; 
+  style: any; 
+}) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    // Scale down then up for a nice "press" effect
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.8,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    onPress();
+  };
+
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        style={style}
+        onPress={handlePress}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.reactionEmoji}>{emoji}</Text>
+        {count > 1 && (
+          <Text style={styles.reactionEmojiCount}>{count}</Text>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// Animated Modal Reaction Button Component
+const AnimatedModalReactionButton = ({ 
+  emoji, 
+  count, 
+  isActive, 
+  onPress, 
+  style 
+}: { 
+  emoji: string; 
+  count: number; 
+  isActive: boolean; 
+  onPress: () => void; 
+  style: any; 
+}) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    // Scale down then up for a nice "press" effect
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.8,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    onPress();
+  };
+
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        style={style}
+        onPress={handlePress}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.postModalReactionEmoji}>{emoji}</Text>
+        <Text style={styles.postModalReactionCount}>{count}</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 function InfohubScreenContent() {
   const { t: commonT } = useTranslation('common');
@@ -345,17 +444,27 @@ function InfohubScreenContent() {
                 <View style={styles.postFooter}>
                   <View style={styles.reactions}>
                     {Array.isArray(post.post_reactions) && post.post_reactions.length > 0 ? (
-                      <TouchableOpacity style={styles.reactionSummary}>
+                      <View style={styles.reactionSummary}>
                         <View style={styles.reactionEmojis}>
-                          {getTopReactions(post.post_reactions).map(([emoji]) => (
-                            <Text key={emoji} style={styles.reactionEmoji}>{emoji}</Text>
+                          {getTopReactions(post.post_reactions).map(([emoji, count]) => (
+                            <AnimatedReactionButton
+                              key={emoji}
+                              emoji={emoji}
+                              count={count as number}
+                              isActive={Array.isArray(post.post_reactions) && post.post_reactions.some((r: any) => r.user_id === user?.id && r.emoji === emoji)}
+                              onPress={() => handleReaction(post.id, emoji)}
+                              style={[
+                                styles.reactionEmojiButton,
+                                Array.isArray(post.post_reactions) && post.post_reactions.some((r: any) => r.user_id === user?.id && r.emoji === emoji) && styles.reactionEmojiButtonActive
+                              ]}
+                            />
                           ))}
                         </View>
                         <Text style={styles.reactionCount}>
                           <Text>{getReactionCount(post.post_reactions)}</Text>
                           <Text> {getReactionCount(post.post_reactions) === 1 ? commonT('reaction') : commonT('reactions')}</Text>
                         </Text>
-                      </TouchableOpacity>
+                      </View>
                     ) : (
                       <View />
                     )}
@@ -510,18 +619,41 @@ function InfohubScreenContent() {
 
           {selectedPostForModal ? (
             <ScrollView style={styles.postModalContent} showsVerticalScrollIndicator={false}>
-              {/* Post Header */}
+              {/* Post Header with Author Info */}
               <View style={styles.postModalHeader}>
-                <Text style={styles.postModalDate}>
-                  {selectedPostForModal.created_at ? formatDate(new Date(selectedPostForModal.created_at)) : 'Date not available'}
-                </Text>
-                <View style={styles.postModalType}>
-                  <Text style={styles.postModalTypeText}>
-                    {selectedPostForModal.post_type === 'organization' 
-                      ? commonT('organization') 
-                      : commonT('teams')
-                    }
+                <View style={styles.postModalAuthorSection}>
+                  <View style={styles.postModalAuthorAvatar}>
+                    <Text style={styles.postModalAuthorInitials}>
+                      {selectedPostForModal.author?.first_name?.[0] || selectedPostForModal.author?.name?.[0] || '?'}
+                    </Text>
+                  </View>
+                  <View style={styles.postModalAuthorInfo}>
+                    <Text style={styles.postModalAuthorName}>
+                      {selectedPostForModal.author?.first_name && selectedPostForModal.author?.last_name 
+                        ? `${selectedPostForModal.author.first_name} ${selectedPostForModal.author.last_name}`
+                        : selectedPostForModal.author?.name || 'Unknown Author'
+                      }
+                    </Text>
+                    <Text style={styles.postModalAuthorRole}>
+                      {selectedPostForModal.author?.role === 'admin' ? 'Administrator' :
+                       selectedPostForModal.author?.role === 'trainer' ? 'Trainer' :
+                       selectedPostForModal.author?.role === 'player' ? 'Player' :
+                       selectedPostForModal.author?.role === 'parent' ? 'Parent' : 'Member'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.postModalMeta}>
+                  <Text style={styles.postModalDate}>
+                    {selectedPostForModal.created_at ? formatDate(new Date(selectedPostForModal.created_at)) : 'Date not available'}
                   </Text>
+                  <View style={styles.postModalType}>
+                    <Text style={styles.postModalTypeText}>
+                      {selectedPostForModal.post_type === 'organization' 
+                        ? commonT('organization') 
+                        : commonT('teams')
+                      }
+                    </Text>
+                  </View>
                 </View>
               </View>
 
@@ -544,20 +676,85 @@ function InfohubScreenContent() {
                 />
               )}
 
-              {/* Post Reactions */}
+              {/* Detailed Reactions Section */}
               <View style={styles.postModalReactions}>
                 <Text style={styles.postModalReactionsTitle}>{commonT('reactions')}</Text>
+                
+                {/* Quick Reaction Buttons */}
                 <View style={styles.postModalReactionsList}>
                   {Array.isArray(selectedPostForModal.post_reactions) && selectedPostForModal.post_reactions.length > 0 ? (
                     getTopReactions(selectedPostForModal.post_reactions).map(([emoji, count]) => (
-                      <View key={emoji} style={styles.postModalReactionItem}>
-                        <Text style={styles.postModalReactionEmoji}>{emoji}</Text>
-                        <Text style={styles.postModalReactionCount}>{count as number}</Text>
-                      </View>
+                      <AnimatedModalReactionButton
+                        key={emoji}
+                        emoji={emoji}
+                        count={count as number}
+                        isActive={Array.isArray(selectedPostForModal.post_reactions) && selectedPostForModal.post_reactions.some((r: any) => r.user_id === user?.id && r.emoji === emoji)}
+                        onPress={() => {
+                          handleReaction(selectedPostForModal.id, emoji);
+                          // Update the modal post data
+                          const updatedPost = posts.find(p => p.id === selectedPostForModal.id);
+                          if (updatedPost) {
+                            setSelectedPostForModal(updatedPost);
+                          }
+                        }}
+                        style={[
+                          styles.postModalReactionItem,
+                          Array.isArray(selectedPostForModal.post_reactions) && selectedPostForModal.post_reactions.some((r: any) => r.user_id === user?.id && r.emoji === emoji) && styles.postModalReactionItemActive
+                        ]}
+                      />
                     ))
                   ) : (
                     <Text style={styles.postModalNoReactions}>{commonT('noReactionsYet')}</Text>
                   )}
+                </View>
+
+                {/* Detailed Reaction Breakdown */}
+                {Array.isArray(selectedPostForModal.post_reactions) && selectedPostForModal.post_reactions.length > 0 && (
+                  <View style={styles.postModalReactionDetails}>
+                    {Object.entries(
+                      selectedPostForModal.post_reactions.reduce((acc: any, reaction: any) => {
+                        if (!acc[reaction.emoji]) {
+                          acc[reaction.emoji] = [];
+                        }
+                        acc[reaction.emoji].push(reaction.user);
+                        return acc;
+                      }, {})
+                    ).map(([emoji, users]: [string, any]) => (
+                      <View key={emoji} style={styles.postModalReactionGroup}>
+                        <View style={styles.postModalReactionGroupHeader}>
+                          <Text style={styles.postModalReactionEmoji}>{emoji}</Text>
+                          <Text style={styles.postModalReactionGroupCount}>{users.length}</Text>
+                        </View>
+                        <View style={styles.postModalReactionUsers}>
+                          {users.map((user: any, index: number) => (
+                            <View key={user.id} style={styles.postModalReactionUser}>
+                              <View style={styles.postModalReactionUserAvatar}>
+                                <Text style={styles.postModalReactionUserInitials}>
+                                  {user.first_name?.[0] || user.name?.[0] || '?'}
+                                </Text>
+                              </View>
+                              <Text style={styles.postModalReactionUserName}>
+                                {user.first_name && user.last_name 
+                                  ? `${user.first_name} ${user.last_name}`
+                                  : user.name || 'Unknown User'
+                                }
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {/* Comment Section (Placeholder for future implementation) */}
+              <View style={styles.postModalComments}>
+                <Text style={styles.postModalCommentsTitle}>Comments</Text>
+                <View style={styles.postModalCommentsPlaceholder}>
+                  <Text style={styles.postModalCommentsPlaceholderText}>
+                    Comments feature coming soon!
+                  </Text>
                 </View>
               </View>
 
@@ -759,6 +956,24 @@ const styles = StyleSheet.create({
   },
   reactionEmoji: {
     fontSize: 16,
+  },
+  reactionEmojiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 12,
+    gap: 2,
+    backgroundColor: 'transparent',
+  },
+  reactionEmojiButtonActive: {
+    backgroundColor: '#E3F2FD',
+  },
+  reactionEmojiCount: {
+    fontSize: 11,
+    color: '#8E8E93',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
   },
   reactionCount: {
     fontSize: 13,
@@ -1004,13 +1219,50 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   postModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
+  },
+  postModalAuthorSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  postModalAuthorAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E3F2FD',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  postModalAuthorInitials: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1976D2',
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  postModalAuthorInfo: {
+    flex: 1,
+  },
+  postModalAuthorName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-SemiBold',
+    marginBottom: 2,
+  },
+  postModalAuthorRole: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+  },
+  postModalMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   postModalDate: {
     fontSize: 14,
@@ -1077,6 +1329,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     gap: 6,
   },
+  postModalReactionItemActive: {
+    backgroundColor: '#E3F2FD',
+    borderWidth: 1,
+    borderColor: '#2196F3',
+  },
   postModalReactionEmoji: {
     fontSize: 18,
   },
@@ -1085,6 +1342,77 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontWeight: '500',
     fontFamily: 'Urbanist-Medium',
+  },
+  postModalReactionDetails: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  postModalReactionGroup: {
+    marginBottom: 16,
+  },
+  postModalReactionGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  postModalReactionGroupCount: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    marginLeft: 6,
+  },
+  postModalReactionUsers: {
+    paddingLeft: 24,
+  },
+  postModalReactionUser: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  postModalReactionUserAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  postModalReactionUserInitials: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Medium',
+  },
+  postModalReactionUserName: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-Regular',
+  },
+  postModalComments: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  postModalCommentsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-SemiBold',
+    marginBottom: 12,
+  },
+  postModalCommentsPlaceholder: {
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  postModalCommentsPlaceholderText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    fontStyle: 'italic',
   },
   postModalNoReactions: {
     fontSize: 14,

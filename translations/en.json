@@ -158,7 +158,12 @@
     "disableTwoFactor": "Disable Two-Factor Authentication",
     "disableTwoFactorMessage": "This will remove the extra security layer from your account. Are you sure?",
     "enabled": "Enabled",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "accounts": "Accounts"
+  },
+  "languages": {
+    "en": "English",
+    "de": "Deutsch"
   },
   "profile": {
     "title": "Profile",

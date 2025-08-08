@@ -684,40 +684,40 @@ export default function CalendarScreen() {
                   
                   {/* Response Buttons for Players */}
                   {event.requiresResponse && isPlayer && (
-                    <View style={styles.responseButtons}>
-                      <TouchableOpacity
-                        style={[
-                          styles.responseButton,
-                          styles.acceptButton,
-                          getUserResponse(event) === 'accepted' && styles.responseButtonActive
-                        ]}
-                        onPress={() => handleEventResponse(event.id, 'accepted')}
-                      >
-                        <Check size={16} color={getUserResponse(event) === 'accepted' ? '#FFFFFF' : '#34C759'} strokeWidth={2} />
-                        <Text style={[
-                          styles.responseButtonText,
-                          { color: getUserResponse(event) === 'accepted' ? '#FFFFFF' : '#34C759' }
-                        ]}>
-                          Accept
-                        </Text>
-                      </TouchableOpacity>
-                      
-                      <TouchableOpacity
-                        style={[
-                          styles.responseButton,
-                          styles.declineButton,
-                          getUserResponse(event) === 'declined' && styles.responseButtonActive
-                        ]}
-                        onPress={() => handleEventResponse(event.id, 'declined')}
-                      >
-                        <X size={16} color={getUserResponse(event) === 'declined' ? '#FFFFFF' : '#FF3B30'} strokeWidth={2} />
-                        <Text style={[
-                          styles.responseButtonText,
-                          { color: getUserResponse(event) === 'declined' ? '#FFFFFF' : '#FF3B30' }
-                        ]}>
-                          Decline
-                        </Text>
-                      </TouchableOpacity>
+                    <View style={styles.responseButtonsContainer}>
+                      <View style={styles.responseButtons}>
+                        <TouchableOpacity
+                          style={[
+                            styles.responseButton,
+                            getUserResponse(event) === 'accepted' && styles.responseButtonAccepted
+                          ]}
+                          onPress={() => handleEventResponse(event.id, 'accepted')}
+                        >
+                          <Check size={16} color={getUserResponse(event) === 'accepted' ? '#FFFFFF' : '#34C759'} strokeWidth={2} />
+                          <Text style={[
+                            styles.responseButtonText,
+                            getUserResponse(event) === 'accepted' && styles.responseButtonTextAccepted
+                          ]}>
+                            Accept
+                          </Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                          style={[
+                            styles.responseButton,
+                            getUserResponse(event) === 'declined' && styles.responseButtonDeclined
+                          ]}
+                          onPress={() => handleEventResponse(event.id, 'declined')}
+                        >
+                          <X size={16} color={getUserResponse(event) === 'declined' ? '#FFFFFF' : '#FF3B30'} strokeWidth={2} />
+                          <Text style={[
+                            styles.responseButtonText,
+                            getUserResponse(event) === 'declined' && styles.responseButtonTextDeclined
+                          ]}>
+                            Decline
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   )}
                   
@@ -1428,40 +1428,49 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Urbanist-SemiBold',
   },
-  responseButtons: {
-    flexDirection: 'row',
-    gap: 12,
+  responseButtonsContainer: {
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
+  },
+  responseButtons: {
+    flexDirection: 'row',
+    gap: 12,
   },
   responseButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E5E5E7',
+    backgroundColor: '#FFFFFF',
     gap: 8,
+    minHeight: 48,
   },
-  acceptButton: {
-    backgroundColor: '#34C75915',
-    borderColor: '#34C75950',
+  responseButtonAccepted: {
+    backgroundColor: '#34C759',
+    borderColor: '#34C759',
   },
-  declineButton: {
-    backgroundColor: '#FF3B3015',
-    borderColor: '#FF3B3050',
-  },
-  responseButtonActive: {
-    borderWidth: 2,
+  responseButtonDeclined: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FF3B30',
   },
   responseButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    fontFamily: 'Urbanist-Medium',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Urbanist-SemiBold',
+    color: '#1A1A1A',
+  },
+  responseButtonTextAccepted: {
+    color: '#FFFFFF',
+  },
+  responseButtonTextDeclined: {
+    color: '#FF3B30',
   },
   repeatIndicator: {
     width: 16,
@@ -1734,10 +1743,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     backgroundColor: '#FFF9E6',
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#FFE066',
   },
@@ -1749,7 +1758,7 @@ const styles = StyleSheet.create({
   },
   finalResponseIndicator: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 12,
     marginLeft: 8,
   },

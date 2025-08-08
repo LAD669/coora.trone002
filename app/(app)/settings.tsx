@@ -18,6 +18,7 @@ import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import LanguageSelector from '@/components/LanguageSelector';
+import DynamicText from '@/components/DynamicText';
 
 interface StoredSession {
   id: string;
@@ -155,12 +156,13 @@ export default function SettingsScreen() {
   };
 
   const handleLanguageChange = (newLanguage: 'en' | 'de') => {
+    const { tSafe } = useLanguage();
     const languageName = newLanguage === 'en' ? 'English' : 'Deutsch';
     setLanguage(newLanguage);
     setLanguageModalVisible(false);
     Alert.alert(
-      t('settings.languageChanged'),
-      t('settings.languageChangedMessage', { language: languageName })
+      tSafe('settings.languageChanged', 'Language Changed'),
+      tSafe('settings.languageChangedMessage', 'Language has been changed to {language}. The app will restart to apply changes.', { language: languageName })
     );
   };
 
@@ -312,7 +314,12 @@ export default function SettingsScreen() {
         >
           <X size={24} color="#1A1A1A" strokeWidth={1.5} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
+        <DynamicText
+          translationKey="settings.title"
+          fallbackText="Settings"
+          style={styles.headerTitle}
+          preserveHeight={true}
+        />
         <View style={styles.headerSpacer} />
       </View>
 
@@ -322,7 +329,12 @@ export default function SettingsScreen() {
 
         {/* Account Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
+          <DynamicText
+          translationKey="settings.account"
+          fallbackText="Account"
+          style={styles.sectionTitle}
+          preserveHeight={true}
+        />
           <View style={styles.settingsGroup}>
             <SettingItem
               icon={Key}
@@ -341,7 +353,12 @@ export default function SettingsScreen() {
 
         {/* Accounts Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Accounts</Text>
+          <DynamicText
+          translationKey="settings.accounts"
+          fallbackText="Accounts"
+          style={styles.sectionTitle}
+          preserveHeight={true}
+        />
           <View style={styles.settingsGroup}>
             {storedSessions.map((session) => {
               // Safe session access
@@ -423,7 +440,12 @@ export default function SettingsScreen() {
 
         {/* Preferences */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.preferences')}</Text>
+          <DynamicText
+          translationKey="settings.preferences"
+          fallbackText="Preferences"
+          style={styles.sectionTitle}
+          preserveHeight={true}
+        />
           <View style={styles.settingsGroup}>
             <SettingItem
               icon={Globe}
@@ -464,7 +486,12 @@ export default function SettingsScreen() {
 
         {/* App Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.app')}</Text>
+          <DynamicText
+          translationKey="settings.app"
+          fallbackText="App"
+          style={styles.sectionTitle}
+          preserveHeight={true}
+        />
           <View style={styles.settingsGroup}>
             <SettingItem
               icon={HelpCircle}

@@ -143,7 +143,12 @@
     "enableTwoFactor": "Zwei-Faktor-Authentifizierung aktivieren",
     "enableTwoFactorMessage": "Dies fügt Ihrem Konto eine zusätzliche Sicherheitsebene hinzu. Sie müssen Ihre Identität bei der Anmeldung mit einem zweiten Faktor verifizieren.",
     "disableTwoFactor": "Zwei-Faktor-Authentifizierung deaktivieren",
-    "disableTwoFactorMessage": "Dies entfernt die zusätzliche Sicherheitsebene von Ihrem Konto. Sind Sie sicher?"
+    "disableTwoFactorMessage": "Dies entfernt die zusätzliche Sicherheitsebene von Ihrem Konto. Sind Sie sicher?",
+    "accounts": "Konten"
+  },
+  "languages": {
+    "en": "English",
+    "de": "Deutsch"
   },
   "profile": {
     "title": "Profil",

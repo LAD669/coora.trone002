@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Modal from 'react-native-modal';
 import Header from '@/components/Header';
-import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleCheck, Circle, Plus, ChevronRight, Clock, X, CalendarDays, Zap } from 'lucide-react-native';
+import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleCheck, Circle, Plus, ChevronRight, Clock, X, CalendarDays, Zap, ChevronDown } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
@@ -1320,7 +1320,9 @@ export default function DashboardScreen() {
                       placeholder="0"
                     />
                   </View>
-                  <Text style={styles.scoreDivider}>-</Text>
+                  <View style={styles.scoreDividerContainer}>
+                    <Text style={styles.scoreDivider}>:</Text>
+                  </View>
                   <View style={styles.scoreInput}>
                     <Text style={styles.scoreLabel}>{commonT('opponent')}</Text>
                     <TextInput
@@ -1351,64 +1353,47 @@ export default function DashboardScreen() {
                 <Text style={styles.limitText}>
                   {matchResult.goals.length}/{matchResult.teamScore} goal scorer{matchResult.teamScore === 1 ? '' : 's'} assigned
                 </Text>
-                {matchResult.goals.map((goal, index) => {
-                  console.log(`🎯 Rendering goal ${index}:`, {
-                    goalIndex: index,
-                    goalPlayerId: goal.playerId,
-                    goalPlayerName: goal.playerName,
-                    allGoals: matchResult.goals.map(g => ({ playerId: g.playerId, playerName: g.playerName }))
-                  });
-                  
-                  return (
-                    <View key={`goal-${index}`} style={styles.statInputRow}>
-                      <View style={styles.playerSelectContainer}>
-                        <Text style={styles.playerSelectLabel}>Goal {index + 1}:</Text>
+                {matchResult.goals.map((goal, index) => (
+                  <View key={`goal-${index}`} style={styles.statInputRow}>
+                    <View style={styles.playerSelectContainer}>
+                      <Text style={styles.playerSelectLabel}>Goal {index + 1}:</Text>
+                      <TouchableOpacity 
+                        style={styles.playerDropdown}
+                        onPress={() => {
+                          // Toggle dropdown visibility for this goal
+                          // For now, we'll show all players in a scrollable list
+                        }}
+                      >
                         <Text style={styles.selectedPlayerText}>
                           {selectedGoalUsers[index] ? 
                             teamPlayers.find(p => p.user_id === selectedGoalUsers[index])?.name || 
                             'Unknown Player' 
-                            : 'No player selected'
+                            : 'Select player'
                           }
                         </Text>
+                        <ChevronRight size={16} color="#8E8E93" strokeWidth={1.5} />
+                      </TouchableOpacity>
                       <View style={styles.playerSelect}>
-                        {(() => {
-                          console.log(`🎯 Rendering goal ${index} players:`, {
-                            totalTeamPlayers: teamPlayers.length,
-                            players: teamPlayers.map(p => ({
-                              user_id: p.user_id,
-                              name: p.name,
-                              role: p.role
-                            }))
-                          });
-                          return teamPlayers.map((player, playerIndex) => {
-                            const isSelected = selectedGoalUsers[index] === player.user_id;
-                            console.log(`🎯 Goal ${index} - Player ${player.user_id}:`, {
-                              goalIndex: index,
-                              playerUserId: player.user_id,
-                              selectedGoalUsers: selectedGoalUsers,
-                              isSelected,
-                              playerName: player.name
-                            });
-                            
-                            return (
-                              <TouchableOpacity
-                                key={generatePlayerKey('goal', index, player, playerIndex)}
-                                style={[
-                                  styles.playerOption,
-                                  isSelected && styles.playerOptionSelected
-                                ]}
-                                onPress={() => updateGoalPlayer(index, player.user_id)}
-                              >
-                                <Text style={[
-                                  styles.playerOptionText,
-                                  isSelected && styles.playerOptionTextSelected
-                                ]}>
-                                  {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player'}
-                                </Text>
-                              </TouchableOpacity>
-                            );
-                          });
-                        })()}
+                        {teamPlayers.map((player, playerIndex) => {
+                          const isSelected = selectedGoalUsers[index] === player.user_id;
+                          return (
+                            <TouchableOpacity
+                              key={generatePlayerKey('goal', index, player, playerIndex)}
+                              style={[
+                                styles.playerOption,
+                                isSelected && styles.playerOptionSelected
+                              ]}
+                              onPress={() => updateGoalPlayer(index, player.user_id)}
+                            >
+                              <Text style={[
+                                styles.playerOptionText,
+                                isSelected && styles.playerOptionTextSelected
+                              ]}>
+                                {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player'}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
                       </View>
                     </View>
                     <TouchableOpacity 
@@ -1418,8 +1403,7 @@ export default function DashboardScreen() {
                       <X size={16} color="#FF3B30" strokeWidth={1.5} />
                     </TouchableOpacity>
                   </View>
-                );
-                })}
+                ))}
               </View>
 
               {/* Assists Section */}
@@ -1438,52 +1422,43 @@ export default function DashboardScreen() {
                   <View key={index} style={styles.statInputRow}>
                     <View style={styles.playerSelectContainer}>
                       <Text style={styles.playerSelectLabel}>Assist {index + 1}:</Text>
-                                              <Text style={styles.selectedPlayerText}>
+                      <TouchableOpacity 
+                        style={styles.playerDropdown}
+                        onPress={() => {
+                          // Toggle dropdown visibility for this assist
+                          // For now, we'll show all players in a scrollable list
+                        }}
+                      >
+                        <Text style={styles.selectedPlayerText}>
                           {selectedAssistUsers[index] ? 
                             teamPlayers.find(p => p.user_id === selectedAssistUsers[index])?.name || 
                             'Unknown Player' 
-                            : 'No player selected'
+                            : 'Select player'
                           }
                         </Text>
+                        <ChevronRight size={16} color="#8E8E93" strokeWidth={1.5} />
+                      </TouchableOpacity>
                       <View style={styles.playerSelect}>
-                        {(() => {
-                          console.log(`🎯 Rendering assist ${index} players:`, {
-                            totalTeamPlayers: teamPlayers.length,
-                            players: teamPlayers.map(p => ({
-                              user_id: p.user_id,
-                              name: p.name,
-                              role: p.role
-                            }))
-                          });
-                          return teamPlayers.map((player, playerIndex) => {
-                            const isSelected = selectedAssistUsers[index] === player.user_id;
-                            console.log(`🎯 Assist ${index} - Player ${player.user_id}:`, {
-                              assistIndex: index,
-                              playerUserId: player.user_id,
-                              selectedAssistUsers: selectedAssistUsers,
-                              isSelected,
-                              playerName: player.name
-                            });
-                            
-                            return (
-                              <TouchableOpacity
-                                key={generatePlayerKey('assist', index, player, playerIndex)}
-                                style={[
-                                  styles.playerOption,
-                                  isSelected && styles.playerOptionSelected
-                                ]}
-                                onPress={() => updateAssistPlayer(index, player.user_id)}
-                              >
-                                <Text style={[
-                                  styles.playerOptionText,
-                                  isSelected && styles.playerOptionTextSelected
-                                ]}>
-                                  {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player'}
-                                </Text>
-                              </TouchableOpacity>
-                            );
-                          });
-                        })()}
+                        {teamPlayers.map((player, playerIndex) => {
+                          const isSelected = selectedAssistUsers[index] === player.user_id;
+                          return (
+                            <TouchableOpacity
+                              key={generatePlayerKey('assist', index, player, playerIndex)}
+                              style={[
+                                styles.playerOption,
+                                isSelected && styles.playerOptionSelected
+                              ]}
+                              onPress={() => updateAssistPlayer(index, player.user_id)}
+                            >
+                              <Text style={[
+                                styles.playerOptionText,
+                                isSelected && styles.playerOptionTextSelected
+                              ]}>
+                                {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player'}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
                       </View>
                     </View>
                     <TouchableOpacity 
@@ -1897,11 +1872,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 24,
+    gap: 32,
+    backgroundColor: '#F8F9FA',
+    padding: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
   scoreInput: {
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   scoreLabel: {
     fontSize: 14,
@@ -1910,23 +1890,28 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   scoreField: {
-    width: 80,
-    height: 60,
+    width: 100,
+    height: 80,
     borderWidth: 2,
-    borderColor: '#E5E5E7',
-    borderRadius: 12,
-    fontSize: 24,
-    fontWeight: '600',
+    borderColor: '#1A1A1A',
+    borderRadius: 16,
+    fontSize: 32,
+    fontWeight: '700',
     color: '#1A1A1A',
-    fontFamily: 'Urbanist-SemiBold',
+    fontFamily: 'Urbanist-Bold',
     textAlign: 'center',
     backgroundColor: '#FFFFFF',
   },
+  scoreDividerContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
   scoreDivider: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#8E8E93',
-    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-Bold',
   },
   statsInputSection: {
     marginBottom: 24,
@@ -1987,12 +1972,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    backgroundColor: '#F8F9FA',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#F0F0F0',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   playerSelectContainer: {
     flex: 1,
@@ -2003,6 +1996,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Medium',
     marginBottom: 8,
   },
+  playerDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5E7',
+    marginBottom: 8,
+  },
   playerSelect: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -2010,18 +2015,20 @@ const styles = StyleSheet.create({
   },
   playerOption: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E5E7',
+    marginRight: 8,
+    marginBottom: 8,
   },
   playerOptionSelected: {
     backgroundColor: '#1A1A1A',
     borderColor: '#1A1A1A',
   },
   playerOptionText: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#1A1A1A',
     fontWeight: '500',
     fontFamily: 'Urbanist-Medium',
@@ -2030,26 +2037,36 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   removeStatButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#FFF5F5',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 12,
+    marginLeft: 16,
+    borderWidth: 1,
+    borderColor: '#FFE5E5',
   },
   submitResultButton: {
     backgroundColor: '#1A1A1A',
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 18,
+    borderRadius: 16,
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 32,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   submitResultButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 18,
+    fontWeight: '600',
     color: '#FFFFFF',
-    fontFamily: 'Urbanist-Medium',
+    fontFamily: 'Urbanist-SemiBold',
   },
   goalCard: {
     backgroundColor: '#FFFFFF',

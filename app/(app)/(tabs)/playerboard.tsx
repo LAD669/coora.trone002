@@ -385,10 +385,10 @@ export default function PlayerboardScreen() {
               name={`${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown User'}
               position={player.position}
               jerseyNumber={player.jersey_number}
-              backgroundColor={player.role === 'trainer' ? '#E6E6E6' : '#F8F8F8'}
               goals={player.goals}
               assists={player.assists}
               trainingsAccepted={player.trainingsAccepted}
+              role={player.role}
               onPress={() => handlePlayerPress(player)}
             />
           ))}

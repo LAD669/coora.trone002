@@ -361,8 +361,25 @@ export const getTeamPosts = async (teamId: string, postType?: 'organization' | '
     .from('posts')
     .select(`
       *,
-      users(name),
-      post_reactions(emoji, user_id)
+      author:users!posts_author_id_fkey(
+        id,
+        name,
+        first_name,
+        last_name,
+        role
+      ),
+      post_reactions(
+        emoji,
+        user_id,
+        created_at,
+        user:users(
+          id,
+          name,
+          first_name,
+          last_name,
+          role
+        )
+      )
     `)
     .eq('team_id', teamId)
     .order('created_at', { ascending: false });

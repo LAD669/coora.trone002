@@ -10,6 +10,7 @@ interface PlayerCardProps {
   goals?: number;
   assists?: number;
   trainingsAccepted?: number;
+  role?: 'trainer' | 'player' | 'admin' | 'parent';
   onPress?: () => void;
 }
 
@@ -22,6 +23,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   goals,
   assists,
   trainingsAccepted,
+  role,
   onPress,
 }) => {
   const getInitials = (name: string) => {
@@ -36,14 +38,21 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
     <View style={[styles.card, { backgroundColor }]}>
       {/* Main content row */}
       <View style={styles.mainRow}>
-        <View style={styles.profileImage}>
+        <View style={[styles.profileImage, role === 'trainer' && styles.trainerProfileImage]}>
           <Text style={styles.profileInitials}>
             {getInitials(name)}
           </Text>
         </View>
         <View style={styles.infoContainer}>
           <Text style={styles.name}>{name}</Text>
-          {position && <Text style={styles.position}>{position}</Text>}
+          <View style={styles.positionRow}>
+            {position && <Text style={styles.position}>{position}</Text>}
+            {role === 'trainer' && (
+              <View style={styles.trainerBadge}>
+                <Text style={styles.trainerBadgeText}>Trainer</Text>
+              </View>
+            )}
+          </View>
         </View>
         {jerseyNumber && (
           <View style={styles.numberPill}>
@@ -92,17 +101,19 @@ const styles = StyleSheet.create({
     width: 'auto',
   },
   card: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    padding: 16,
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
   mainRow: {
     flexDirection: 'row',
@@ -113,69 +124,87 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#E9ECEF',
+    backgroundColor: '#F8F9FA',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   profileInitials: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#495057',
-    fontFamily: 'Urbanist-Bold',
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-SemiBold',
   },
   infoContainer: {
     flex: 1,
     justifyContent: 'center',
   },
   name: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#212529',
-    fontFamily: 'Urbanist-Bold',
-    marginBottom: 2,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-SemiBold',
+    marginBottom: 4,
+  },
+  positionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   position: {
     fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+  },
+  trainerBadge: {
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  trainerBadgeText: {
+    fontSize: 11,
     fontWeight: '500',
-    color: '#6C757D',
+    color: '#1976D2',
     fontFamily: 'Urbanist-Medium',
   },
+  trainerProfileImage: {
+    backgroundColor: '#E3F2FD',
+  },
   numberPill: {
-    backgroundColor: '#212529',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    backgroundColor: '#1A1A1A',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 16,
   },
   numberText: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: '#FFFFFF',
-    fontFamily: 'Urbanist-Bold',
+    fontFamily: 'Urbanist-SemiBold',
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 12,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E9ECEF',
+    borderTopColor: '#F0F0F0',
   },
   statItem: {
     alignItems: 'center',
     flex: 1,
   },
   statValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#212529',
-    fontFamily: 'Urbanist-Bold',
-    marginBottom: 2,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-SemiBold',
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#6C757D',
-    fontFamily: 'Urbanist-Medium',
+    fontSize: 12,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
   },
 });
 

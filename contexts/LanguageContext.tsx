@@ -12,7 +12,7 @@ import de from '../translations/de.json';
 
 const LANGUAGE_STORAGE_KEY = '@app_language';
 
-// Initialize i18next
+// Initialize i18next with enhanced configuration
 i18next
   .use(initReactI18next)
   .init({
@@ -30,7 +30,16 @@ i18next
     },
     compatibilityJSON: 'v3',
     defaultNS: 'common',
-    ns: ['common', 'auth', 'settings', 'tabs', 'profile', 'notifications']
+    ns: ['common', 'auth', 'settings', 'tabs', 'profile', 'notifications'],
+    // Enhanced configuration for better fallback handling
+    saveMissing: true,
+    missingKeyHandler: (lng, ns, key, fallbackValue) => {
+      console.warn(`Missing translation key: ${key} for language: ${lng}`);
+      return fallbackValue || key;
+    },
+    // Ensure proper plural handling
+    pluralSeparator: '_',
+    contextSeparator: '_'
   });
 
 // Add custom plural rule handler
@@ -43,6 +52,12 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
   t: TFunction;
+  // Enhanced translation function with better fallback handling
+  tSafe: (key: string, options?: any) => string;
+  // Function to check if a translation key exists
+  hasTranslation: (key: string) => boolean;
+  // Function to get text length for layout calculations
+  getTextLength: (key: string, options?: any) => number;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -54,6 +69,44 @@ interface LanguageProviderProps {
 export function LanguageProvider({ children }: LanguageProviderProps) {
   const [language, setLanguageState] = useState<Language>('en');
   const { t } = useTranslation(['common', 'auth', 'settings', 'tabs', 'profile', 'notifications']);
+
+  // Enhanced translation function with better fallback handling
+  const tSafe = (key: string, options?: any): string => {
+    try {
+      const translation = t(key, options);
+      // If the translation is the same as the key, it means the key wasn't found
+      if (translation === key) {
+        console.warn(`Translation key not found: ${key}, falling back to English`);
+        // Try to get the English translation as fallback
+        const englishTranslation = i18next.t(key, { ...options, lng: 'en' });
+        return englishTranslation !== key ? englishTranslation : key;
+      }
+      return translation;
+    } catch (error) {
+      console.error(`Error translating key: ${key}`, error);
+      return key;
+    }
+  };
+
+  // Check if a translation key exists
+  const hasTranslation = (key: string): boolean => {
+    try {
+      const translation = t(key);
+      return translation !== key;
+    } catch {
+      return false;
+    }
+  };
+
+  // Get text length for layout calculations
+  const getTextLength = (key: string, options?: any): number => {
+    try {
+      const translation = tSafe(key, options);
+      return translation.length;
+    } catch {
+      return key.length;
+    }
+  };
 
   // Load saved language on app start
   useEffect(() => {
@@ -84,7 +137,10 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
   const value: LanguageContextType = {
     language,
     setLanguage,
-    t
+    t,
+    tSafe,
+    hasTranslation,
+    getTextLength
   };
 
   return (
