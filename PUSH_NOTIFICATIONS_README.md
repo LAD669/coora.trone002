@@ -244,6 +244,12 @@ Die Funktion behandelt folgende Fehlertypen:
 
 Das Goal- und Assist-System ermöglicht die detaillierte Erfassung von Torschützen und Vorlagengebern mit optionaler Minute-Eingabe für jeden Match.
 
+## Datenbank-Notification-System
+
+### Übersicht
+
+Das Datenbank-Notification-System ermöglicht die Erstellung und Verwaltung von In-App-Notifications für Benutzer mit Lesestatus-Tracking.
+
 ### Funktionalität
 
 - ✅ **Torschützen-Auswahl** für jeden Goal
@@ -279,6 +285,22 @@ const goals = await getGoalsForMatch(matchId);
 const assists = await getAssistsForMatch(matchId);
 ```
 
+### Notification-System Verwendung
+
+```typescript
+import { createNotification, getUserNotifications } from '@/lib/databaseNotifications';
+
+// Notification erstellen
+const notification = await createNotification({
+  user_id: userId,
+  title: 'Neue Nachricht',
+  body: 'Du hast eine neue Nachricht erhalten.'
+});
+
+// Notifications für User laden
+const notifications = await getUserNotifications(userId);
+```
+
 ### Datenbank-Schema
 
 #### Goals Tabelle
@@ -300,6 +322,19 @@ CREATE TABLE assists (
   match_id uuid NOT NULL REFERENCES match_results(id),
   player_id uuid NOT NULL REFERENCES users(id),
   minute integer, -- optional
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+```
+
+#### Notifications Tabelle
+```sql
+CREATE TABLE notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES users(id),
+  title text NOT NULL,
+  body text NOT NULL,
+  read boolean DEFAULT false,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
