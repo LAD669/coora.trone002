@@ -64,6 +64,38 @@ export interface Database {
           updated_at?: string
         }
       }
+      messages: {
+        Row: {
+          id: string
+          content: string
+          author_id: string
+          team_id: string
+          message_type: 'general' | 'announcement' | 'reminder' | 'question'
+          is_pinned: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          content: string
+          author_id: string
+          team_id: string
+          message_type?: 'general' | 'announcement' | 'reminder' | 'question'
+          is_pinned?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          content?: string
+          author_id?: string
+          team_id?: string
+          message_type?: 'general' | 'announcement' | 'reminder' | 'question'
+          is_pinned?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
       users: {
         Row: {
           id: string
@@ -81,6 +113,7 @@ export interface Database {
           date_of_birth: string | null
           height_cm: number | null
           weight_kg: number | null
+          expo_push_token: string | null
           created_at: string
           updated_at: string
         }
@@ -100,6 +133,7 @@ export interface Database {
           date_of_birth?: string | null
           height_cm?: number | null
           weight_kg?: number | null
+          expo_push_token?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -119,6 +153,7 @@ export interface Database {
           date_of_birth?: string | null
           height_cm?: number | null
           weight_kg?: number | null
+          expo_push_token?: string | null
           created_at?: string
           updated_at?: string
         }
