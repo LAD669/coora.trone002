@@ -392,6 +392,58 @@ export interface Database {
           created_at?: string
         }
       }
+      assists: {
+        Row: {
+          id: string
+          match_id: string
+          player_id: string
+          minute: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          match_id: string
+          player_id: string
+          minute?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          match_id?: string
+          player_id?: string
+          minute?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      goals: {
+        Row: {
+          id: string
+          match_id: string
+          player_id: string
+          minute: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          match_id: string
+          player_id: string
+          minute?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          match_id?: string
+          player_id?: string
+          minute?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       match_results: {
         Row: {
           id: string

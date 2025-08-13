@@ -749,41 +749,107 @@ export const submitMatchResult = async (result: {
   teamScore: number;
   opponentScore: number;
   opponentName?: string;
-  goals: any[];
+  goals: {
+    playerId: string;
+    minute?: number | null;
+  }[];
   assists: any[];
   otherStats?: any;
   submittedBy: string;
   teamId: string;
 }) => {
-  const { data, error } = await supabase
-    .from('match_results')
-    .insert({
-      event_id: result.eventId,
-      team_score: result.teamScore,
-      opponent_score: result.opponentScore,
-      opponent_name: result.opponentName,
-      goals: result.goals,
-      assists: result.assists,
-      other_stats: result.otherStats,
-      submitted_by: result.submittedBy,
-      team_id: result.teamId,
-    })
-    .select()
-    .maybeSingle();
+  try {
+    console.log('📝 Submit Match Result:', {
+      eventId: result.eventId,
+      teamScore: result.teamScore,
+      opponentScore: result.opponentScore,
+      goalsCount: result.goals.length
+    });
 
-  if (error) {
-    // Check if it's a unique constraint violation
-    if (error.code === '23505' || error.message?.includes('duplicate')) {
-      throw new Error('duplicate_match_result');
+    // Erstelle zuerst den Match-Result-Eintrag
+    const { data: matchResult, error: matchError } = await supabase
+      .from('match_results')
+      .insert({
+        event_id: result.eventId,
+        team_score: result.teamScore,
+        opponent_score: result.opponentScore,
+        opponent_name: result.opponentName,
+        goals: [], // Leeres Array, da Goals jetzt in separater Tabelle gespeichert werden
+        assists: result.assists,
+        other_stats: result.otherStats,
+        submitted_by: result.submittedBy,
+        team_id: result.teamId,
+      })
+      .select()
+      .single();
+
+    if (matchError) {
+      // Check if it's a unique constraint violation
+      if (matchError.code === '23505' || matchError.message?.includes('duplicate')) {
+        throw new Error('duplicate_match_result');
+      }
+      throw matchError;
     }
+   
+    if (!matchResult) {
+      throw new Error('Failed to submit match result');
+    }
+
+    console.log('✅ Match Result erstellt:', matchResult.id);
+
+    // Erstelle die Goals in der separaten goals Tabelle
+    if (result.goals && result.goals.length > 0) {
+      try {
+        const { createGoalsForMatch } = await import('./goals');
+        
+        const goalInputs = result.goals.map(goal => ({
+          match_id: matchResult.id,
+          player_id: goal.playerId,
+          minute: goal.minute || null
+        }));
+
+        const createdGoals = await createGoalsForMatch(goalInputs);
+        console.log(`✅ ${createdGoals.length} Goals für Match erstellt`);
+      } catch (goalError) {
+        console.error('❌ Fehler beim Erstellen der Goals:', goalError);
+        // Lösche den Match-Result-Eintrag, falls Goals nicht erstellt werden können
+        await supabase
+          .from('match_results')
+          .delete()
+          .eq('id', matchResult.id);
+        throw new Error('Failed to create goals for match result');
+      }
+    }
+
+    // Erstelle die Assists in der separaten assists Tabelle
+    if (result.assists && result.assists.length > 0) {
+      try {
+        const { createAssistsForMatch } = await import('./assists');
+        
+        const assistInputs = result.assists.map(assist => ({
+          match_id: matchResult.id,
+          player_id: assist.playerId,
+          minute: assist.minute || null
+        }));
+
+        const createdAssists = await createAssistsForMatch(assistInputs);
+        console.log(`✅ ${createdAssists.length} Assists für Match erstellt`);
+      } catch (assistError) {
+        console.error('❌ Fehler beim Erstellen der Assists:', assistError);
+        // Lösche den Match-Result-Eintrag und Goals, falls Assists nicht erstellt werden können
+        await supabase
+          .from('match_results')
+          .delete()
+          .eq('id', matchResult.id);
+        throw new Error('Failed to create assists for match result');
+      }
+    }
+   
+    return matchResult;
+  } catch (error) {
+    console.error('❌ Fehler beim Submit Match Result:', error);
     throw error;
   }
-   
-   if (!data) {
-     throw new Error('Failed to submit match result');
-   }
-   
-  return data;
 };
 
 export const getTeamGoals = async (teamId: string) => {

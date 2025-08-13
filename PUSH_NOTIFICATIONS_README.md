@@ -238,6 +238,83 @@ Die Funktion behandelt folgende Fehlertypen:
 - **Validierungsfehler**: Ungültige Parameter
 - **Unerwartete Antworten**: Unbekannte API-Formate
 
+## Goal- und Assist-System mit Minute-Eingabe
+
+### Übersicht
+
+Das Goal- und Assist-System ermöglicht die detaillierte Erfassung von Torschützen und Vorlagengebern mit optionaler Minute-Eingabe für jeden Match.
+
+### Funktionalität
+
+- ✅ **Torschützen-Auswahl** für jeden Goal
+- ✅ **Vorlagengeber-Auswahl** für jeden Assist
+- ✅ **Minute-Eingabe** (optional) für Goals und Assists
+- ✅ **Automatische Dropdowns** basierend auf Team-Score
+- ✅ **Spieler-Filterung** (nur Teammitglieder)
+- ✅ **Datenbank-Integration** mit separaten `goals` und `assists` Tabellen
+- ✅ **Vollständige CRUD-Operationen** für Goals und Assists
+
+### Verwendung
+
+```typescript
+import { createGoal, getGoalsForMatch } from '@/lib/goals';
+import { createAssist, getAssistsForMatch } from '@/lib/assists';
+
+// Goal erstellen
+const goal = await createGoal({
+  match_id: matchId,
+  player_id: playerId,
+  minute: 23 // optional
+});
+
+// Assist erstellen
+const assist = await createAssist({
+  match_id: matchId,
+  player_id: playerId,
+  minute: 22 // optional
+});
+
+// Goals und Assists für Match laden
+const goals = await getGoalsForMatch(matchId);
+const assists = await getAssistsForMatch(matchId);
+```
+
+### Datenbank-Schema
+
+#### Goals Tabelle
+```sql
+CREATE TABLE goals (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  match_id uuid NOT NULL REFERENCES match_results(id),
+  player_id uuid NOT NULL REFERENCES users(id),
+  minute integer, -- optional
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+```
+
+#### Assists Tabelle
+```sql
+CREATE TABLE assists (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  match_id uuid NOT NULL REFERENCES match_results(id),
+  player_id uuid NOT NULL REFERENCES users(id),
+  minute integer, -- optional
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+```
+
+### UI-Integration
+
+Die Goal-Funktionalität ist vollständig in das bestehende Dashboard-Design integriert:
+
+- **Bestehende Stile** werden beibehalten
+- **Konsistente Layouts** mit dem Rest der App
+- **Minute-Eingabe** mit validiertem TextInput
+- **Spieler-Auswahl** mit Chip-basierten Buttons
+- **Responsive Design** für verschiedene Bildschirmgrößen
+
 ## Message-System mit automatischen Push-Benachrichtigungen
 
 ### Übersicht
