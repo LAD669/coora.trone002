@@ -10,7 +10,7 @@ export interface DatabaseNotification {
   body: string;
   read: boolean;
   created_at: string;
-  updated_at: string;
+  updated_at?: string; // Optional, da es möglicherweise nicht existiert
 }
 
 /**
@@ -185,8 +185,8 @@ export async function markNotificationAsRead(notificationId: string): Promise<Da
     const { data: notification, error } = await supabase
       .from('notifications')
       .update({
-        read: true,
-        updated_at: new Date().toISOString()
+        read: true
+        // updated_at wird nicht gesetzt, da die Spalte möglicherweise nicht existiert
       })
       .eq('id', notificationId)
       .select()
@@ -238,8 +238,8 @@ export async function markAllUserNotificationsAsRead(userId: string): Promise<nu
     const { error: updateError } = await supabase
       .from('notifications')
       .update({
-        read: true,
-        updated_at: new Date().toISOString()
+        read: true
+        // updated_at wird nicht gesetzt, da die Spalte möglicherweise nicht existiert
       })
       .eq('user_id', userId)
       .eq('read', false);

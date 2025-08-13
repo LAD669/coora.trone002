@@ -32,7 +32,7 @@ SELECT
   n.body,
   n.read,
   n.created_at,
-  n.updated_at,
+  COALESCE(n.updated_at, n.created_at) as updated_at,
   u.name as user_name,
   u.first_name,
   u.last_name,

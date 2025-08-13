@@ -426,7 +426,7 @@ export interface Database {
           body: string
           read: boolean
           created_at: string
-          updated_at: string
+          updated_at?: string
         }
         Insert: {
           id?: string
