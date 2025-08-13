@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --dev-client",
     "dev": "EXPO_NO_TELEMETRY=1 EXPO_ROUTER_APP_ROOT=app expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -34,8 +34,10 @@
     "expo": "~52.0.47",
     "expo-blur": "~14.0.3",
     "expo-camera": "~16.0.18",
+    "expo-cli": "^6.3.12",
     "expo-constants": "~17.0.8",
     "expo-dev-client": "~5.0.20",
+    "expo-device": "~7.0.3",
     "expo-font": "~13.0.4",
     "expo-haptics": "~14.0.1",
     "expo-linear-gradient": "~14.0.2",
@@ -64,6 +66,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~18.3.12",
+    "@types/react-native": "^0.72.8",
     "cross-env": "^10.0.0",
     "typescript": "~5.8.3"
   }

@@ -575,7 +575,7 @@ export default function DashboardScreen() {
     
     setMatchResult(prev => ({
       ...prev,
-      goals: [...prev.goals, { playerId: '', playerName: '', minute: '' }]
+      goals: [...prev.goals, { playerId: '', playerName: '', minute: null }]
     }));
   };
 
@@ -625,7 +625,7 @@ export default function DashboardScreen() {
     
     setMatchResult(prev => ({
       ...prev,
-      assists: [...prev.assists, { playerId: '', playerName: '', minute: '' }]
+      assists: [...prev.assists, { playerId: '', playerName: '', minute: null }]
     }));
   };
 
@@ -701,15 +701,15 @@ export default function DashboardScreen() {
     }
 
     try {
-      // Goals and assists already have individual player assignments
+      // Prepare goals with player IDs and minutes for submission
       const goalsWithPlayer = matchResult.goals.map((goal, index) => ({
-        ...goal,
-        minute: goal.minute || ''
+        playerId: selectedGoalUsers[index] || '',
+        minute: goal.minute
       }));
       
       const assistsWithPlayer = matchResult.assists.map((assist, index) => ({
-        ...assist,
-        minute: assist.minute || ''
+        playerId: selectedAssistUsers[index] || '',
+        minute: assist.minute
       }));
 
       await submitMatchResult({
@@ -1363,6 +1363,8 @@ export default function DashboardScreen() {
                     <View key={`goal-${index}`} style={styles.statInputRow}>
                       <View style={styles.playerSelectContainer}>
                         <Text style={styles.playerSelectLabel}>Goal {index + 1}:</Text>
+                        
+                        {/* Selected Player Display */}
                         <Text style={styles.selectedPlayerText}>
                           {selectedGoalUsers[index] ? 
                             teamPlayers.find(p => p.user_id === selectedGoalUsers[index])?.name || 
@@ -1370,55 +1372,80 @@ export default function DashboardScreen() {
                             : 'No player selected'
                           }
                         </Text>
-                      <View style={styles.playerSelect}>
-                        {(() => {
-                          console.log(`🎯 Rendering goal ${index} players:`, {
-                            totalTeamPlayers: teamPlayers.length,
-                            players: teamPlayers.map(p => ({
-                              user_id: p.user_id,
-                              name: p.name,
-                              role: p.role
-                            }))
-                          });
-                          return teamPlayers.map((player, playerIndex) => {
-                            const isSelected = selectedGoalUsers[index] === player.user_id;
-                            console.log(`🎯 Goal ${index} - Player ${player.user_id}:`, {
-                              goalIndex: index,
-                              playerUserId: player.user_id,
-                              selectedGoalUsers: selectedGoalUsers,
-                              isSelected,
-                              playerName: player.name
+                        
+                        {/* Minute Input */}
+                        <View style={styles.minuteInputContainer}>
+                          <Text style={styles.minuteLabel}>Minute:</Text>
+                          <TextInput
+                            style={styles.minuteInput}
+                            value={goal.minute ? goal.minute.toString() : ''}
+                            onChangeText={(text) => {
+                              const minute = parseInt(text) || null;
+                              setMatchResult(prev => ({
+                                ...prev,
+                                goals: prev.goals.map((g, i) => 
+                                  i === index ? { ...g, minute } : g
+                                )
+                              }));
+                            }}
+                            placeholder="e.g. 23"
+                            keyboardType="numeric"
+                            maxLength={3}
+                          />
+                        </View>
+                        
+                        {/* Player Selection */}
+                        <View style={styles.playerSelect}>
+                          {(() => {
+                            console.log(`🎯 Rendering goal ${index} players:`, {
+                              totalTeamPlayers: teamPlayers.length,
+                              players: teamPlayers.map(p => ({
+                                user_id: p.user_id,
+                                name: p.name,
+                                role: p.role
+                              }))
                             });
-                            
-                            return (
-                              <TouchableOpacity
-                                key={generatePlayerKey('goal', index, player, playerIndex)}
-                                style={[
-                                  styles.playerOption,
-                                  isSelected && styles.playerOptionSelected
-                                ]}
-                                onPress={() => updateGoalPlayer(index, player.user_id)}
-                              >
-                                <Text style={[
-                                  styles.playerOptionText,
-                                  isSelected && styles.playerOptionTextSelected
-                                ]}>
-                                  {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player'}
-                                </Text>
-                              </TouchableOpacity>
-                            );
-                          });
-                        })()}
+                            return teamPlayers.map((player, playerIndex) => {
+                              const isSelected = selectedGoalUsers[index] === player.user_id;
+                              console.log(`🎯 Goal ${index} - Player ${player.user_id}:`, {
+                                goalIndex: index,
+                                playerUserId: player.user_id,
+                                selectedGoalUsers: selectedGoalUsers,
+                                isSelected,
+                                playerName: player.name
+                              });
+                              
+                              return (
+                                <TouchableOpacity
+                                  key={generatePlayerKey('goal', index, player, playerIndex)}
+                                  style={[
+                                    styles.playerOption,
+                                    isSelected && styles.playerOptionSelected
+                                  ]}
+                                  onPress={() => updateGoalPlayer(index, player.user_id)}
+                                >
+                                  <Text style={[
+                                    styles.playerOptionText,
+                                    isSelected && styles.playerOptionTextSelected
+                                  ]}>
+                                    {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player'}
+                                  </Text>
+                                </TouchableOpacity>
+                              );
+                            });
+                          })()}
+                        </View>
                       </View>
+                      
+                      {/* Remove Button */}
+                      <TouchableOpacity 
+                        style={styles.removeStatButton}
+                        onPress={() => removeGoal(index)}
+                      >
+                        <X size={16} color="#FF3B30" strokeWidth={1.5} />
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity 
-                      style={styles.removeStatButton}
-                      onPress={() => removeGoal(index)}
-                    >
-                      <X size={16} color="#FF3B30" strokeWidth={1.5} />
-                    </TouchableOpacity>
-                  </View>
-                );
+                  );
                 })}
               </View>
 
@@ -2028,6 +2055,32 @@ const styles = StyleSheet.create({
   },
   playerOptionTextSelected: {
     color: '#FFFFFF',
+  },
+  minuteInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  minuteLabel: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Medium',
+    minWidth: 50,
+  },
+  minuteInput: {
+    flex: 1,
+    maxWidth: 80,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5E7',
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-Regular',
+    textAlign: 'center',
   },
   removeStatButton: {
     width: 32,

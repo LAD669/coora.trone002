@@ -54,6 +54,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
           if (initialSession?.user?.id) {
             console.log('Session found — navigating to home');
             await loadUserProfile(initialSession.user.id);
+            
+            // Registriere für Push-Benachrichtigungen nach initial session load
+            try {
+              const { registerForPushNotificationsAsync } = await import('@/lib/pushNotifications');
+              await registerForPushNotificationsAsync();
+            } catch (pushError) {
+              console.error('Error registering for push notifications:', pushError);
+            }
           } else {
             console.log('Session null — showing login');
           }
@@ -82,6 +90,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (sessionData?.user?.id) {
         console.log('Session found — navigating to home');
         await loadUserProfile(sessionData.user.id);
+        
+        // Registriere für Push-Benachrichtigungen nach Session-Restore
+        try {
+          const { registerForPushNotificationsAsync } = await import('@/lib/pushNotifications');
+          await registerForPushNotificationsAsync();
+        } catch (pushError) {
+          console.error('Error registering for push notifications:', pushError);
+        }
       } else {
         console.log('Session null — showing login');
         setUser(null);
@@ -108,6 +124,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
       
       console.log('User profile loaded successfully');
+      
+      // Registriere für Push-Benachrichtigungen nach erfolgreichem Login
+      try {
+        const { registerForPushNotificationsAsync } = await import('@/lib/pushNotifications');
+        await registerForPushNotificationsAsync();
+      } catch (pushError) {
+        console.error('Error registering for push notifications:', pushError);
+      }
+      
     } catch (error) {
       console.error('Error loading user profile:', error);
       setUser(null);
@@ -126,6 +151,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (data.user?.id) {
         await loadUserProfile(data.user.id);
+        
+        // Registriere für Push-Benachrichtigungen nach erfolgreichem Login
+        try {
+          const { registerForPushNotificationsAsync } = await import('@/lib/pushNotifications');
+          await registerForPushNotificationsAsync();
+        } catch (pushError) {
+          console.error('Error registering for push notifications:', pushError);
+        }
       }
     } catch (error) {
       console.error('Sign in error:', error);
@@ -202,6 +235,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           // Load the user profile
           await loadUserProfile(data.user.id);
+          
+          // Registriere für Push-Benachrichtigungen nach erfolgreicher Registrierung
+          try {
+            const { registerForPushNotificationsAsync } = await import('@/lib/pushNotifications');
+            await registerForPushNotificationsAsync();
+          } catch (pushError) {
+            console.error('Error registering for push notifications:', pushError);
+          }
         } catch (profileError) {
           console.error('Profile creation error:', profileError);
           // Clean up auth user if profile creation fails
@@ -220,6 +261,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = async () => {
     setLoading(true);
     try {
+      // Entferne den Expo Push Token vor dem Logout
+      try {
+        const { removeExpoPushTokenFromSupabase } = await import('@/lib/pushNotifications');
+        await removeExpoPushTokenFromSupabase();
+      } catch (pushError) {
+        console.error('Error removing push notification token:', pushError);
+      }
+      
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);

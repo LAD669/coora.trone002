@@ -1,482 +1,456 @@
+import { supabase } from './supabaseClient';
 import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 
-// Safe notification handler configuration with error handling
-let notificationHandlerConfigured = false;
-
-export function configureNotificationHandler() {
+/**
+ * Registriert das Gerät für Push-Benachrichtigungen
+ * @returns Promise<string | undefined> - Der Expo Push Token oder undefined bei Fehler
+ */
+export async function registerForPushNotificationsAsync(): Promise<string | undefined> {
   try {
-    if (notificationHandlerConfigured) {
-      console.log('Notification handler already configured');
-      return;
+    console.log('🔔 Registriere für Push-Benachrichtigungen...');
+
+    // Prüfe ob es ein physisches Gerät ist (nicht Simulator)
+    if (!Device.isDevice) {
+      console.log('⚠️ Push-Benachrichtigungen funktionieren nur auf physischen Geräten');
+      return undefined;
     }
 
-    // Configure how notifications are handled when the app is in the foreground
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-      }),
-    });
+    // Prüfe aktuelle Berechtigungen
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    console.log('📱 Aktuelle Push-Berechtigung:', existingStatus);
 
-    notificationHandlerConfigured = true;
-    console.log('Notification handler configured successfully');
+    let finalStatus = existingStatus;
+
+    // Falls noch nicht erlaubt: erneut fragen
+    if (existingStatus !== 'granted') {
+      console.log('🔐 Frage Push-Berechtigung an...');
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+      console.log('📱 Neue Push-Berechtigung:', finalStatus);
+    }
+
+    // Bei Erfolg den Expo Push Token generieren
+    if (finalStatus === 'granted') {
+      console.log('✅ Push-Berechtigung erteilt, generiere Token...');
+      
+      // Token generieren
+      const token = await Notifications.getExpoPushTokenAsync({
+        projectId: '7d523146-86fe-4d7c-8d60-7d3fc4c8dde4',
+      });
+
+      console.log('🎯 Expo Push Token generiert:', token.data);
+      
+      // Token zurückgeben
+      return token.data;
+    } else {
+      console.log('❌ Push-Berechtigung verweigert');
+      return undefined;
+    }
+
   } catch (error) {
-    console.error('Error configuring notification handler:', error);
-    // Don't throw - allow app to continue without notifications
+    console.error('❌ Fehler bei der Push-Benachrichtigungsregistrierung:', error);
+    return undefined;
   }
 }
 
-// Validate expo-notifications configuration
-export function validateNotificationsConfig(): boolean {
+/**
+ * Initialisiert Push-Benachrichtigungen beim App-Start
+ * Ruft intern registerForPushNotificationsAsync() auf
+ * @returns Promise<string | undefined> - Der Expo Push Token oder undefined bei Fehler
+ */
+export async function initializeNotifications(): Promise<string | undefined> {
   try {
-    // Check if Notifications is available
-    if (!Notifications) {
-      console.error('expo-notifications is not available');
-      return false;
+    console.log('🚀 Initialisiere Push-Benachrichtigungen...');
+    
+    // Rufe die Registrierungsfunktion auf
+    const token = await registerForPushNotificationsAsync();
+    
+    if (token) {
+      console.log('✅ Push-Benachrichtigungen erfolgreich initialisiert');
+    } else {
+      console.log('⚠️ Push-Benachrichtigungen konnten nicht initialisiert werden');
+    }
+    
+    return token;
+    
+  } catch (error) {
+    console.error('❌ Fehler bei der Initialisierung der Push-Benachrichtigungen:', error);
+    return undefined;
+  }
+}
+
+/**
+ * Notification-Interface für TypeScript
+ */
+export interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string;
+  read: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Notification mit User-Details
+ */
+export interface NotificationWithUserDetails extends Notification {
+  user_name: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+}
+
+/**
+ * Notification-Input für die Erstellung
+ */
+export interface NotificationInput {
+  user_id: string;
+  title: string;
+  body: string;
+}
+
+/**
+ * Erstellt eine neue Notification
+ * @param notificationData - Die Notification-Daten
+ * @returns Die erstellte Notification
+ */
+export async function createNotification(notificationData: NotificationInput): Promise<Notification> {
+  try {
+    console.log('🔔 Erstelle neue Notification:', {
+      user_id: notificationData.user_id,
+      title: notificationData.title,
+      body: notificationData.body
+    });
+
+    const { data: notification, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: notificationData.user_id,
+        title: notificationData.title,
+        body: notificationData.body,
+        // read wird automatisch auf false gesetzt
+        // created_at wird automatisch gesetzt
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Fehler beim Erstellen der Notification:', error);
+      throw error;
     }
 
-    // Check if required methods exist
-    const requiredMethods = [
-      'setNotificationHandler',
-      'getPermissionsAsync',
-      'requestPermissionsAsync',
-      'getExpoPushTokenAsync',
-      'setNotificationChannelAsync',
-      'addNotificationReceivedListener',
-      'addNotificationResponseReceivedListener',
-    ] as const;
-
-    for (const method of requiredMethods) {
-      if (typeof (Notifications as any)[method] !== 'function') {
-        console.error(`Required method ${method} is not available in expo-notifications`);
-        return false;
-      }
+    if (!notification) {
+      throw new Error('Notification konnte nicht erstellt werden');
     }
 
-    console.log('expo-notifications configuration validated successfully');
+    console.log('✅ Notification erfolgreich erstellt:', notification.id);
+    return notification;
+
+  } catch (error) {
+    console.error('❌ Fehler beim Erstellen der Notification:', error);
+    throw error;
+  }
+}
+
+/**
+ * Lädt alle Notifications für einen User
+ * @param userId - Die User-ID
+ * @param limit - Maximale Anzahl der Notifications (Standard: 100)
+ * @returns Array der Notifications
+ */
+export async function getUserNotifications(userId: string, limit: number = 100): Promise<Notification[]> {
+  try {
+    console.log('📊 Lade Notifications für User:', userId);
+
+    const { data: notifications, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('❌ Fehler beim Laden der Notifications:', error);
+      throw error;
+    }
+
+    console.log(`✅ ${notifications?.length || 0} Notifications für User geladen`);
+    return notifications || [];
+
+  } catch (error) {
+    console.error('❌ Fehler beim Laden der Notifications:', error);
+    throw error;
+  }
+}
+
+/**
+ * Lädt alle Notifications für einen User mit User-Details
+ * @param userId - Die User-ID
+ * @param limit - Maximale Anzahl der Notifications (Standard: 100)
+ * @returns Array der Notifications mit User-Details
+ */
+export async function getUserNotificationsWithDetails(userId: string, limit: number = 100): Promise<NotificationWithUserDetails[]> {
+  try {
+    console.log('📊 Lade Notifications mit Details für User:', userId);
+
+    const { data: notifications, error } = await supabase
+      .from('notifications_with_user_details')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('❌ Fehler beim Laden der Notifications mit Details:', error);
+      throw error;
+    }
+
+    console.log(`✅ ${notifications?.length || 0} Notifications mit Details für User geladen`);
+    return notifications || [];
+
+  } catch (error) {
+    console.error('❌ Fehler beim Laden der Notifications mit Details:', error);
+    throw error;
+  }
+}
+
+/**
+ * Lädt ungelesene Notifications für einen User
+ * @param userId - Die User-ID
+ * @param limit - Maximale Anzahl der Notifications (Standard: 100)
+ * @returns Array der ungelesenen Notifications
+ */
+export async function getUnreadUserNotifications(userId: string, limit: number = 100): Promise<Notification[]> {
+  try {
+    console.log('📊 Lade ungelesene Notifications für User:', userId);
+
+    const { data: notifications, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('read', false)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('❌ Fehler beim Laden der ungelesenen Notifications:', error);
+      throw error;
+    }
+
+    console.log(`✅ ${notifications?.length || 0} ungelesene Notifications für User geladen`);
+    return notifications || [];
+
+  } catch (error) {
+    console.error('❌ Fehler beim Laden der ungelesenen Notifications:', error);
+    throw error;
+  }
+}
+
+/**
+ * Markiert eine Notification als gelesen
+ * @param notificationId - Die Notification-ID
+ * @returns Die aktualisierte Notification
+ */
+export async function markNotificationAsRead(notificationId: string): Promise<Notification> {
+  try {
+    console.log('✅ Markiere Notification als gelesen:', notificationId);
+
+    const { data: notification, error } = await supabase
+      .from('notifications')
+      .update({
+        read: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', notificationId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Fehler beim Markieren der Notification als gelesen:', error);
+      throw error;
+    }
+
+    if (!notification) {
+      throw new Error('Notification konnte nicht aktualisiert werden');
+    }
+
+    console.log('✅ Notification erfolgreich als gelesen markiert:', notificationId);
+    return notification;
+
+  } catch (error) {
+    console.error('❌ Fehler beim Markieren der Notification als gelesen:', error);
+    throw error;
+  }
+}
+
+/**
+ * Markiert alle Notifications eines Users als gelesen
+ * @param userId - Die User-ID
+ * @returns Anzahl der aktualisierten Notifications
+ */
+export async function markAllUserNotificationsAsRead(userId: string): Promise<number> {
+  try {
+    console.log('✅ Markiere alle Notifications als gelesen für User:', userId);
+
+    const { data: notifications, error: fetchError } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('read', false);
+
+    if (fetchError) {
+      console.error('❌ Fehler beim Laden der ungelesenen Notifications:', fetchError);
+      throw fetchError;
+    }
+
+    if (!notifications || notifications.length === 0) {
+      console.log('ℹ️ Keine ungelesenen Notifications gefunden');
+      return 0;
+    }
+
+    const { error: updateError } = await supabase
+      .from('notifications')
+      .update({
+        read: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .eq('read', false);
+
+    if (updateError) {
+      console.error('❌ Fehler beim Markieren der Notifications als gelesen:', updateError);
+      throw updateError;
+    }
+
+    console.log(`✅ ${notifications.length} Notifications erfolgreich als gelesen markiert`);
+    return notifications.length;
+
+  } catch (error) {
+    console.error('❌ Fehler beim Markieren der Notifications als gelesen:', error);
+    throw error;
+  }
+}
+
+/**
+ * Löscht eine Notification
+ * @param notificationId - Die Notification-ID
+ * @returns true wenn erfolgreich gelöscht
+ */
+export async function deleteNotification(notificationId: string): Promise<boolean> {
+  try {
+    console.log('🗑️ Lösche Notification:', notificationId);
+
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', notificationId);
+
+    if (error) {
+      console.error('❌ Fehler beim Löschen der Notification:', error);
+      throw error;
+    }
+
+    console.log('✅ Notification erfolgreich gelöscht:', notificationId);
     return true;
+
   } catch (error) {
-    console.error('Error validating notifications config:', error);
-    return false;
+    console.error('❌ Fehler beim Löschen der Notification:', error);
+    throw error;
   }
 }
 
-// Safe notification channel setup for Android
-export async function setupNotificationChannel(): Promise<boolean> {
+/**
+ * Löscht alle Notifications eines Users
+ * @param userId - Die User-ID
+ * @returns Anzahl der gelöschten Notifications
+ */
+export async function deleteAllUserNotifications(userId: string): Promise<number> {
   try {
-    if (Platform.OS !== 'android') {
-      return true; // Not needed for iOS
+    console.log('🗑️ Lösche alle Notifications für User:', userId);
+
+    const { data: notifications, error: fetchError } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('user_id', userId);
+
+    if (fetchError) {
+      console.error('❌ Fehler beim Laden der Notifications:', fetchError);
+      throw fetchError;
     }
 
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-    });
+    if (!notifications || notifications.length === 0) {
+      console.log('ℹ️ Keine Notifications zum Löschen gefunden');
+      return 0;
+    }
 
-    console.log('Android notification channel configured successfully');
-    return true;
+    const { error: deleteError } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      console.error('❌ Fehler beim Löschen der Notifications:', deleteError);
+      throw deleteError;
+    }
+
+    console.log(`✅ ${notifications.length} Notifications erfolgreich gelöscht`);
+    return notifications.length;
+
   } catch (error) {
-    console.error('Error setting up Android notification channel:', error);
-    return false;
+    console.error('❌ Fehler beim Löschen der Notifications:', error);
+    throw error;
   }
 }
 
-// Check notification permissions safely
-export async function checkNotificationPermissions(): Promise<boolean> {
+/**
+ * Lädt Notification-Statistiken für einen User
+ * @param userId - Die User-ID
+ * @returns Notification-Statistiken
+ */
+export async function getUserNotificationStats(userId: string): Promise<{
+  totalNotifications: number;
+  unreadNotifications: number;
+  readNotifications: number;
+  latestNotification?: string;
+}> {
   try {
-    const { status } = await Notifications.getPermissionsAsync();
-    const isGranted = status === 'granted';
-    console.log('Notification permissions status:', status);
-    return isGranted;
-  } catch (error) {
-    console.error('Error checking notification permissions:', error);
-    return false;
-  }
-}
+    console.log('📊 Lade Notification-Statistiken für User:', userId);
 
-// Request notification permissions safely
-export async function requestNotificationPermissions(): Promise<boolean> {
-  try {
-    // Set up notification channel for Android before requesting permissions
-    if (Platform.OS === 'android') {
-      await setupNotificationChannel();
+    const { data: notifications, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Fehler beim Laden der Notification-Statistiken:', error);
+      throw error;
     }
 
-    const { status } = await Notifications.requestPermissionsAsync();
-    const isGranted = status === 'granted';
-    console.log('Notification permissions request result:', status);
-    return isGranted;
-  } catch (error) {
-    console.error('Error requesting notification permissions:', error);
-    return false;
-  }
-}
-
-// Get Expo push token with proper permission handling
-export async function getExpoPushTokenAsync(): Promise<string | null> {
-  try {
-    // Validate configuration first
-    if (!validateNotificationsConfig()) {
-      console.error('Notifications configuration validation failed');
-      return null;
+    if (!notifications || notifications.length === 0) {
+      return {
+        totalNotifications: 0,
+        unreadNotifications: 0,
+        readNotifications: 0
+      };
     }
 
-    // Check permissions first
-    const hasPermission = await checkNotificationPermissions();
-    if (!hasPermission) {
-      console.log('Notification permissions not granted, requesting...');
-      const granted = await requestNotificationPermissions();
-      if (!granted) {
-        console.log('Notification permissions denied by user');
-        return null;
-      }
-    }
-
-    // Get the project ID
-    const projectId = process.env.EXPO_PROJECT_ID;
-    if (!projectId) {
-      console.error('EXPO_PROJECT_ID is not configured');
-      return null;
-    }
-
-    // Get the token that uniquely identifies this device
-    const tokenResponse = await Notifications.getExpoPushTokenAsync({
-      projectId: projectId,
-    });
-    
-    if (!tokenResponse?.data) {
-      console.error('Failed to get push token');
-      return null;
-    }
-    
-    console.log('Push token retrieved successfully:', tokenResponse.data);
-    return tokenResponse.data;
-  } catch (error) {
-    console.error('Error getting Expo push token:', error);
-    return null;
-  }
-}
-
-// Get device push token with proper permission handling (for native push notifications)
-export async function getDevicePushTokenAsync(): Promise<string | null> {
-  try {
-    // Check permissions first
-    const hasPermission = await checkNotificationPermissions();
-    if (!hasPermission) {
-      console.log('Notification permissions not granted, requesting...');
-      const granted = await requestNotificationPermissions();
-      if (!granted) {
-        console.log('Notification permissions denied by user');
-        return null;
-      }
-    }
-
-    // Get device push token
-    const tokenResponse = await Notifications.getDevicePushTokenAsync();
-    
-    if (!tokenResponse?.data) {
-      console.error('Failed to get device push token');
-      return null;
-    }
-    
-    console.log('Device push token retrieved successfully:', tokenResponse.data);
-    return tokenResponse.data;
-  } catch (error) {
-    console.error('Error getting device push token:', error);
-    return null;
-  }
-}
-
-// Legacy function - now uses the new permission-aware token retrieval
-export async function registerForPushNotificationsAsync(): Promise<string | null> {
-  try {
-    // Configure notification handler
-    configureNotificationHandler();
-
-    // Use the new permission-aware token retrieval
-    return await getExpoPushTokenAsync();
-  } catch (error) {
-    console.error('Error registering for push notifications:', error);
-    return null;
-  }
-}
-
-// Safe token retrieval function that ensures permissions are granted before getting tokens
-export async function getNotificationTokenSafely(): Promise<string | null> {
-  try {
-    // Check if permissions are granted first
-    const hasPermission = await checkNotificationPermissions();
-    
-    if (!hasPermission) {
-      console.log('Notification permissions not granted, cannot retrieve token');
-      return null;
-    }
-
-    // Get the token
-    return await getExpoPushTokenAsync();
-  } catch (error) {
-    console.error('Error getting notification token safely:', error);
-    return null;
-  }
-}
-
-export async function sendPushNotification(
-  expoPushToken: string, 
-  title: string, 
-  body: string, 
-  data?: any
-): Promise<boolean> {
-  try {
-    if (!expoPushToken) {
-      console.error('Invalid push token provided');
-      return false;
-    }
-
-    const message = {
-      to: expoPushToken,
-      sound: 'default',
-      title: title,
-      body: body,
-      data: data || {},
+    const stats = {
+      totalNotifications: notifications.length,
+      unreadNotifications: notifications.filter(n => !n.read).length,
+      readNotifications: notifications.filter(n => n.read).length,
+      latestNotification: notifications[0]?.created_at
     };
 
-    const response = await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Accept-encoding': 'gzip, deflate',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(message),
-    });
+    console.log('✅ Notification-Statistiken erfolgreich geladen:', stats);
+    return stats;
 
-    if (!response.ok) {
-      console.error('Push notification send failed:', response.status, response.statusText);
-      return false;
-    }
-
-    console.log('Push notification sent successfully');
-    return true;
   } catch (error) {
-    console.error('Error sending push notification:', error);
-    return false;
+    console.error('❌ Fehler beim Laden der Notification-Statistiken:', error);
+    throw error;
   }
-}
-
-export function addNotificationReceivedListener(
-  callback: (notification: Notifications.Notification) => void
-): Notifications.Subscription | null {
-  try {
-    if (typeof callback !== 'function') {
-      console.error('Invalid callback provided for notification received listener');
-      return null;
-    }
-
-    const subscription = Notifications.addNotificationReceivedListener(callback);
-    console.log('Notification received listener added successfully');
-    return subscription;
-  } catch (error) {
-    console.error('Error adding notification received listener:', error);
-    return null;
-  }
-}
-
-export function addNotificationResponseReceivedListener(
-  callback: (response: Notifications.NotificationResponse) => void
-): Notifications.Subscription | null {
-  try {
-    if (typeof callback !== 'function') {
-      console.error('Invalid callback provided for notification response listener');
-      return null;
-    }
-
-    const subscription = Notifications.addNotificationResponseReceivedListener(callback);
-    console.log('Notification response listener added successfully');
-    return subscription;
-  } catch (error) {
-    console.error('Error adding notification response listener:', error);
-    return null;
-  }
-}
-
-export async function getBadgeCountAsync(): Promise<number> {
-  try {
-    const count = await Notifications.getBadgeCountAsync();
-    return count || 0;
-  } catch (error) {
-    console.error('Error getting badge count:', error);
-    return 0;
-  }
-}
-
-export async function setBadgeCountAsync(count: number): Promise<boolean> {
-  try {
-    if (typeof count !== 'number' || count < 0) {
-      console.error('Invalid badge count provided:', count);
-      return false;
-    }
-
-    await Notifications.setBadgeCountAsync(count);
-    console.log('Badge count set successfully:', count);
-    return true;
-  } catch (error) {
-    console.error('Error setting badge count:', error);
-    return false;
-  }
-}
-
-export async function cancelAllScheduledNotificationsAsync(): Promise<boolean> {
-  try {
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    console.log('All scheduled notifications cancelled successfully');
-    return true;
-  } catch (error) {
-    console.error('Error canceling scheduled notifications:', error);
-    return false;
-  }
-}
-
-// Initialize notifications safely on app startup
-// This function only sets up the notification system, it does NOT request tokens
-export async function initializeNotifications(): Promise<boolean> {
-  try {
-    console.log('Initializing notifications...');
-    
-    // Validate configuration
-    if (!validateNotificationsConfig()) {
-      console.error('Notifications initialization failed: invalid configuration');
-      return false;
-    }
-
-    // Configure notification handler
-    configureNotificationHandler();
-
-    // Setup Android notification channel (iOS doesn't need this)
-    if (Platform.OS === 'android') {
-      await setupNotificationChannel();
-    }
-
-    console.log('Notifications initialized successfully');
-    return true;
-  } catch (error) {
-    console.error('Error initializing notifications:', error);
-    // Don't throw - allow app to continue without notifications
-    return false;
-  }
-}
-
-// Cleanup notifications
-export function cleanupNotifications(): void {
-  try {
-    // Reset notification handler
-    Notifications.setNotificationHandler(null);
-    notificationHandlerConfigured = false;
-    console.log('Notifications cleaned up successfully');
-  } catch (error) {
-    console.error('Error cleaning up notifications:', error);
-  }
-}
-
-/*
-NOTIFICATION SYSTEM USAGE GUIDE
-
-This refactored notification system ensures that:
-1. No token requests happen without proper permission checks
-2. All token requests are wrapped in try/catch blocks
-3. Permissions are requested before token retrieval
-4. No token fetching runs on app startup without permission checks
-
-PROPER USAGE PATTERNS:
-
-1. App Startup (Safe - No Token Requests):
-   ```typescript
-   import { initializeNotifications } from '@/lib/notifications';
-   
-   // In your app startup
-   useEffect(() => {
-     initializeNotifications(); // Only sets up the system, no token requests
-   }, []);
-   ```
-
-2. Requesting Permissions (User Interaction Required):
-   ```typescript
-   import { requestNotificationPermissions } from '@/lib/notifications';
-   
-   const handleRequestPermissions = async () => {
-     const granted = await requestNotificationPermissions();
-     if (granted) {
-       // Now safe to get tokens
-       const token = await getNotificationTokenSafely();
-     }
-   };
-   ```
-
-3. Getting Tokens Safely (After Permissions Granted):
-   ```typescript
-   import { getNotificationTokenSafely } from '@/lib/notifications';
-   
-   const getToken = async () => {
-     const token = await getNotificationTokenSafely();
-     if (token) {
-       // Use token for push notifications
-       console.log('Token:', token);
-     }
-   };
-   ```
-
-4. Checking Permissions Without Requesting:
-   ```typescript
-   import { checkNotificationPermissions } from '@/lib/notifications';
-   
-   const checkPermissions = async () => {
-     const hasPermission = await checkNotificationPermissions();
-     if (hasPermission) {
-       // Safe to get tokens
-       const token = await getNotificationTokenSafely();
-     }
-   };
-   ```
-
-5. Complete Permission + Token Flow:
-   ```typescript
-   import { 
-     checkNotificationPermissions, 
-     requestNotificationPermissions, 
-     getNotificationTokenSafely 
-   } from '@/lib/notifications';
-   
-   const setupNotifications = async () => {
-     try {
-       // Check current permissions
-       let hasPermission = await checkNotificationPermissions();
-       
-       // Request if not granted
-       if (!hasPermission) {
-         hasPermission = await requestNotificationPermissions();
-       }
-       
-       // Get token if permissions granted
-       if (hasPermission) {
-         const token = await getNotificationTokenSafely();
-         if (token) {
-           // Store token or send to server
-           console.log('Notification token:', token);
-         }
-       }
-     } catch (error) {
-       console.error('Error setting up notifications:', error);
-     }
-   };
-   ```
-
-IMPORTANT NOTES:
-- Never call token functions on app startup without user interaction
-- Always check permissions before requesting tokens
-- Use try/catch blocks around all notification operations
-- The system will automatically handle permission requests when needed
-- All functions are safe and will not crash the app if permissions are denied
-*/ 
+} 

@@ -4,7 +4,7 @@ export default {
   expo: {
     name: "Coora for Sport",
     slug: "coora-for-sport",
-    version: "1.1.0",
+    version: "1.1.5",
     orientation: "portrait",
     icon: "./images/coora.icon.png",
     scheme: "myapp",
@@ -18,14 +18,14 @@ export default {
       newArchEnabled: false
     },
     splash: {
-      image: "./images/COORA (2).png",
+      image: "./images/splashscreen.yucbyab.png",
       resizeMode: "contain",
       backgroundColor: "#ffffff"
     },
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.coora.app.cooraforsport",
-      buildNumber: "5",
+      buildNumber: "6",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSCameraUsageDescription: "This app uses the camera to take photos for team posts and profile pictures.",

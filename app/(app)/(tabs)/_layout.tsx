@@ -151,16 +151,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="live-ticker"
-        options={{
-          title: commonT('liveTicker'),
-          href: '/live-ticker',
-          tabBarIcon: ({ size, color }) => (
-            <Zap size={24} color={color} strokeWidth={1.5} />
-          ),
-        }}
-      />
+
     </Tabs>
   );
 }
