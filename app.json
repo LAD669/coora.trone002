@@ -7,11 +7,12 @@
     "icon": "./images/coora.icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
+    "owner": "cooraforsport",
     "platforms": [
       "ios",
       "android"
     ],
-    "jsEngine": "hermes",
+
     "experimental": {
       "newArchEnabled": false
     },
@@ -55,7 +56,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "7d523146-86fe-4d7c-8d60-7d3fc4c8dde4"
+        "projectId": "2ddea270-61d0-4101-948b-e5ec57f5cfdc"
       }
     }
   }
