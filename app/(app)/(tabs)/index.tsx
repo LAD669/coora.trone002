@@ -344,7 +344,10 @@ function InfohubScreenContent() {
               <TouchableOpacity 
                 key={post.id} 
                 style={styles.postCard}
-                onPress={() => handlePostClick(post.id)}
+                onPress={() => {
+                  console.log('Post clicked!', post.id);
+                  handlePostClick(post.id);
+                }}
                 activeOpacity={0.7}
               >
                 <View style={styles.postHeader}>
@@ -450,7 +453,6 @@ function InfohubScreenContent() {
         }}
         style={styles.modal}
         avoidKeyboard={true}
-        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
