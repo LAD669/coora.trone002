@@ -29,13 +29,13 @@ export default function LoginScreen() {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email.trim()) {
-      newErrors.email = t('common.fillAllFields');
+      newErrors.email = t('common.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = t('common.validEmailRequired');
     }
 
     if (!password.trim()) {
-      newErrors.password = t('common.fillAllFields');
+      newErrors.password = t('common.passwordRequired');
     }
 
     setErrors(newErrors);

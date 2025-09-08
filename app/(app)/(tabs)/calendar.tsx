@@ -159,26 +159,38 @@ export default function CalendarScreen() {
   };
 
   const handleCreateEvent = async () => {
-    if (!newEvent.title.trim() || !newEvent.date || !newEvent.location.trim()) {
-      Alert.alert('Error', 'Please fill in all required fields');
+    if (!newEvent.title.trim()) {
+      Alert.alert(t('common.error'), t('common.eventTitleRequired'));
+      return;
+    }
+    if (!newEvent.date) {
+      Alert.alert(t('common.error'), t('common.eventDateRequired'));
+      return;
+    }
+    if (!newEvent.location.trim()) {
+      Alert.alert(t('common.error'), t('common.eventLocationRequired'));
       return;
     }
 
     // Validate required times based on event type
     if (newEvent.type === 'training' && !newEvent.trainingStartTime) {
-      Alert.alert('Error', 'Please provide a start time for training');
+      Alert.alert(t('common.error'), t('common.startTimeRequired'));
       return;
     }
     
     if (newEvent.type === 'match') {
-      if (!newEvent.meetingTime || !newEvent.matchStartTime) {
-        Alert.alert('Error', 'Please provide meeting time and start time for matches');
+      if (!newEvent.meetingTime) {
+        Alert.alert(t('common.error'), t('common.meetingTimeRequired'));
+        return;
+      }
+      if (!newEvent.matchStartTime) {
+        Alert.alert(t('common.error'), t('common.matchStartTimeRequired'));
         return;
       }
       
       // Validate that meeting time is before start time
       if (newEvent.meetingTime >= newEvent.matchStartTime) {
-        Alert.alert('Error', 'Meeting time must be before start time');
+        Alert.alert(t('common.error'), t('common.meetingTimeBeforeStartTime'));
         return;
       }
     }
@@ -186,27 +198,27 @@ export default function CalendarScreen() {
     // Additional validation for repeating events
     if (newEvent.isRepeating) {
       if (newEvent.repeatEndType === 'date' && !newEvent.repeatEndDate) {
-        Alert.alert('Error', 'Please select an end date for repeating events');
+        Alert.alert(t('common.error'), t('common.repeatEndDateRequired'));
         return;
       }
       if (newEvent.repeatEndType === 'occurrences' && newEvent.repeatOccurrences < 1) {
-        Alert.alert('Error', 'Number of occurrences must be at least 1');
+        Alert.alert(t('common.error'), t('common.repeatOccurrencesInvalid'));
         return;
       }
       if (newEvent.repeatFrequency === 'weekly' && newEvent.selectedDays.length === 0) {
-        Alert.alert('Error', 'Please select at least one day for weekly repeating events');
+        Alert.alert(t('common.error'), t('common.weeklyRepeatDaysRequired'));
         return;
       }
     }
 
     // Validate end times if provided
     if (newEvent.type === 'training' && newEvent.trainingEndTime && newEvent.trainingStartTime >= newEvent.trainingEndTime) {
-      Alert.alert('Error', 'End time must be after start time');
+      Alert.alert(t('common.error'), t('common.endTimeAfterStartTime'));
       return;
     }
     
     if (newEvent.type === 'match' && newEvent.matchEndTime && newEvent.matchStartTime >= newEvent.matchEndTime) {
-      Alert.alert('Error', 'End time must be after start time');
+      Alert.alert(t('common.error'), t('common.endTimeAfterStartTime'));
       return;
     }
 
@@ -280,7 +292,7 @@ export default function CalendarScreen() {
       Alert.alert('Success', 'Event created successfully!');
     } catch (error) {
       console.error('Error creating event:', error);
-      Alert.alert('Error', 'Failed to create event. Please try again.');
+      Alert.alert(t('common.error'), t('common.createEventFailed'));
     }
   };
 
@@ -365,7 +377,7 @@ export default function CalendarScreen() {
       Alert.alert('Success', `${createdEvents.length} training sessions created successfully!`);
     } catch (error) {
       console.error('Error creating repeating events:', error);
-      Alert.alert('Error', 'Failed to create repeating events. Please try again.');
+      Alert.alert(t('common.error'), t('common.createRepeatingEventsFailed'));
     }
   };
 
@@ -379,7 +391,7 @@ export default function CalendarScreen() {
       await loadEvents();
     } catch (error) {
       console.error('Error responding to event:', error);
-      Alert.alert('Error', 'Failed to record your response. Please try again.');
+      Alert.alert(t('common.error'), t('common.recordResponseFailed'));
     }
   };
 

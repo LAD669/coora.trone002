@@ -5,12 +5,14 @@ import {
   requestNotificationPermissions, 
   getNotificationTokenSafely 
 } from '@/lib/notifications';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface NotificationSetupProps {
   onTokenReceived?: (token: string) => void;
 }
 
 export default function NotificationSetup({ onTokenReceived }: NotificationSetupProps) {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
@@ -28,7 +30,7 @@ export default function NotificationSetup({ onTokenReceived }: NotificationSetup
       }
     } catch (error) {
       console.error('Error checking permissions:', error);
-      Alert.alert('Error', 'Failed to check notification permissions.');
+      Alert.alert('Error', t('common.notificationPermissionsFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +52,7 @@ export default function NotificationSetup({ onTokenReceived }: NotificationSetup
       }
     } catch (error) {
       console.error('Error requesting permissions:', error);
-      Alert.alert('Error', 'Failed to request notification permissions.');
+      Alert.alert('Error', t('common.requestNotificationPermissionsFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +72,7 @@ export default function NotificationSetup({ onTokenReceived }: NotificationSetup
       }
     } catch (error) {
       console.error('Error getting token:', error);
-      Alert.alert('Error', 'Failed to get notification token.');
+      Alert.alert('Error', t('common.getNotificationTokenFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +104,7 @@ export default function NotificationSetup({ onTokenReceived }: NotificationSetup
       }
     } catch (error) {
       console.error('Error setting up notifications:', error);
-      Alert.alert('Error', 'Failed to setup notifications.');
+      Alert.alert('Error', t('common.setupNotificationsFailed'));
     } finally {
       setIsLoading(false);
     }

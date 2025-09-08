@@ -42,23 +42,23 @@ export default function SignUpScreen() {
     } = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = t('common.fillAllFields');
+      newErrors.name = t('common.nameRequired');
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = t('common.fillAllFields');
+      newErrors.email = t('common.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-              newErrors.email = t('common.validEmailRequired');
+      newErrors.email = t('common.validEmailRequired');
     }
 
     if (!formData.password.trim()) {
-      newErrors.password = t('common.fillAllFields');
+      newErrors.password = t('common.passwordRequired');
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('common.passwordTooShort');
     }
 
     if (!formData.accessCode.trim()) {
-      newErrors.accessCode = t('common.fillAllFields');
+      newErrors.accessCode = t('common.accessCodeRequired');
     }
 
     setErrors(newErrors);

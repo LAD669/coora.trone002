@@ -247,7 +247,7 @@ function InfohubScreenContent() {
       setPostModalVisible(true);
     } else {
       console.log('Post not found for ID:', postId);
-      Alert.alert('Error', 'Post not found. Please try again.');
+      Alert.alert(commonT('error'), commonT('postNotFound'));
     }
     setShowEmojiPicker(null);
   }

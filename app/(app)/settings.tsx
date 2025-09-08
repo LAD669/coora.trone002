@@ -81,7 +81,7 @@ export default function SettingsScreen() {
 
   const switchToAccount = async (session: StoredSession) => {
     if (!session || !session.access_token || !session.refresh_token) {
-      Alert.alert('Error', 'Invalid session data. Please try again.');
+      Alert.alert(t('common.error'), t('common.invalidSessionData'));
       return;
     }
 
@@ -103,7 +103,7 @@ export default function SettingsScreen() {
       // Refresh the page to update the UI
       safeReplace('/(app)/(tabs)');
     } catch (error) {
-      Alert.alert('Error', 'Failed to switch account. Please try again.');
+      Alert.alert(t('common.error'), t('common.switchAccountFailed'));
     } finally {
       setIsLoading(false);
     }

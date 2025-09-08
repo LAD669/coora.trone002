@@ -98,8 +98,12 @@ export default function EditProfileScreen() {
     if (!user?.id) return;
 
     // Validate required fields
-    if (!profile.first_name.trim() || !profile.last_name.trim()) {
-      Alert.alert(t('common.error'), t('common.fillAllFields'));
+    if (!profile.first_name.trim()) {
+      Alert.alert(t('common.error'), t('common.firstNameRequired'));
+      return;
+    }
+    if (!profile.last_name.trim()) {
+      Alert.alert(t('common.error'), t('common.lastNameRequired'));
       return;
     }
 
