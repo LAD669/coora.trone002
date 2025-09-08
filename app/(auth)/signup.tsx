@@ -119,12 +119,12 @@ export default function SignUpScreen() {
         <View style={styles.form}>
           {/* Name Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('common.fullName')}</Text>
+            <Text style={styles.inputLabel}>{t('auth.name.label')}</Text>
             <View style={[styles.inputContainer, errors.name && styles.inputError]}>
               <User size={20} color="#8E8E93" strokeWidth={1.5} />
               <TextInput
                 style={styles.input}
-                placeholder={t('common.fullName')}
+                placeholder={t('auth.name.placeholder')}
                 value={formData.name}
                 onChangeText={(text) => updateFormData('name', text)}
                 autoCapitalize="words"
@@ -182,12 +182,12 @@ export default function SignUpScreen() {
 
           {/* Access Code Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Access Code</Text>
+            <Text style={styles.inputLabel}>{t('auth.accessCode.label')}</Text>
             <View style={[styles.inputContainer, errors.accessCode && styles.inputError]}>
               <Key size={20} color="#8E8E93" strokeWidth={1.5} />
               <TextInput
                 style={styles.input}
-                placeholder="Enter your team access code"
+                placeholder={t('auth.accessCode.placeholder')}
                 value={formData.accessCode}
                 onChangeText={(text) => updateFormData('accessCode', text.toUpperCase())}
                 autoCapitalize="characters"
@@ -227,7 +227,7 @@ export default function SignUpScreen() {
             onPress={handleNavigateToLogin}
           >
             <LogIn size={20} color="#007AFF" strokeWidth={1.5} />
-            <Text style={styles.signInButtonText}>Sign In</Text>
+            <Text style={styles.signInButtonText}>{t('auth.signIn')}</Text>
           </TouchableOpacity>
 
           {/* Sign In Link */}

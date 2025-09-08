@@ -106,6 +106,10 @@
     "signIn": "Anmelden",
     "signOut": "Abmelden",
     "signUp": "Registrieren",
+    "name": {
+      "label": "Name",
+      "placeholder": "Name eingeben"
+    },
     "email": {
       "label": "E-Mail",
       "placeholder": "E-Mail eingeben"
@@ -113,6 +117,10 @@
     "password": {
       "label": "Passwort",
       "placeholder": "Passwort eingeben"
+    },
+    "accessCode": {
+      "label": "Zugangscode",
+      "placeholder": "Team-Zugangscode eingeben"
     },
     "confirmPassword": "Passwort bestätigen",
     "forgotPassword": "Passwort vergessen?",

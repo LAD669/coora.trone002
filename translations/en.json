@@ -118,6 +118,10 @@
     "signIn": "Sign In",
     "signOut": "Sign Out",
     "signUp": "Sign up",
+    "name": {
+      "label": "Name",
+      "placeholder": "Enter name"
+    },
     "email": {
       "label": "Email",
       "placeholder": "Enter email"
@@ -125,6 +129,10 @@
     "password": {
       "label": "Password",
       "placeholder": "Enter password"
+    },
+    "accessCode": {
+      "label": "Access Code",
+      "placeholder": "Enter your team access code"
     },
     "confirmPassword": "Confirm Password",
     "forgotPassword": "Forgot Password?",
