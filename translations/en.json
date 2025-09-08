@@ -106,13 +106,12 @@
     "email": "Email",
     "password": "Password",
     "fullName": "Full Name",
-    "signIn": "Sign In",
-    "signUp": "Sign Up",
     "firstName": "First Name",
     "lastName": "Last Name",
     "phoneNumber": "Phone Number",
     "role": "Role",
-    "profileUpdated": "Profile updated successfully"
+    "profileUpdated": "Profile updated successfully",
+    "saveChanges": "Save changes"
   },
   "auth": {
     "signIn": "Sign in",
@@ -159,9 +158,9 @@
       "date": "Date",
       "datePlaceholder": "YYYY-MM-DD",
       "startTime": "Start time",
-      "startTimePlaceholder": "HH:MM",
+      "startTimePlaceholder": "HH:mm",
       "endTime": "End time",
-      "endTimePlaceholder": "HH:MM",
+      "endTimePlaceholder": "HH:mm",
       "duration": "Duration",
       "durationPlaceholder": "Auto-calculated",
       "type": "Type",
@@ -176,7 +175,9 @@
     "emptyState": {
       "title": "No events scheduled",
       "subtitle": "Create your first event to get started"
-    }
+    },
+    "eventsCount_one": "{{count}} event",
+    "eventsCount_other": "{{count}} events"
   },
   "settings": {
     "title": "Settings",
@@ -203,7 +204,9 @@
     "disableTwoFactor": "Disable Two-Factor Authentication",
     "disableTwoFactorMessage": "This will remove the extra security layer from your account. Are you sure?",
     "enabled": "Enabled",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "loading": "Loading...",
+    "error": "Error"
   },
   "profile": {
     "title": "Profile",

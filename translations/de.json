@@ -100,7 +100,16 @@
     "updateTitle": "Update-Titel",
     "publishUpdate": "Update veröffentlichen",
     "postDetails": "Beitragsdetails",
-    "noReactionsYet": "Noch keine Reaktionen"
+    "noReactionsYet": "Noch keine Reaktionen",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "fullName": "Vollständiger Name",
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "phoneNumber": "Telefonnummer",
+    "role": "Rolle",
+    "profileUpdated": "Profil erfolgreich aktualisiert",
+    "saveChanges": "Änderungen speichern"
   },
   "auth": {
     "signIn": "Anmelden",
@@ -147,9 +156,9 @@
       "date": "Datum",
       "datePlaceholder": "JJJJ-MM-TT",
       "startTime": "Startzeit",
-      "startTimePlaceholder": "HH:MM",
+      "startTimePlaceholder": "HH:mm",
       "endTime": "Endzeit",
-      "endTimePlaceholder": "HH:MM",
+      "endTimePlaceholder": "HH:mm",
       "duration": "Dauer",
       "durationPlaceholder": "Automatisch berechnet",
       "type": "Typ",
@@ -164,7 +173,9 @@
     "emptyState": {
       "title": "Keine Termine geplant",
       "subtitle": "Erstellen Sie Ihren ersten Termin, um zu beginnen"
-    }
+    },
+    "eventsCount_one": "{{count}} Termin",
+    "eventsCount_other": "{{count}} Termine"
   },
   "settings": {
     "title": "Einstellungen",
@@ -189,12 +200,27 @@
     "enableTwoFactor": "Zwei-Faktor-Authentifizierung aktivieren",
     "enableTwoFactorMessage": "Dies fügt Ihrem Konto eine zusätzliche Sicherheitsebene hinzu. Sie müssen Ihre Identität bei der Anmeldung mit einem zweiten Faktor verifizieren.",
     "disableTwoFactor": "Zwei-Faktor-Authentifizierung deaktivieren",
-    "disableTwoFactorMessage": "Dies entfernt die zusätzliche Sicherheitsebene von Ihrem Konto. Sind Sie sicher?"
+    "disableTwoFactorMessage": "Dies entfernt die zusätzliche Sicherheitsebene von Ihrem Konto. Sind Sie sicher?",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "loading": "Laden...",
+    "error": "Fehler"
   },
   "profile": {
     "title": "Profil",
     "editProfile": "Profil bearbeiten",
     "personalInfo": "Persönliche Informationen",
     "preferences": "Präferenzen"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "markAllRead": "Alle als gelesen markieren",
+    "all": "Alle",
+    "unread": "Ungelesen",
+    "loading": "Benachrichtigungen werden geladen...",
+    "noUnreadNotifications": "Keine ungelesenen Benachrichtigungen",
+    "noNotifications": "Keine Benachrichtigungen",
+    "allCaughtUp": "Alles erledigt!",
+    "teamUpdatesHere": "Team-Updates werden hier angezeigt"
   }
 } 
