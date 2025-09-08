@@ -117,7 +117,7 @@
   "auth": {
     "signIn": "Sign In",
     "signOut": "Sign Out",
-    "signUp": "Sign Up",
+    "signUp": "Sign up",
     "email": {
       "label": "Email",
       "placeholder": "Enter email"

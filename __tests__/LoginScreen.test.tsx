@@ -157,6 +157,17 @@ describe('LoginScreen - COORA-001 & COORA-002', () => {
       expect(screen.getByText('Sign up')).toBeTruthy();
     });
 
+    it('renders complete signup text with correct sentence case', () => {
+      render(
+        <I18nextProvider i18n={i18next}>
+          <LoginScreen />
+        </I18nextProvider>
+      );
+
+      // Check that the complete text appears as expected
+      expect(screen.getByText("Don't have an account? Sign up")).toBeTruthy();
+    });
+
     it('does not render divider or create account button', () => {
       render(
         <I18nextProvider i18n={i18next}>
