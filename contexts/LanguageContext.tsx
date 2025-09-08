@@ -29,8 +29,8 @@ i18next
       useSuspense: false
     },
     compatibilityJSON: 'v3',
-    defaultNS: 'common',
-    ns: ['common', 'auth', 'settings', 'tabs', 'profile', 'notifications']
+    defaultNS: 'translation',
+    ns: ['translation']
   });
 
 // Add custom plural rule handler
@@ -53,7 +53,7 @@ interface LanguageProviderProps {
 
 export function LanguageProvider({ children }: LanguageProviderProps) {
   const [language, setLanguageState] = useState<Language>('en');
-  const { t } = useTranslation(['common', 'auth', 'settings', 'tabs', 'profile', 'notifications']);
+  const { t } = useTranslation();
 
   // Load saved language on app start
   useEffect(() => {
