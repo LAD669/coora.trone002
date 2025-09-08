@@ -16,6 +16,10 @@ npm run lint:strict
 echo "📚 Spell checking..."
 npm run spell-check
 
+# Placeholder scanning
+echo "🚫 Scanning for placeholders..."
+npm run scan:placeholders
+
 # Run staged file linting
 echo "🎯 Checking staged files..."
 npx lint-staged

@@ -474,11 +474,7 @@ function InfohubScreenContent() {
 
             <TextInput
               style={styles.contentInput}
-              placeholder={
-                activeTab === 'organization' 
-                  ? "Was gibt es Neues in der Organisation?"
-                  : "Was passiert mit dem Team?"
-              }
+              placeholder={commonT('postContentPlaceholder')}
               value={newPost.content}
               onChangeText={(text) => setNewPost({ ...newPost, content: text })}
               multiline

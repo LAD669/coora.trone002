@@ -28,7 +28,7 @@ export default function PlayerDetailScreen() {
   if (!player) {
     return (
       <View style={styles.container}>
-        <Header title="Player Details" />
+        <Header title={t('player.details')} />
         <View style={styles.centerContainer}>
           <User size={48} color="#E5E5E7" strokeWidth={1} />
           <Text style={styles.emptyText}>Player not found</Text>
@@ -41,7 +41,7 @@ export default function PlayerDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <Header title="Player Details" showBackButton onBackPress={() => safeBack()} />
+      <Header title={t('player.details')} showBackButton onBackPress={() => safeBack()} />
       
       <ScrollView 
         style={styles.scrollView}

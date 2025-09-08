@@ -66,6 +66,8 @@
     "requestNotificationPermissionsFailed": "Failed to request notification permissions.",
     "getNotificationTokenFailed": "Failed to get notification token.",
     "setupNotificationsFailed": "Failed to setup notifications.",
+    "comingSoon": "Feature coming soon",
+    "postContentPlaceholder": "What's happening with the team?",
     "goalCreated": "Goal created successfully",
     "welcomeBack": "Welcome back",
     "teamStatistics": "Team Statistics",
@@ -228,6 +230,10 @@
     "selectLanguage": "Select Language",
     "languageChanged": "Language Changed",
     "languageChangedMessage": "Language has been changed to {language}. The app will restart to apply changes.",
+    "accounts": "Accounts",
+    "changePasswordComingSoon": "Change password feature will be available soon.",
+    "privacySettingsComingSoon": "Privacy settings will be available soon.",
+    "helpCenterComingSoon": "Help center will be available soon",
     "twoFactorAuth": "Two-Factor Authentication",
     "enableTwoFactor": "Enable Two-Factor Authentication",
     "enableTwoFactorMessage": "This will add an extra layer of security to your account. You'll need to verify your identity with a second factor when signing in.",
@@ -243,6 +249,9 @@
     "editProfile": "Edit Profile",
     "personalInfo": "Personal Information",
     "preferences": "Preferences"
+  },
+  "player": {
+    "details": "Player Details"
   },
   "notifications": {
     "title": "Notifications",

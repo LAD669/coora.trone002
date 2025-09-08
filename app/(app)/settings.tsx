@@ -328,20 +328,20 @@ export default function SettingsScreen() {
               icon={Key}
               title={t('settings.changePassword')}
               subtitle={t('settings.updatePassword')}
-              onPress={() => Alert.alert('Coming Soon', 'Change password feature will be available soon.')}
+              onPress={() => Alert.alert(t('common.comingSoon'), t('settings.changePasswordComingSoon'))}
             />
             <SettingItem
               icon={Shield}
               title={t('settings.privacySecurity')}
               subtitle={t('settings.privacySettings')}
-              onPress={() => Alert.alert('Coming Soon', 'Privacy settings will be available soon.')}
+              onPress={() => Alert.alert(t('common.comingSoon'), t('settings.privacySettingsComingSoon'))}
             />
           </View>
         </View>
 
         {/* Accounts Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Accounts</Text>
+          <Text style={styles.sectionTitle}>{t('settings.accounts')}</Text>
           <View style={styles.settingsGroup}>
             {storedSessions.map((session) => {
               // Safe session access
@@ -470,7 +470,7 @@ export default function SettingsScreen() {
               icon={HelpCircle}
               title={t('settings.helpSupport')}
               subtitle={t('settings.helpSupport')}
-              onPress={() => Alert.alert(t('settings.helpSupport'), 'Help center coming soon')}
+              onPress={() => Alert.alert(t('settings.helpSupport'), t('settings.helpCenterComingSoon'))}
             />
             <SettingItem
               icon={LogOut}
