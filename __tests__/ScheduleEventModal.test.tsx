@@ -54,7 +54,7 @@ describe('ScheduleEventModal', () => {
     
     // Modal should now be visible
     expect(screen.getByTestId('modal-overlay')).toBeTruthy();
-    expect(screen.getByText('Schedule Event')).toBeTruthy();
+    expect(screen.getByText('Schedule event')).toBeTruthy();
   });
 
   it('renders modal with proper app-style structure', () => {
@@ -65,12 +65,12 @@ describe('ScheduleEventModal', () => {
     fireEvent.press(scheduleButton);
     
     // Check modal structure follows app pattern
-    expect(screen.getByText('Schedule Event')).toBeTruthy();
+    expect(screen.getByText('Schedule event')).toBeTruthy();
     expect(screen.getByText('Cancel')).toBeTruthy();
     expect(screen.getByPlaceholderText('Event title')).toBeTruthy();
     expect(screen.getByText('Training')).toBeTruthy();
     expect(screen.getByText('Match')).toBeTruthy();
-    expect(screen.getByText('Schedule Event')).toBeTruthy();
+    expect(screen.getByText('Schedule event')).toBeTruthy();
   });
 
   it('closes modal when cancel button is pressed', () => {
@@ -81,7 +81,7 @@ describe('ScheduleEventModal', () => {
     fireEvent.press(scheduleButton);
     
     // Verify modal is open
-    expect(screen.getByText('Schedule Event')).toBeTruthy();
+    expect(screen.getByText('Schedule event')).toBeTruthy();
     
     // Close modal
     const cancelButton = screen.getByText('Cancel');
@@ -99,7 +99,7 @@ describe('ScheduleEventModal', () => {
     fireEvent.press(scheduleButton);
     
     // Verify modal is open
-    expect(screen.getByText('Schedule Event')).toBeTruthy();
+    expect(screen.getByText('Schedule event')).toBeTruthy();
     
     // Close modal by pressing backdrop
     const modalOverlay = screen.getByTestId('modal-overlay');
@@ -117,7 +117,7 @@ describe('ScheduleEventModal', () => {
     fireEvent.press(scheduleButton);
     
     // Check that modal follows standard app pattern
-    expect(screen.getByText('Schedule Event')).toBeTruthy();
+    expect(screen.getByText('Schedule event')).toBeTruthy();
     expect(screen.getByText('Cancel')).toBeTruthy();
     expect(screen.getByPlaceholderText('Event title')).toBeTruthy();
     
@@ -162,7 +162,7 @@ describe('ScheduleEventModal', () => {
     expect(modalOverlay).toBeTruthy();
     
     // Check that modal follows app pattern with proper structure
-    expect(screen.getByText('Schedule Event')).toBeTruthy();
+    expect(screen.getByText('Schedule event')).toBeTruthy();
     expect(screen.getByText('Cancel')).toBeTruthy();
     expect(screen.getByPlaceholderText('Event title')).toBeTruthy();
   });
