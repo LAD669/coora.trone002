@@ -14,7 +14,7 @@ import {
 import { useAuth } from '@/contexts/AuthProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
-import { Eye, EyeOff, Mail, Lock, ArrowRight, UserPlus } from 'lucide-react-native';
+import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const { t } = useLanguage();
@@ -150,22 +150,6 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Sign Up Button */}
-          <TouchableOpacity
-            style={styles.signUpButton}
-            onPress={handleNavigateToSignup}
-          >
-            <UserPlus size={20} color="#007AFF" strokeWidth={1.5} />
-            <Text style={styles.signUpButtonText}>Create Account</Text>
-          </TouchableOpacity>
-
           {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
@@ -293,40 +277,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-    fontFamily: 'Urbanist-SemiBold',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 32,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#F0F0F0',
-  },
-  dividerText: {
-    fontSize: 14,
-    color: '#8E8E93',
-    fontFamily: 'Urbanist-Regular',
-    marginHorizontal: 16,
-  },
-  signUpButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    paddingVertical: 16,
-    marginBottom: 24,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-  },
-  signUpButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#007AFF',
     fontFamily: 'Urbanist-SemiBold',
   },
   signUpContainer: {
