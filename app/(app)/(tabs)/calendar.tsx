@@ -11,6 +11,7 @@ import {
 import Modal from 'react-native-modal';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthProvider';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getTeamEvents, createEvent, respondToEvent, getEventResponses } from '@/lib/supabase';
 import { Plus, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Check, X, Users, UserCheck, UserX, Clock as ClockIcon } from 'lucide-react-native';
 import { Event } from '@/types';
@@ -72,6 +73,7 @@ const isToday = (date: Date) => {
 
 export default function CalendarScreen() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   
   const [events, setEvents] = useState<Event[]>([]);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -525,7 +527,7 @@ export default function CalendarScreen() {
 
   return (
     <View style={styles.container}>
-      <Header title="Calendar" />
+      <Header title={t('calendar.title')} />
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Calendar Header */}
@@ -600,7 +602,7 @@ export default function CalendarScreen() {
             {getEventsForSelectedDate().length === 0 ? (
               <View style={styles.emptyState}>
                 <CalendarIcon size={48} color="#E5E5E7" strokeWidth={1} />
-                <Text style={styles.emptyStateText}>No events scheduled</Text>
+                <Text style={styles.emptyStateText}>{t('calendar.emptyState.title')}</Text>
               </View>
             ) : (
               getEventsForSelectedDate().map((event) => (
@@ -777,9 +779,9 @@ export default function CalendarScreen() {
       >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Schedule Event</Text>
+            <Text style={styles.modalTitle}>{t('calendar.schedule.title')}</Text>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t('calendar.actions.cancel')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -790,7 +792,7 @@ export default function CalendarScreen() {
           >
           <TextInput
             style={styles.input}
-            placeholder="Event title"
+            placeholder={t('calendar.schedule.eventTitlePlaceholder')}
             value={newEvent.title}
             onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
             placeholderTextColor="#8E8E93"
@@ -807,7 +809,7 @@ export default function CalendarScreen() {
               <Text style={[
                 styles.typeButtonText,
                 newEvent.type === 'training' && styles.typeButtonTextActive
-              ]}>Training</Text>
+              ]}>{t('calendar.schedule.training')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
@@ -820,7 +822,7 @@ export default function CalendarScreen() {
               <Text style={[
                 styles.typeButtonText,
                 newEvent.type === 'match' && styles.typeButtonTextActive
-              ]}>Match</Text>
+              ]}>{t('calendar.schedule.match')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -954,7 +956,7 @@ export default function CalendarScreen() {
                     {newEvent.repeatEndType === 'date' ? (
                       <TextInput
                         style={styles.endDateInput}
-                        placeholder="YYYY-MM-DD"
+                        placeholder={t('calendar.schedule.datePlaceholder')}
                         value={newEvent.repeatEndDate}
                         onChangeText={(text) => setNewEvent({ ...newEvent, repeatEndDate: text })}
                         placeholderTextColor="#8E8E93"
@@ -963,7 +965,7 @@ export default function CalendarScreen() {
                       <View style={styles.occurrencesContainer}>
                         <TextInput
                           style={styles.occurrencesInput}
-                          placeholder="10"
+                          placeholder={t('calendar.schedule.startTimePlaceholder')}
                           value={newEvent.repeatOccurrences.toString()}
                           onChangeText={(text) => setNewEvent({ ...newEvent, repeatOccurrences: parseInt(text) || 1 })}
                           keyboardType="numeric"
@@ -981,7 +983,7 @@ export default function CalendarScreen() {
           <View style={styles.dateRow}>
             <TextInput
               style={styles.input}
-              placeholder="YYYY-MM-DD"
+              placeholder={t('calendar.schedule.datePlaceholder')}
               value={newEvent.date}
               onChangeText={(text) => setNewEvent({ ...newEvent, date: text })}
               placeholderTextColor="#8E8E93"
@@ -992,10 +994,10 @@ export default function CalendarScreen() {
           {newEvent.type === 'training' ? (
             <View style={styles.timeRow}>
               <View style={styles.timeInputContainer}>
-                <Text style={styles.timeLabel}>Start Time *</Text>
+                <Text style={styles.timeLabel}>{t('calendar.schedule.startTime')} *</Text>
                 <TextInput
                   style={[styles.input, styles.timeInput]}
-                  placeholder="HH:MM"
+                  placeholder={t('calendar.schedule.startTimePlaceholder')}
                   value={newEvent.trainingStartTime}
                   onChangeText={(text) => setNewEvent({ ...newEvent, trainingStartTime: text })}
                   onBlur={() => {
@@ -1006,10 +1008,10 @@ export default function CalendarScreen() {
                 />
               </View>
               <View style={styles.timeInputContainer}>
-                <Text style={styles.timeLabel}>End Time</Text>
+                <Text style={styles.timeLabel}>{t('calendar.schedule.endTime')}</Text>
                 <TextInput
                   style={[styles.input, styles.timeInput]}
-                  placeholder="HH:MM"
+                  placeholder={t('calendar.schedule.startTimePlaceholder')}
                   value={newEvent.trainingEndTime}
                   onChangeText={(text) => setNewEvent({ ...newEvent, trainingEndTime: text })}
                   onBlur={() => {
@@ -1023,10 +1025,10 @@ export default function CalendarScreen() {
           ) : (
             <View style={styles.matchTimesContainer}>
               <View style={styles.timeInputContainer}>
-                <Text style={styles.timeLabel}>Meeting Time *</Text>
+                <Text style={styles.timeLabel}>{t('calendar.schedule.startTime')} *</Text>
                 <TextInput
                   style={[styles.input, styles.timeInput]}
-                  placeholder="HH:MM"
+                  placeholder={t('calendar.schedule.startTimePlaceholder')}
                   value={newEvent.meetingTime}
                   onChangeText={(text) => setNewEvent({ ...newEvent, meetingTime: text })}
                   onBlur={() => {
@@ -1038,10 +1040,10 @@ export default function CalendarScreen() {
               </View>
               
               <View style={styles.timeInputContainer}>
-                <Text style={styles.timeLabel}>Start Time *</Text>
+                <Text style={styles.timeLabel}>{t('calendar.schedule.startTime')} *</Text>
                 <TextInput
                   style={[styles.input, styles.timeInput]}
-                  placeholder="HH:MM"
+                  placeholder={t('calendar.schedule.startTimePlaceholder')}
                   value={newEvent.matchStartTime}
                   onChangeText={(text) => {
                     setNewEvent({ ...newEvent, matchStartTime: text });
@@ -1069,10 +1071,10 @@ export default function CalendarScreen() {
               </View>
               
               <View style={styles.timeInputContainer}>
-                <Text style={styles.timeLabel}>End Time</Text>
+                <Text style={styles.timeLabel}>{t('calendar.schedule.endTime')}</Text>
                 <TextInput
                   style={[styles.input, styles.timeInput]}
-                  placeholder="Auto-calculated"
+                  placeholder={t('calendar.schedule.durationPlaceholder')}
                   value={newEvent.matchEndTime}
                   onChangeText={(text) => setNewEvent({ ...newEvent, matchEndTime: text })}
                   onBlur={() => {
@@ -1091,7 +1093,7 @@ export default function CalendarScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="Location"
+            placeholder={t('calendar.schedule.locationPlaceholder')}
             value={newEvent.location}
             onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
             placeholderTextColor="#8E8E93"
@@ -1099,7 +1101,7 @@ export default function CalendarScreen() {
 
           <TextInput
             style={styles.notesInput}
-            placeholder="Notes (optional)"
+            placeholder={t('calendar.schedule.notesPlaceholder')}
             value={newEvent.notes}
             onChangeText={(text) => setNewEvent({ ...newEvent, notes: text })}
             multiline
@@ -1112,7 +1114,7 @@ export default function CalendarScreen() {
             style={styles.createButton}
             onPress={handleCreateEvent}
           >
-            <Text style={styles.createButtonText}>Schedule Event</Text>
+            <Text style={styles.createButtonText}>{t('calendar.actions.schedule')}</Text>
           </TouchableOpacity>
           </ScrollView>
         </View>
