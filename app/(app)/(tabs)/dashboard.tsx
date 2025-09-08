@@ -81,11 +81,6 @@ export default function DashboardScreen() {
   const { t: tabsT } = useTranslation('tabs');
   const { user } = useAuth();
   
-  // Early return if user is not available
-  if (!user) {
-    return null;
-  }
-  
   const canManagePlayers = user?.role === 'trainer' || user?.role === 'admin';
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const [stats, setStats] = useState<any[]>(defaultStats);
@@ -250,6 +245,11 @@ export default function DashboardScreen() {
       loadTeamPlayers();
     }
   }, [user]);
+
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
 
   const loadDashboardData = async () => {
     if (!user?.teamId) return;

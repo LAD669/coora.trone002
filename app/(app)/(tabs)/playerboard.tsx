@@ -166,11 +166,6 @@ export default function PlayerboardScreen() {
   const { user } = useAuth();
   const { safePush } = useNavigationReady();
   
-  // Early return if user is not available
-  if (!user) {
-    return null;
-  }
-  
   // const [view, setView] = useState<'list' | 'lineup'>('list'); // LINEUP VIEW DEACTIVATED
   const [view, setView] = useState<'list' | 'lineup'>('list'); // Force list view only
   const [selectedFormation, setSelectedFormation] = useState(formations[1]);
@@ -203,6 +198,11 @@ export default function PlayerboardScreen() {
       });
     }
   }, [user]);
+
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
 
   const loadPlayers = async () => {
     if (!user) {

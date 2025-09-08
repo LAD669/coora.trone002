@@ -67,11 +67,6 @@ function InfohubScreenContent() {
   const { t: commonT } = useTranslation('common');
   const { user } = useAuth();
   
-  // Early return if user is not available
-  if (!user) {
-    return null;
-  }
-  
   const [activeTab, setActiveTab] = useState<'organization' | 'teams'>('organization');
   const [posts, setPosts] = useState<any[]>([]);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -96,6 +91,11 @@ function InfohubScreenContent() {
       setIsLoading(false);
     }
   }, [activeTab, user]);
+
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
 
   const loadPosts = async () => {
     if (!user?.teamId || !user?.id) {

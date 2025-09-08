@@ -44,11 +44,6 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const { safeReplace, safePush } = useNavigationReady();
   
-  // Early return if user is not available
-  if (!user) {
-    return null;
-  }
-  
   const { permissions, requestPermission, isLoading: permissionsLoading } = usePermissions();
   const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState(true);
@@ -60,6 +55,11 @@ export default function SettingsScreen() {
   useEffect(() => {
     loadStoredSessions();
   }, []);
+
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
 
   const loadStoredSessions = async () => {
     try {

@@ -118,8 +118,14 @@
     "signIn": "Sign In",
     "signOut": "Sign Out",
     "signUp": "Sign Up",
-    "email": "Email",
-    "password": "Password",
+    "email": {
+      "label": "Email",
+      "placeholder": "Enter email"
+    },
+    "password": {
+      "label": "Password",
+      "placeholder": "Enter password"
+    },
     "confirmPassword": "Confirm Password",
     "forgotPassword": "Forgot Password?",
     "loginSuccess": "Successfully logged in",

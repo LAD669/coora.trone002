@@ -13,11 +13,6 @@ export default function TabLayout() {
   const { user } = useAuth();
   const { safePush } = useNavigationReady();
   
-  // Early return if user is not available
-  if (!user) {
-    return null;
-  }
-  
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Load notifications and count unread ones
@@ -44,6 +39,11 @@ export default function TabLayout() {
       setUnreadCount(0);
     }
   };
+
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
 
   const handleNotifications = () => {
             safePush('/(app)/notifications');
