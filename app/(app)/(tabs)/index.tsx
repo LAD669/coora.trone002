@@ -524,10 +524,12 @@ function InfohubScreenContent() {
         backdropOpacity={0.5}
         animationIn="slideInUp"
         animationOut="slideOutDown"
-        useNativeDriver={true}
-        hideModalContentWhileAnimating={true}
+        useNativeDriver={false}
+        hideModalContentWhileAnimating={false}
+        propagateSwipe={true}
+        avoidKeyboard={true}
       >
-        <View style={styles.modalContent}>
+        <View style={[styles.modalContent, { backgroundColor: 'white', minHeight: 200 }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{commonT('postDetails')}</Text>
             <TouchableOpacity onPress={() => {
