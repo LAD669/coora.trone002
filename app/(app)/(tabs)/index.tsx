@@ -244,15 +244,8 @@ function InfohubScreenContent() {
     const post = posts.find(p => p.id === postId);
     if (post) {
       console.log('Selected post for modal:', post);
-      console.log('Setting modal state - before:', { isPostModalVisible, selectedPostForModal });
       setSelectedPostForModal(post);
       setPostModalVisible(true);
-      console.log('Modal state should be set to true now');
-      
-      // Debug: Force a re-render to check state
-      setTimeout(() => {
-        console.log('Modal state after timeout:', { isPostModalVisible, selectedPostForModal });
-      }, 100);
     } else {
       console.log('Post not found for ID:', postId);
       Alert.alert(commonT('error'), commonT('postNotFound'));
@@ -275,18 +268,22 @@ function InfohubScreenContent() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        {/* Debug: Test Modal Button */}
-        <TouchableOpacity 
-          style={{ backgroundColor: 'red', padding: 10, margin: 10, alignItems: 'center' }}
-          onPress={() => {
-            console.log('Test button pressed');
-            setSelectedPostForModal({ id: 'test', title: 'Test Post', content: 'Test Content' });
-            setPostModalVisible(true);
-          }}
-        >
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>DEBUG: Test Modal</Text>
-        </TouchableOpacity>
         
+        {/* Debug State Display */}
+        <View style={{ padding: 10, backgroundColor: '#f0f0f0', margin: 10 }}>
+          <Text>Modal Visible: {isPostModalVisible ? 'true' : 'false'}</Text>
+          <Text>Selected Post: {selectedPostForModal ? selectedPostForModal.title : 'none'}</Text>
+          <TouchableOpacity 
+            style={{ backgroundColor: 'blue', padding: 5, marginTop: 5 }}
+            onPress={() => {
+              setSelectedPostForModal({ id: 'test', title: 'Test Post', content: 'Test Content' });
+              setPostModalVisible(true);
+            }}
+          >
+            <Text style={{ color: 'white' }}>Test Modal</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Toggle Section */}
         <View style={styles.toggleContainer}>
           <View style={styles.toggle}>
@@ -520,13 +517,10 @@ function InfohubScreenContent() {
       <Modal
         isVisible={isPostModalVisible}
         onBackdropPress={() => {
-          console.log('Modal backdrop pressed');
           setPostModalVisible(false);
           setSelectedPostForModal(null);
         }}
         style={styles.modal}
-        onModalShow={() => console.log('Modal shown')}
-        onModalHide={() => console.log('Modal hidden')}
         backdropOpacity={0.5}
         animationIn="slideInUp"
         animationOut="slideOutDown"
