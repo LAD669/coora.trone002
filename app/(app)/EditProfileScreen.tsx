@@ -20,11 +20,6 @@ export default function EditProfileScreen() {
   const { user, loading } = useAuth();
   const { safeBack } = useNavigationReady();
   
-  // Early return if user is not available
-  if (!user) {
-    return null;
-  }
-  
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState({
     first_name: '',
@@ -42,6 +37,11 @@ export default function EditProfileScreen() {
       loadOrCreateProfile();
     }
   }, [user?.id]);
+
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
 
   const loadOrCreateProfile = async () => {
     if (!user?.id || !user?.email) return;
@@ -204,7 +204,7 @@ export default function EditProfileScreen() {
 
           {/* Read-only fields */}
           <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>{t('common.email')}</Text>
+            <Text style={styles.formLabel}>{t('auth.email.label')}</Text>
             <View style={styles.readOnlyField}>
               <Text style={styles.readOnlyText}>{profile.email}</Text>
             </View>

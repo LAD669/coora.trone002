@@ -106,8 +106,14 @@
     "signIn": "Anmelden",
     "signOut": "Abmelden",
     "signUp": "Registrieren",
-    "email": "E-Mail",
-    "password": "Passwort",
+    "email": {
+      "label": "E-Mail",
+      "placeholder": "E-Mail eingeben"
+    },
+    "password": {
+      "label": "Passwort",
+      "placeholder": "Passwort eingeben"
+    },
     "confirmPassword": "Passwort bestätigen",
     "forgotPassword": "Passwort vergessen?",
     "loginSuccess": "Erfolgreich angemeldet",

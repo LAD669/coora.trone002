@@ -20,11 +20,6 @@ export default function NotificationsScreen() {
   const { user } = useAuth();
   const { safeBack } = useNavigationReady();
   
-  // Early return if user is not available
-  if (!user) {
-    return null;
-  }
-  
   const [notifications, setNotifications] = useState<any[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -35,6 +30,11 @@ export default function NotificationsScreen() {
       loadNotifications();
     }
   }, [user]);
+
+  // Early return if user is not available
+  if (!user) {
+    return null;
+  }
 
   const loadNotifications = async () => {
     if (!user?.teamId) return;

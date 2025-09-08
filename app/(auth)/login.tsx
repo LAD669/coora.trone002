@@ -86,12 +86,12 @@ export default function LoginScreen() {
         <View style={styles.form}>
           {/* Email Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('common.email')}</Text>
+            <Text style={styles.inputLabel}>{t('auth.email.label')}</Text>
             <View style={[styles.inputContainer, errors.email && styles.inputError]}>
               <Mail size={20} color="#8E8E93" strokeWidth={1.5} />
               <TextInput
                 style={styles.input}
-                placeholder={t('common.email')}
+                placeholder={t('auth.email.placeholder')}
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
@@ -108,12 +108,12 @@ export default function LoginScreen() {
 
           {/* Password Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('common.password')}</Text>
+            <Text style={styles.inputLabel}>{t('auth.password.label')}</Text>
             <View style={[styles.inputContainer, errors.password && styles.inputError]}>
               <Lock size={20} color="#8E8E93" strokeWidth={1.5} />
               <TextInput
                 style={styles.input}
-                placeholder={t('common.password')}
+                placeholder={t('auth.password.placeholder')}
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);

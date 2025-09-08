@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 import { getUserProfile } from '@/lib/supabase';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { clearAllAuthData } from '@/lib/clearAuthData';
 
 interface AuthUser {
   id: string;
@@ -20,6 +21,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signUp: (email: string, password: string, name: string, accessCode?: string) => Promise<void>;
+  clearAuthData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +45,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         if (error) {
           console.error('Error loading session:', error);
+          
+          // If it's a refresh token error, clear all stored auth data
+          if (error.message?.includes('Invalid Refresh Token') || error.message?.includes('Refresh Token Not Found')) {
+            console.log('Clearing invalid refresh token...');
+            await clearAllAuthData();
+          }
+          
           setSession(null);
           setUser(null);
           console.log('Session null — showing login');
@@ -68,6 +77,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       } catch (error) {
         console.error('Error during session load:', error);
+        
+        // Clear any potentially corrupted auth data
+        try {
+          await clearAllAuthData();
+        } catch (clearError) {
+          console.error('Error clearing auth data:', clearError);
+        }
+        
         setSession(null);
         setUser(null);
         console.log('Session null — showing login');
@@ -84,6 +101,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, sessionData) => {
       console.log('Auth state changed:', event, 'session:', sessionData ? 'exists' : 'null');
+      
+      // Handle token refresh errors
+      if (event === 'TOKEN_REFRESHED' && !sessionData) {
+        console.log('Token refresh failed, clearing session');
+        setSession(null);
+        setUser(null);
+        return;
+      }
       
       setSession(sessionData);
       
@@ -280,6 +305,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const clearAuthData = async () => {
+    try {
+      await clearAllAuthData();
+      setUser(null);
+      setSession(null);
+    } catch (error) {
+      console.error('Error clearing auth data:', error);
+      throw error;
+    }
+  };
+
   const value: AuthContextType = {
     session,
     user,
@@ -287,6 +323,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signIn,
     signOut,
     signUp,
+    clearAuthData,
   };
 
   // Show loading screen while session is being loaded or not initialized
