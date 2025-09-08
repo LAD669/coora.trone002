@@ -16,13 +16,10 @@ export default function AppInitializer({ children, onInitializationComplete }: A
       try {
         console.log('Starting app initialization...');
         
-        // Initialize notifications safely (this won't request permissions or tokens)
-        const notificationsInitialized = await initializeNotifications();
-        
-        if (!notificationsInitialized) {
-          console.warn('Notifications initialization failed, but app will continue');
-          // Don't set error - app should continue without notifications
-        }
+        // Initialize notifications in background (non-blocking)
+        initializeNotifications().catch(error => {
+          console.warn('Notifications initialization failed, but app will continue:', error);
+        });
         
         console.log('App initialization completed successfully');
         setIsInitialized(true);
@@ -37,12 +34,12 @@ export default function AppInitializer({ children, onInitializationComplete }: A
       }
     };
 
-    // Add a timeout to prevent infinite initialization
+    // Reduce timeout to 1 second for faster startup
     const timeout = setTimeout(() => {
       console.warn('App initialization timeout, forcing completion');
       setIsInitialized(true);
       onInitializationComplete?.();
-    }, 5000); // 5 second timeout
+    }, 1000); // 1 second timeout
 
     initializeApp();
 

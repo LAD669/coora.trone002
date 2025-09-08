@@ -14,16 +14,16 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <SafeAreaProvider>
-          <LanguageProvider>
+      <SafeAreaProvider>
+        <LanguageProvider>
+          <AuthProvider>
             <AppInitializer>
               <Slot />
               <StatusBar style="auto" />
             </AppInitializer>
-          </LanguageProvider>
-        </SafeAreaProvider>
-      </AuthProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }

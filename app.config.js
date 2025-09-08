@@ -23,6 +23,9 @@ export default {
       resizeMode: "contain",
       backgroundColor: "#ffffff"
     },
+    assetBundlePatterns: [
+      "**/*"
+    ],
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.coora.app.cooraforsport",
