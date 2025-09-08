@@ -116,15 +116,20 @@ describe('SignupScreen', () => {
     expect(screen.getByText('Sign up')).toBeTruthy();
   });
 
-  it('renders sign in button with correct text', () => {
+  it('renders exactly one sign in CTA', () => {
     render(
       <I18nextProvider i18n={i18next}>
         <SignUpScreen />
       </I18nextProvider>
     );
 
-    // Check that sign in button shows correct text
+    // Check that there is exactly one sign in CTA (the link)
+    expect(screen.getByText('Already have an account?')).toBeTruthy();
     expect(screen.getByText('Sign In')).toBeTruthy();
+    
+    // Ensure there's no duplicate sign in button
+    const signInElements = screen.queryAllByText('Sign In');
+    expect(signInElements).toHaveLength(1);
   });
 
   it('renders sign in link with correct text', () => {
