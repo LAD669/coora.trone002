@@ -65,6 +65,8 @@
     "requestNotificationPermissionsFailed": "Benachrichtigungsberechtigungen konnten nicht angefordert werden.",
     "getNotificationTokenFailed": "Benachrichtigungstoken konnte nicht abgerufen werden.",
     "setupNotificationsFailed": "Benachrichtigungen konnten nicht eingerichtet werden.",
+    "comingSoon": "Funktion wird bald verfügbar",
+    "postContentPlaceholder": "Was passiert mit dem Team?",
     "goalCreated": "Ziel erfolgreich erstellt",
     "welcomeBack": "Willkommen zurück",
     "teamStatistics": "Team-Statistiken",
@@ -227,6 +229,10 @@
     "selectLanguage": "Sprache auswählen",
     "languageChanged": "Sprache geändert",
     "languageChangedMessage": "Die Sprache wurde auf {language} geändert. Die App wird neu gestartet, um die Änderungen zu übernehmen.",
+    "accounts": "Konten",
+    "changePasswordComingSoon": "Passwort-Änderungsfunktion wird bald verfügbar sein.",
+    "privacySettingsComingSoon": "Datenschutzeinstellungen werden bald verfügbar sein.",
+    "helpCenterComingSoon": "Hilfezentrum wird bald verfügbar",
     "twoFactorAuth": "Zwei-Faktor-Authentifizierung",
     "enableTwoFactor": "Zwei-Faktor-Authentifizierung aktivieren",
     "enableTwoFactorMessage": "Dies fügt Ihrem Konto eine zusätzliche Sicherheitsebene hinzu. Sie müssen Ihre Identität bei der Anmeldung mit einem zweiten Faktor verifizieren.",
@@ -242,6 +248,9 @@
     "editProfile": "Profil bearbeiten",
     "personalInfo": "Persönliche Informationen",
     "preferences": "Präferenzen"
+  },
+  "player": {
+    "details": "Spielerdetails"
   },
   "notifications": {
     "title": "Benachrichtigungen",
