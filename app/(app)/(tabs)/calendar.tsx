@@ -774,40 +774,26 @@ export default function CalendarScreen() {
         isVisible={isModalVisible}
         onBackdropPress={() => setModalVisible(false)}
         style={styles.modal}
-        animationType="slide"
-        presentationStyle="overFullScreen"
-        statusBarTranslucent={true}
-        avoidKeyboard={true}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent} accessibilityRole="dialog" accessibilityModal={true}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle} accessibilityRole="header">Schedule Event</Text>
-              <TouchableOpacity 
-                onPress={() => setModalVisible(false)}
-                accessibilityLabel="Cancel"
-                accessibilityRole="button"
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Schedule Event</Text>
+            <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
 
-            <ScrollView 
-              style={styles.modalScrollView}
-              contentContainerStyle={styles.modalScrollContent}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              bounces={false}
-            >
+          <ScrollView 
+            style={styles.modalScrollView}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           <TextInput
             style={styles.input}
             placeholder="Event title"
             value={newEvent.title}
             onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
             placeholderTextColor="#8E8E93"
-            accessibilityLabel="Event title"
-            accessibilityHint="Enter the title for your event"
-            autoFocus={true}
           />
 
           <View style={styles.typeSelector}>
@@ -817,9 +803,6 @@ export default function CalendarScreen() {
                 newEvent.type === 'training' && styles.typeButtonActive
               ]}
               onPress={() => setNewEvent({ ...newEvent, type: 'training' })}
-              accessibilityLabel="Training"
-              accessibilityRole="button"
-              accessibilityState={{ selected: newEvent.type === 'training' }}
             >
               <Text style={[
                 styles.typeButtonText,
@@ -833,9 +816,6 @@ export default function CalendarScreen() {
                 newEvent.type === 'match' && styles.typeButtonActive
               ]}
               onPress={() => setNewEvent({ ...newEvent, type: 'match' })}
-              accessibilityLabel="Match"
-              accessibilityRole="button"
-              accessibilityState={{ selected: newEvent.type === 'match' }}
             >
               <Text style={[
                 styles.typeButtonText,
@@ -1131,14 +1111,10 @@ export default function CalendarScreen() {
           <TouchableOpacity
             style={styles.createButton}
             onPress={handleCreateEvent}
-            accessibilityLabel="Schedule Event"
-            accessibilityRole="button"
-            accessibilityHint="Create and schedule the event"
           >
             <Text style={styles.createButtonText}>Schedule Event</Text>
           </TouchableOpacity>
-            </ScrollView>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -1522,41 +1498,20 @@ const styles = StyleSheet.create({
   },
   modal: {
     margin: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 32,
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    width: '100%',
-    maxWidth: 480,
-    maxHeight: '90%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    marginBottom: 24,
   },
   modalTitle: {
     fontSize: 20,
@@ -1570,12 +1525,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Regular',
   },
   modalScrollView: {
-    flex: 1,
-  },
-  modalScrollContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    paddingBottom: 24,
+    maxHeight: '80%',
   },
   input: {
     fontSize: 16,

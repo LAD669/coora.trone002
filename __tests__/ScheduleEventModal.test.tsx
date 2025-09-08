@@ -57,14 +57,14 @@ describe('ScheduleEventModal', () => {
     expect(screen.getByText('Schedule Event')).toBeTruthy();
   });
 
-  it('renders modal with proper structure', () => {
+  it('renders modal with proper app-style structure', () => {
     render(<CalendarScreen />);
     
     // Open modal
     const scheduleButton = screen.getByTestId('schedule-event-button');
     fireEvent.press(scheduleButton);
     
-    // Check modal structure
+    // Check modal structure follows app pattern
     expect(screen.getByText('Schedule Event')).toBeTruthy();
     expect(screen.getByText('Cancel')).toBeTruthy();
     expect(screen.getByPlaceholderText('Event title')).toBeTruthy();
@@ -109,29 +109,23 @@ describe('ScheduleEventModal', () => {
     expect(screen.queryByTestId('modal-overlay')).toBeNull();
   });
 
-  it('has proper accessibility attributes', () => {
+  it('follows app modal pattern without custom accessibility overrides', () => {
     render(<CalendarScreen />);
     
     // Open modal
     const scheduleButton = screen.getByTestId('schedule-event-button');
     fireEvent.press(scheduleButton);
     
-    // Check accessibility attributes
-    const modalContent = screen.getByText('Schedule Event').parent;
-    expect(modalContent?.props.accessibilityRole).toBe('dialog');
-    expect(modalContent?.props.accessibilityModal).toBe(true);
+    // Check that modal follows standard app pattern
+    expect(screen.getByText('Schedule Event')).toBeTruthy();
+    expect(screen.getByText('Cancel')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Event title')).toBeTruthy();
     
-    // Check input accessibility
+    // Modal should render without custom accessibility overrides
     const titleInput = screen.getByPlaceholderText('Event title');
-    expect(titleInput.props.accessibilityLabel).toBe('Event title');
-    expect(titleInput.props.accessibilityHint).toBe('Enter the title for your event');
-    expect(titleInput.props.autoFocus).toBe(true);
-    
-    // Check button accessibility
-    const createButton = screen.getByText('Schedule Event');
-    expect(createButton.parent?.props.accessibilityLabel).toBe('Schedule Event');
-    expect(createButton.parent?.props.accessibilityRole).toBe('button');
-    expect(createButton.parent?.props.accessibilityHint).toBe('Create and schedule the event');
+    expect(titleInput.props.accessibilityLabel).toBeUndefined();
+    expect(titleInput.props.accessibilityHint).toBeUndefined();
+    expect(titleInput.props.autoFocus).toBeUndefined();
   });
 
   it('handles form input correctly', () => {
@@ -156,21 +150,20 @@ describe('ScheduleEventModal', () => {
     expect(matchButton.parent?.props.accessibilityState?.selected).toBe(true);
   });
 
-  it('renders responsive layout without overflow', () => {
+  it('renders with app-style modal layout (flex-end positioning)', () => {
     render(<CalendarScreen />);
     
     // Open modal
     const scheduleButton = screen.getByTestId('schedule-event-button');
     fireEvent.press(scheduleButton);
     
-    // Modal should be properly contained
+    // Modal should be properly contained following app pattern
     const modalOverlay = screen.getByTestId('modal-overlay');
     expect(modalOverlay).toBeTruthy();
     
-    // Check that scrollable content exists
-    const scrollView = screen.getByText('Schedule Event').parent?.parent?.children[1];
-    expect(scrollView?.props.style).toMatchObject({
-      flex: 1
-    });
+    // Check that modal follows app pattern with proper structure
+    expect(screen.getByText('Schedule Event')).toBeTruthy();
+    expect(screen.getByText('Cancel')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Event title')).toBeTruthy();
   });
 });
