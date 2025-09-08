@@ -56,13 +56,19 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
 }
 
 /**
- * Initialisiert Push-Benachrichtigungen beim App-Start
+ * Initialisiert Push-Benachrichtigungen beim App-Start (optimiert für Performance)
  * Ruft intern registerForPushNotificationsAsync() auf
  * @returns Promise<string | undefined> - Der Expo Push Token oder undefined bei Fehler
  */
 export async function initializeNotifications(): Promise<string | undefined> {
   try {
     console.log('🚀 Initialisiere Push-Benachrichtigungen...');
+    
+    // Quick check for device compatibility first
+    if (!Device.isDevice) {
+      console.log('💻 Emulator/Simulator erkannt, Push-Benachrichtigungen werden übersprungen');
+      return undefined;
+    }
     
     // Rufe die Registrierungsfunktion auf
     const token = await registerForPushNotificationsAsync();
