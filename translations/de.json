@@ -134,6 +134,38 @@
     "dashboard": "Dashboard",
     "playerboard": "Spielerboard"
   },
+  "calendar": {
+    "title": "Kalender",
+    "schedule": {
+      "title": "Termin planen",
+      "eventTitle": "Termintitel",
+      "eventTitlePlaceholder": "Termintitel eingeben",
+      "location": "Ort",
+      "locationPlaceholder": "Ort eingeben",
+      "notes": "Notizen",
+      "notesPlaceholder": "Notizen (optional)",
+      "date": "Datum",
+      "datePlaceholder": "JJJJ-MM-TT",
+      "startTime": "Startzeit",
+      "startTimePlaceholder": "HH:MM",
+      "endTime": "Endzeit",
+      "endTimePlaceholder": "HH:MM",
+      "duration": "Dauer",
+      "durationPlaceholder": "Automatisch berechnet",
+      "type": "Typ",
+      "training": "Training",
+      "match": "Spiel"
+    },
+    "actions": {
+      "schedule": "Termin planen",
+      "save": "Speichern",
+      "cancel": "Abbrechen"
+    },
+    "emptyState": {
+      "title": "Keine Termine geplant",
+      "subtitle": "Erstellen Sie Ihren ersten Termin, um zu beginnen"
+    }
+  },
   "settings": {
     "title": "Einstellungen",
     "language": "Sprache",

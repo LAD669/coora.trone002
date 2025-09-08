@@ -115,8 +115,8 @@
     "profileUpdated": "Profile updated successfully"
   },
   "auth": {
-    "signIn": "Sign In",
-    "signOut": "Sign Out",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
     "signUp": "Sign up",
     "name": {
       "label": "Name",
@@ -138,14 +138,45 @@
     "forgotPassword": "Forgot Password?",
     "loginSuccess": "Successfully logged in",
     "signupSuccess": "Successfully signed up",
-    "signOutDescription": "Sign out of your account",
-    "signOut": "Sign Out"
+    "signOutDescription": "Sign out of your account"
   },
   "tabs": {
     "home": "Home",
     "calendar": "Calendar",
     "dashboard": "Dashboard",
     "playerboard": "Playerboard"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "schedule": {
+      "title": "Schedule event",
+      "eventTitle": "Event title",
+      "eventTitlePlaceholder": "Enter event title",
+      "location": "Location",
+      "locationPlaceholder": "Enter location",
+      "notes": "Notes",
+      "notesPlaceholder": "Notes (optional)",
+      "date": "Date",
+      "datePlaceholder": "YYYY-MM-DD",
+      "startTime": "Start time",
+      "startTimePlaceholder": "HH:MM",
+      "endTime": "End time",
+      "endTimePlaceholder": "HH:MM",
+      "duration": "Duration",
+      "durationPlaceholder": "Auto-calculated",
+      "type": "Type",
+      "training": "Training",
+      "match": "Match"
+    },
+    "actions": {
+      "schedule": "Schedule event",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "emptyState": {
+      "title": "No events scheduled",
+      "subtitle": "Create your first event to get started"
+    }
   },
   "settings": {
     "title": "Settings",
