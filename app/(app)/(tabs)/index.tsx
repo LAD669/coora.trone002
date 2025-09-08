@@ -240,14 +240,11 @@ function InfohubScreenContent() {
   }) : [];
 
   const handlePostClick = (postId: string) => {
-    console.log('handlePostClick called with postId:', postId);
     const post = posts.find(p => p.id === postId);
     if (post) {
-      console.log('Selected post for modal:', post);
       setSelectedPostForModal(post);
       setPostModalVisible(true);
     } else {
-      console.log('Post not found for ID:', postId);
       Alert.alert(commonT('error'), commonT('postNotFound'));
     }
     setShowEmojiPicker(null);
@@ -269,20 +266,6 @@ function InfohubScreenContent() {
     <View style={styles.container}>
       <View style={styles.content}>
         
-        {/* Debug State Display */}
-        <View style={{ padding: 10, backgroundColor: '#f0f0f0', margin: 10 }}>
-          <Text>Modal Visible: {isPostModalVisible ? 'true' : 'false'}</Text>
-          <Text>Selected Post: {selectedPostForModal ? selectedPostForModal.title : 'none'}</Text>
-          <TouchableOpacity 
-            style={{ backgroundColor: 'blue', padding: 5, marginTop: 5 }}
-            onPress={() => {
-              setSelectedPostForModal({ id: 'test', title: 'Test Post', content: 'Test Content' });
-              setPostModalVisible(true);
-            }}
-          >
-            <Text style={{ color: 'white' }}>Test Modal</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Toggle Section */}
         <View style={styles.toggleContainer}>
@@ -341,10 +324,7 @@ function InfohubScreenContent() {
               <TouchableOpacity 
                 key={post.id} 
                 style={styles.postCard}
-                onPress={() => {
-                  console.log('Post clicked!', post.id);
-                  handlePostClick(post.id);
-                }}
+                onPress={() => handlePostClick(post.id)}
                 activeOpacity={0.7}
               >
                 <View style={styles.postHeader}>
