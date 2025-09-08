@@ -240,11 +240,19 @@ function InfohubScreenContent() {
   }) : [];
 
   const handlePostClick = (postId: string) => {
+    console.log('handlePostClick called with postId:', postId);
     const post = posts.find(p => p.id === postId);
     if (post) {
       console.log('Selected post for modal:', post);
+      console.log('Setting modal state - before:', { isPostModalVisible, selectedPostForModal });
       setSelectedPostForModal(post);
       setPostModalVisible(true);
+      console.log('Modal state should be set to true now');
+      
+      // Debug: Force a re-render to check state
+      setTimeout(() => {
+        console.log('Modal state after timeout:', { isPostModalVisible, selectedPostForModal });
+      }, 100);
     } else {
       console.log('Post not found for ID:', postId);
       Alert.alert(commonT('error'), commonT('postNotFound'));
@@ -267,6 +275,18 @@ function InfohubScreenContent() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
+        {/* Debug: Test Modal Button */}
+        <TouchableOpacity 
+          style={{ backgroundColor: 'red', padding: 10, margin: 10, alignItems: 'center' }}
+          onPress={() => {
+            console.log('Test button pressed');
+            setSelectedPostForModal({ id: 'test', title: 'Test Post', content: 'Test Content' });
+            setPostModalVisible(true);
+          }}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>DEBUG: Test Modal</Text>
+        </TouchableOpacity>
+        
         {/* Toggle Section */}
         <View style={styles.toggleContainer}>
           <View style={styles.toggle}>
@@ -304,6 +324,7 @@ function InfohubScreenContent() {
           style={styles.scrollContent} 
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
         >
           {isLoading ? (
             <View style={styles.loadingContainer}>
@@ -497,10 +518,18 @@ function InfohubScreenContent() {
       <Modal
         isVisible={isPostModalVisible}
         onBackdropPress={() => {
+          console.log('Modal backdrop pressed');
           setPostModalVisible(false);
           setSelectedPostForModal(null);
         }}
         style={styles.modal}
+        onModalShow={() => console.log('Modal shown')}
+        onModalHide={() => console.log('Modal hidden')}
+        backdropOpacity={0.5}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        useNativeDriver={true}
+        hideModalContentWhileAnimating={true}
       >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
