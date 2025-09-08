@@ -407,6 +407,7 @@ function InfohubScreenContent() {
         {canCreatePost && (
           <TouchableOpacity
             style={styles.floatingButton}
+            testID="create-update-button"
             onPress={() => {
               if (postableTab) {
                 setActiveTab(postableTab);
@@ -427,6 +428,8 @@ function InfohubScreenContent() {
           setNewPost({ title: '', content: '', imageUrl: '' });
         }}
         style={styles.modal}
+        avoidKeyboard={true}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
@@ -439,52 +442,58 @@ function InfohubScreenContent() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.modalToggle}>
-            <Text style={styles.modalToggleLabel}>{commonT('postTo')}</Text>
-            <View style={styles.selectedPostType}>
-              {postableTab === 'organization' ? (
-                <View style={styles.postTypeDisplay}>
-                  <Building2 size={16} color="#1A1A1A" strokeWidth={1.5} />
-                  <Text style={styles.postTypeText}>{commonT('organization')}</Text>
-                </View>
-              ) : (
-                <View style={styles.postTypeDisplay}>
-                  <Users size={16} color="#1A1A1A" strokeWidth={1.5} />
-                  <Text style={styles.postTypeText}>{commonT('teams')}</Text>
-                </View>
-              )}
-            </View>
-          </View>
-
-          <TextInput
-            style={styles.titleInput}
-            placeholder={commonT('updateTitle')}
-            value={newPost.title}
-            onChangeText={(text) => setNewPost({ ...newPost, title: text })}
-            placeholderTextColor="#8E8E93"
-          />
-
-          <TextInput
-            style={styles.contentInput}
-            placeholder={
-              activeTab === 'organization' 
-                ? "Was gibt es Neues in der Organisation?"
-                : "Was passiert mit dem Team?"
-            }
-            value={newPost.content}
-            onChangeText={(text) => setNewPost({ ...newPost, content: text })}
-            multiline
-            numberOfLines={6}
-            textAlignVertical="top"
-            placeholderTextColor="#8E8E93"
-          />
-
-          <TouchableOpacity
-            style={styles.publishButton}
-            onPress={handleCreatePost}
+          <ScrollView 
+            style={styles.modalScrollView}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.publishButtonText}>{commonT('publishUpdate')}</Text>
-          </TouchableOpacity>
+            <View style={styles.modalToggle}>
+              <Text style={styles.modalToggleLabel}>{commonT('postTo')}</Text>
+              <View style={styles.selectedPostType}>
+                {postableTab === 'organization' ? (
+                  <View style={styles.postTypeDisplay}>
+                    <Building2 size={16} color="#1A1A1A" strokeWidth={1.5} />
+                    <Text style={styles.postTypeText}>{commonT('organization')}</Text>
+                  </View>
+                ) : (
+                  <View style={styles.postTypeDisplay}>
+                    <Users size={16} color="#1A1A1A" strokeWidth={1.5} />
+                    <Text style={styles.postTypeText}>{commonT('teams')}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            <TextInput
+              style={styles.titleInput}
+              placeholder={commonT('updateTitle')}
+              value={newPost.title}
+              onChangeText={(text) => setNewPost({ ...newPost, title: text })}
+              placeholderTextColor="#8E8E93"
+            />
+
+            <TextInput
+              style={styles.contentInput}
+              placeholder={
+                activeTab === 'organization' 
+                  ? "Was gibt es Neues in der Organisation?"
+                  : "Was passiert mit dem Team?"
+              }
+              value={newPost.content}
+              onChangeText={(text) => setNewPost({ ...newPost, content: text })}
+              multiline
+              numberOfLines={6}
+              textAlignVertical="top"
+              placeholderTextColor="#8E8E93"
+            />
+
+            <TouchableOpacity
+              style={styles.publishButton}
+              onPress={handleCreatePost}
+            >
+              <Text style={styles.publishButtonText}>{commonT('publishUpdate')}</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -835,6 +844,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 24,
+    maxHeight: '80%',
+  },
+  modalScrollView: {
     maxHeight: '80%',
   },
   modalHeader: {
