@@ -102,6 +102,86 @@ export default function DashboardScreen() {
     assists: [] as any[],
   });
 
+  // String-first state for score inputs to prevent blinking
+  const [teamScoreInput, setTeamScoreInput] = useState<string>('');
+  const [opponentScoreInput, setOpponentScoreInput] = useState<string>('');
+
+  // Normalize score input - only allow digits, clamp to reasonable range
+  const normalizeScore = (input: string): string => {
+    const cleaned = input.replace(/\D+/g, ''); // Remove non-digits
+    if (cleaned === '') return '';
+    const num = parseInt(cleaned, 10);
+    return Math.max(0, Math.min(99, num)).toString(); // Clamp to 0-99
+  };
+
+  // Handle team score input change - no parsing during typing
+  const handleTeamScoreChange = (text: string) => {
+    setTeamScoreInput(text);
+  };
+
+  // Handle team score blur - normalize and update match result
+  const handleTeamScoreBlur = () => {
+    const normalized = normalizeScore(teamScoreInput);
+    setTeamScoreInput(normalized);
+    const newScore = parseInt(normalized) || 0;
+    const currentScore = matchResult.teamScore;
+    
+    if (newScore !== currentScore) {
+      setMatchResult(prev => {
+        const adjustedGoals = prev.goals.slice(0, newScore);
+        const adjustedAssists = prev.assists.slice(0, newScore);
+        
+        return {
+          ...prev,
+          teamScore: newScore,
+          goals: adjustedGoals,
+          assists: adjustedAssists
+        };
+      });
+      
+      // Update selection objects separately if score reduced
+      if (newScore < currentScore) {
+        setSelectedGoalUsers(prev => {
+          const newState = { ...prev };
+          Object.keys(newState).forEach(key => {
+            const keyIndex = parseInt(key);
+            if (keyIndex >= newScore) {
+              delete newState[keyIndex];
+            }
+          });
+          return newState;
+        });
+        setSelectedAssistUsers(prev => {
+          const newState = { ...prev };
+          Object.keys(newState).forEach(key => {
+            const keyIndex = parseInt(key);
+            if (keyIndex >= newScore) {
+              delete newState[keyIndex];
+            }
+          });
+          return newState;
+        });
+      }
+    }
+  };
+
+  // Handle opponent score input change - no parsing during typing
+  const handleOpponentScoreChange = (text: string) => {
+    setOpponentScoreInput(text);
+  };
+
+  // Handle opponent score blur - normalize and update match result
+  const handleOpponentScoreBlur = () => {
+    const normalized = normalizeScore(opponentScoreInput);
+    setOpponentScoreInput(normalized);
+    const newScore = parseInt(normalized) || 0;
+    
+    setMatchResult(prev => ({
+      ...prev,
+      opponentScore: newScore
+    }));
+  };
+
   // Separate selection state for goals and assists - using objects for better isolation
   const [selectedGoalUsers, setSelectedGoalUsers] = useState<Record<number, string>>({});
   const [selectedAssistUsers, setSelectedAssistUsers] = useState<Record<number, string>>({});
@@ -546,7 +626,31 @@ export default function DashboardScreen() {
       assists: [],
     });
     
+    // Initialize string inputs for stable typing
+    setTeamScoreInput('');
+    setOpponentScoreInput('');
+    
     // Reset selection state for new match
+    setSelectedGoalUsers({});
+    setSelectedAssistUsers({});
+  };
+
+  const handleCloseMatchResultsModal = () => {
+    setMatchResultsModalVisible(false);
+    setSelectedMatch(null);
+    setMatchResult({
+      teamScore: 0,
+      opponentScore: 0,
+      opponentName: '',
+      goals: [],
+      assists: [],
+    });
+    
+    // Reset string inputs
+    setTeamScoreInput('');
+    setOpponentScoreInput('');
+    
+    // Reset selection state
     setSelectedGoalUsers({});
     setSelectedAssistUsers({});
   };
@@ -732,15 +836,7 @@ export default function DashboardScreen() {
       });
 
       Alert.alert(commonT('success'), commonT('matchResultSubmitted'));
-      setMatchResultsModalVisible(false);
-      setSelectedMatch(null);
-      setMatchResult({
-        teamScore: 0,
-        opponentScore: 0,
-        opponentName: '',
-        goals: [],
-        assists: [],
-      });
+      handleCloseMatchResultsModal();
       
       // Reload data to update stats
       loadDashboardData();
@@ -1184,7 +1280,7 @@ export default function DashboardScreen() {
       {/* Match Results Modal */}
       <Modal
         isVisible={isMatchResultsModalVisible}
-        onBackdropPress={() => setMatchResultsModalVisible(false)}
+        onBackdropPress={handleCloseMatchResultsModal}
         style={styles.modal}
       >
         <View style={styles.modalContent}>
@@ -1192,7 +1288,7 @@ export default function DashboardScreen() {
             <Text style={styles.modalTitle}>
               {completedMatches.length > 0 ? 'Enter Match Results' : 'Match Results'}
             </Text>
-            <TouchableOpacity onPress={() => setMatchResultsModalVisible(false)}>
+            <TouchableOpacity onPress={handleCloseMatchResultsModal}>
               <X size={24} color="#8E8E93" strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
@@ -1285,51 +1381,9 @@ export default function DashboardScreen() {
                     <Text style={styles.scoreLabel}>{commonT('myTeam')}</Text>
                     <TextInput
                       style={styles.scoreField}
-                      value={matchResult.teamScore.toString()}
-                      onChangeText={(text) => {
-                        const newScore = parseInt(text) || 0;
-                        const currentScore = matchResult.teamScore;
-                        
-                        // Only update if score actually changed
-                        if (newScore === currentScore) return;
-                        
-                        setMatchResult(prev => {
-                          // If score is reduced, remove excess goals and assists
-                          const adjustedGoals = prev.goals.slice(0, newScore);
-                          const adjustedAssists = prev.assists.slice(0, newScore);
-                          
-                          return {
-                            ...prev,
-                            teamScore: newScore,
-                            goals: adjustedGoals,
-                            assists: adjustedAssists
-                          };
-                        });
-                        
-                        // Update selection objects separately to avoid cascading re-renders
-                        if (newScore < currentScore) {
-                          setSelectedGoalUsers(prev => {
-                            const newState = { ...prev };
-                            Object.keys(newState).forEach(key => {
-                              const keyIndex = parseInt(key);
-                              if (keyIndex >= newScore) {
-                                delete newState[keyIndex];
-                              }
-                            });
-                            return newState;
-                          });
-                          setSelectedAssistUsers(prev => {
-                            const newState = { ...prev };
-                            Object.keys(newState).forEach(key => {
-                              const keyIndex = parseInt(key);
-                              if (keyIndex >= newScore) {
-                                delete newState[keyIndex];
-                              }
-                            });
-                            return newState;
-                          });
-                        }
-                      }}
+                      value={teamScoreInput}
+                      onChangeText={handleTeamScoreChange}
+                      onEndEditing={handleTeamScoreBlur}
                       keyboardType="numeric"
                       placeholder="0"
                     />
@@ -1339,11 +1393,9 @@ export default function DashboardScreen() {
                     <Text style={styles.scoreLabel}>{commonT('opponent')}</Text>
                     <TextInput
                       style={styles.scoreField}
-                      value={matchResult.opponentScore.toString()}
-                      onChangeText={(text) => setMatchResult(prev => ({
-                        ...prev,
-                        opponentScore: parseInt(text) || 0
-                      }))}
+                      value={opponentScoreInput}
+                      onChangeText={handleOpponentScoreChange}
+                      onEndEditing={handleOpponentScoreBlur}
                       keyboardType="numeric"
                       placeholder="0"
                     />
