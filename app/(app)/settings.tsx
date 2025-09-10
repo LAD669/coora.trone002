@@ -123,8 +123,11 @@ export default function SettingsScreen() {
         refresh_token: '', // Get from current session
       };
       
-      // Navigate to login screen
-      safePush('/(auth)/login');
+      // Navigate to login screen with return navigation info
+      safePush({
+        pathname: '/(auth)/login',
+        params: { returnTo: 'settings' }
+      });
     }
   };
 
