@@ -1484,13 +1484,42 @@ export default function DashboardScreen() {
                         <Text style={styles.playerSelectLabel}>Goal {index + 1}:</Text>
                         
                         {/* Selected Player Display */}
-                        <Text style={styles.selectedPlayerText}>
-                          {selectedGoalUsers[index] ? 
-                            memoizedTeamPlayers.find(p => p.user_id === selectedGoalUsers[index])?.name || 
-                            'Unknown Player' 
-                            : 'No player selected'
+                        <TouchableOpacity 
+                          style={[
+                            styles.selectedPlayerContainer,
+                            !selectedGoalUsers[index] && styles.selectedPlayerContainerEmpty
+                          ]}
+                          onPress={() => {
+                            if (selectedGoalUsers[index]) {
+                              console.log('🎯 Selected player tapped:', { 
+                                playerId: selectedGoalUsers[index], 
+                                goalIndex: index 
+                              });
+                              // Toggle selection - deselect the player
+                              updateGoalPlayer(index, selectedGoalUsers[index]);
+                            } else {
+                              console.log('🎯 Empty player slot tapped for goal:', index);
+                              // Could open a quick player picker here if needed
+                            }
+                          }}
+                          accessibilityRole="button"
+                          accessibilityLabel={selectedGoalUsers[index] ? 
+                            `Selected player: ${memoizedTeamPlayers.find(p => p.user_id === selectedGoalUsers[index])?.name || 'Unknown Player'}. Tap to deselect.` : 
+                            'No player selected. Tap to select a player.'
                           }
-                        </Text>
+                          accessibilityState={{ selected: !!selectedGoalUsers[index] }}
+                        >
+                          <Text style={styles.selectedPlayerText}>
+                            {selectedGoalUsers[index] ? 
+                              memoizedTeamPlayers.find(p => p.user_id === selectedGoalUsers[index])?.name || 
+                              'Unknown Player' 
+                              : 'No player selected'
+                            }
+                          </Text>
+                          {selectedGoalUsers[index] && (
+                            <Text style={styles.deselectHint}>Tap to deselect</Text>
+                          )}
+                        </TouchableOpacity>
                         
                         {/* Minute Input */}
                         <View style={styles.minuteInputContainer}>
@@ -1596,13 +1625,42 @@ export default function DashboardScreen() {
                   <View key={`assist-${selectedMatch?.id}-${index}`} style={styles.statInputRow}>
                     <View style={styles.playerSelectContainer}>
                       <Text style={styles.playerSelectLabel}>Assist {index + 1}:</Text>
-                                              <Text style={styles.selectedPlayerText}>
+                      <TouchableOpacity 
+                        style={[
+                          styles.selectedPlayerContainer,
+                          !selectedAssistUsers[index] && styles.selectedPlayerContainerEmpty
+                        ]}
+                        onPress={() => {
+                          if (selectedAssistUsers[index]) {
+                            console.log('🎯 Selected assist player tapped:', { 
+                              playerId: selectedAssistUsers[index], 
+                              assistIndex: index 
+                            });
+                            // Toggle selection - deselect the player
+                            updateAssistPlayer(index, selectedAssistUsers[index]);
+                          } else {
+                            console.log('🎯 Empty player slot tapped for assist:', index);
+                            // Could open a quick player picker here if needed
+                          }
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={selectedAssistUsers[index] ? 
+                          `Selected player: ${memoizedTeamPlayers.find(p => p.user_id === selectedAssistUsers[index])?.name || 'Unknown Player'}. Tap to deselect.` : 
+                          'No player selected. Tap to select a player.'
+                        }
+                        accessibilityState={{ selected: !!selectedAssistUsers[index] }}
+                      >
+                        <Text style={styles.selectedPlayerText}>
                           {selectedAssistUsers[index] ? 
                             memoizedTeamPlayers.find(p => p.user_id === selectedAssistUsers[index])?.name || 
                             'Unknown Player' 
                             : 'No player selected'
                           }
                         </Text>
+                        {selectedAssistUsers[index] && (
+                          <Text style={styles.deselectHint}>Tap to deselect</Text>
+                        )}
+                      </TouchableOpacity>
                       <View style={styles.playerSelect}>
                         {memoizedTeamPlayers.length === 0 ? (
                           <View style={styles.noPlayersContainer}>
@@ -2136,11 +2194,35 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontStyle: 'italic',
   },
+  selectedPlayerContainer: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5E7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 40,
+  },
+  selectedPlayerContainerEmpty: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D1D1D6',
+    borderStyle: 'dashed',
+  },
   selectedPlayerText: {
     fontSize: 14,
     color: '#1A1A1A',
     fontFamily: 'Urbanist-Medium',
     fontWeight: '500',
+    textAlign: 'center',
+  },
+  deselectHint: {
+    fontSize: 10,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    marginTop: 2,
+    textAlign: 'center',
   },
   clearSelectionButton: {
     paddingHorizontal: 12,
