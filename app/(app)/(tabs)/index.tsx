@@ -8,6 +8,8 @@ import {
   TextInput,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import Header from '@/components/Header';
@@ -479,14 +481,17 @@ function InfohubScreenContent() {
         style={styles.modal}
         avoidKeyboard={true}
       >
-        <View style={styles.modalContent}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContent}
+        >
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{commonT('createUpdate')}</Text>
+            <Text style={styles.modalTitle} id="create-post-title">{commonT('createUpdate') || 'Create Post'}</Text>
             <TouchableOpacity onPress={() => {
               setModalVisible(false);
               setNewPost({ title: '', content: '', imageUrl: '' });
             }}>
-              <Text style={styles.cancelText}>{commonT('cancel')}</Text>
+              <Text style={styles.cancelText}>{commonT('cancel') || 'Cancel'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -538,7 +543,7 @@ function InfohubScreenContent() {
               <Text style={styles.publishButtonText}>{commonT('publishUpdate')}</Text>
             </TouchableOpacity>
           </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Post Detail Modal */}
@@ -557,14 +562,17 @@ function InfohubScreenContent() {
         propagateSwipe={true}
         avoidKeyboard={true}
       >
-        <View style={[styles.modalContent, { backgroundColor: 'white', minHeight: 200 }]}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={[styles.modalContent, { backgroundColor: 'white', minHeight: 200 }]}
+        >
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{commonT('postDetails')}</Text>
+            <Text style={styles.modalTitle} id="post-details-title">{commonT('postDetails') || 'Post Details'}</Text>
             <TouchableOpacity onPress={() => {
               setPostModalVisible(false);
               setSelectedPostForModal(null);
             }}>
-              <Text style={styles.cancelText}>{commonT('close')}</Text>
+              <Text style={styles.cancelText}>{commonT('close') || 'Close'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -666,13 +674,13 @@ function InfohubScreenContent() {
               {/* Comment Section */}
               <View style={styles.commentSection}>
                 <View style={styles.commentHeader}>
-                  <Text style={styles.commentSectionTitle}>Comments</Text>
+                  <Text style={styles.commentSectionTitle}>{commonT('comments') || 'Comments'}</Text>
                   <TouchableOpacity 
                     style={styles.addCommentButton}
                     onPress={() => setShowCommentInput(!showCommentInput)}
                   >
                     <Text style={styles.addCommentButtonText}>
-                      {showCommentInput ? 'Cancel' : 'Add Comment'}
+                      {showCommentInput ? (commonT('cancel') || 'Cancel') : (commonT('addComment') || 'Add Comment')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -681,7 +689,7 @@ function InfohubScreenContent() {
                   <View style={styles.commentInputContainer}>
                     <TextInput
                       style={styles.commentInput}
-                      placeholder="Write a comment..."
+                      placeholder={commonT('writeComment') || "Write a comment..."}
                       value={newComment}
                       onChangeText={setNewComment}
                       multiline
@@ -697,13 +705,13 @@ function InfohubScreenContent() {
                           setShowCommentInput(false);
                         }}
                       >
-                        <Text style={styles.cancelCommentButtonText}>Cancel</Text>
+                        <Text style={styles.cancelCommentButtonText}>{commonT('cancel') || 'Cancel'}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={styles.submitCommentButton}
                         onPress={handleAddComment}
                       >
-                        <Text style={styles.submitCommentButtonText}>Post</Text>
+                        <Text style={styles.submitCommentButtonText}>{commonT('post') || 'Post'}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -711,7 +719,7 @@ function InfohubScreenContent() {
 
                 <View style={styles.commentsList}>
                   <Text style={styles.noCommentsText}>
-                    No comments yet. Be the first to comment!
+                    {commonT('noCommentsYet') || 'No comments yet. Be the first to comment!'}
                   </Text>
                 </View>
               </View>
@@ -732,7 +740,7 @@ function InfohubScreenContent() {
               </View>
             </View>
           )}
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
