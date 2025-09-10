@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthProvider';
-import { X, User, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight, Key, Lock, UserPlus, Camera } from 'lucide-react-native';
+import { X, User, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight, Key, Lock, UserPlus, Camera, Edit3 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -229,24 +229,38 @@ export default function SettingsScreen() {
       .toUpperCase();
 
     return (
-      <TouchableOpacity 
-        style={styles.profileCard}
-                      onPress={() => safePush('/(app)/EditProfileScreen')}
-      >
-        <View style={styles.profileAvatarContainer}>
-          <View style={styles.profileInitialsContainer}>
-            <Text style={styles.profileInitials}>{initials}</Text>
+      <View style={styles.profileCard}>
+        <TouchableOpacity 
+          style={styles.profileCardContent}
+          onPress={() => safePush('/(app)/EditProfileScreen')}
+        >
+          <View style={styles.profileAvatarContainer}>
+            <View style={styles.profileInitialsContainer}>
+              <Text style={styles.profileInitials}>{initials}</Text>
+            </View>
           </View>
-        </View>
-        <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{user.name}</Text>
-          <Text style={styles.profileEmail}>{user.email}</Text>
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleText}>{user.role.toUpperCase()}</Text>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{user.name}</Text>
+            <Text style={styles.profileEmail}>{user.email}</Text>
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleText}>{user.role.toUpperCase()}</Text>
+            </View>
           </View>
-        </View>
-        <ChevronRight size={20} color="#8E8E93" strokeWidth={1.5} />
-      </TouchableOpacity>
+          <ChevronRight size={20} color="#8E8E93" strokeWidth={1.5} />
+        </TouchableOpacity>
+        
+        {/* Visible Edit Button */}
+        <TouchableOpacity 
+          style={styles.editProfileButton}
+          onPress={() => safePush('/(app)/EditProfileScreen')}
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.editProfile')}
+          accessibilityHint="Opens profile editing screen"
+        >
+          <Edit3 size={16} color="#1A1A1A" strokeWidth={1.5} />
+          <Text style={styles.editProfileButtonText}>{t('common.edit')}</Text>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -604,13 +618,16 @@ const styles = StyleSheet.create({
     height: 32,
   },
   profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#F8F9FA',
-    padding: 20,
     borderRadius: 16,
     marginBottom: 32,
     marginTop: 24,
+    overflow: 'hidden',
+  },
+  profileCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
   },
   profileAvatarContainer: {
     marginRight: 16,
@@ -657,6 +674,23 @@ const styles = StyleSheet.create({
     color: '#1976D2',
     fontWeight: '600',
     fontFamily: 'Urbanist-SemiBold',
+  },
+  editProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E7',
+    gap: 6,
+  },
+  editProfileButtonText: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
   },
   activeAccountBadge: {
     backgroundColor: '#34C759',
