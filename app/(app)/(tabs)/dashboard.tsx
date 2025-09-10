@@ -188,21 +188,38 @@ export default function DashboardScreen() {
 
   // Function to update goal player selection
   const updateGoalPlayer = (goalIndex: number, user_id: string) => {
-    const player = memoizedTeamPlayers.find(p => p.user_id === user_id);
+    const normalizedUserId = toId(user_id);
+    console.log('🎯 updateGoalPlayer called:', { goalIndex, user_id: normalizedUserId, availablePlayers: memoizedTeamPlayers.length });
+    
+    const player = memoizedTeamPlayers.find(p => p.user_id === normalizedUserId);
+    
+    if (!player) {
+      console.warn('⚠️ Player not found in memoizedTeamPlayers:', { user_id: normalizedUserId, availableIds: memoizedTeamPlayers.map(p => p.user_id) });
+      return;
+    }
+    
+    console.log('✅ Found player:', { 
+      id: player.user_id, 
+      name: player.name, 
+      firstName: player.first_name, 
+      lastName: player.last_name 
+    });
     
     // Update the separate selection state - only update the specific index
     // If the same user is already selected, deselect them (toggle behavior)
     setSelectedGoalUsers(prev => {
-      if (prev[goalIndex] === user_id) {
+      if (prev[goalIndex] === normalizedUserId) {
         // Deselect if already selected
         const newState = { ...prev };
         delete newState[goalIndex];
+        console.log('🔄 Deselected player for goal', goalIndex);
         return newState;
       } else {
         // Select the new user
+        console.log('✅ Selected player for goal', goalIndex, ':', player.name);
         return {
           ...prev,
-          [goalIndex]: user_id
+          [goalIndex]: normalizedUserId
         };
       }
     });
@@ -212,14 +229,15 @@ export default function DashboardScreen() {
       const updatedGoals = prev.goals.map((goal, index) => 
         index === goalIndex ? { 
           ...goal, 
-          playerId: user_id || '', 
+          playerId: normalizedUserId || '', 
           playerName: player?.name || `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'Unknown Player' 
         } : goal
       );
       
       console.log('🎯 Updated goals state:', {
         goalIndex,
-        selectedUserId: user_id,
+        selectedUserId: normalizedUserId,
+        playerName: player?.name,
         allGoals: updatedGoals.map((g, i) => ({ 
           index: i, 
           playerId: g.playerId, 
@@ -236,21 +254,38 @@ export default function DashboardScreen() {
 
   // Function to update assist player selection
   const updateAssistPlayer = (assistIndex: number, user_id: string) => {
-    const player = memoizedTeamPlayers.find(p => p.user_id === user_id);
+    const normalizedUserId = toId(user_id);
+    console.log('🎯 updateAssistPlayer called:', { assistIndex, user_id: normalizedUserId, availablePlayers: memoizedTeamPlayers.length });
+    
+    const player = memoizedTeamPlayers.find(p => p.user_id === normalizedUserId);
+    
+    if (!player) {
+      console.warn('⚠️ Player not found in memoizedTeamPlayers:', { user_id: normalizedUserId, availableIds: memoizedTeamPlayers.map(p => p.user_id) });
+      return;
+    }
+    
+    console.log('✅ Found player for assist:', { 
+      id: player.user_id, 
+      name: player.name, 
+      firstName: player.first_name, 
+      lastName: player.last_name 
+    });
     
     // Update the separate selection state - only update the specific index
     // If the same user is already selected, deselect them (toggle behavior)
     setSelectedAssistUsers(prev => {
-      if (prev[assistIndex] === user_id) {
+      if (prev[assistIndex] === normalizedUserId) {
         // Deselect if already selected
         const newState = { ...prev };
         delete newState[assistIndex];
+        console.log('🔄 Deselected player for assist', assistIndex);
         return newState;
       } else {
         // Select the new user
+        console.log('✅ Selected player for assist', assistIndex, ':', player.name);
         return {
           ...prev,
-          [assistIndex]: user_id
+          [assistIndex]: normalizedUserId
         };
       }
     });
@@ -260,14 +295,15 @@ export default function DashboardScreen() {
       const updatedAssists = prev.assists.map((assist, index) => 
         index === assistIndex ? { 
           ...assist, 
-          playerId: user_id || '', 
+          playerId: normalizedUserId || '', 
           playerName: player?.name || `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'Unknown Player' 
         } : assist
       );
       
       console.log('🎯 Updated assists state:', {
         assistIndex,
-        selectedUserId: user_id,
+        selectedUserId: normalizedUserId,
+        playerName: player?.name,
         allAssists: updatedAssists.map((a, i) => ({ 
           index: i, 
           playerId: a.playerId, 
@@ -290,8 +326,25 @@ export default function DashboardScreen() {
   };
   const [teamPlayers, setTeamPlayers] = useState<any[]>([]);
   
+  // Helper function to normalize IDs to strings
+  const toId = (id: string | number | null | undefined): string => {
+    if (id == null) return '';
+    return String(id);
+  };
+
+  // Helper function to normalize text for comparison
+  const normalize = (s: string): string => {
+    return s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  };
+
   // Memoize teamPlayers to prevent unnecessary re-renders
-  const memoizedTeamPlayers = useMemo(() => teamPlayers, [teamPlayers]);
+  const memoizedTeamPlayers = useMemo(() => {
+    console.log('🔄 Memoizing team players:', teamPlayers.length);
+    return teamPlayers.map(player => ({
+      ...player,
+      user_id: toId(player.user_id), // Ensure consistent string IDs
+    }));
+  }, [teamPlayers]);
   const [potmVotes, setPotmVotes] = useState<{
     first: string | null;
     second: string | null;
@@ -525,7 +578,15 @@ export default function DashboardScreen() {
         teamId,
         totalCount: playersWithComputedName.length,
         trainerCount: playersWithComputedName.filter(u => u.role === 'trainer').length,
-        playerCount: playersWithComputedName.filter(u => u.role === 'player').length
+        playerCount: playersWithComputedName.filter(u => u.role === 'player').length,
+        allPlayers: playersWithComputedName.map(p => ({
+          id: p.id,
+          user_id: p.user_id,
+          name: p.name,
+          firstName: p.first_name,
+          lastName: p.last_name,
+          role: p.role
+        }))
       });
       
       setTeamPlayers(playersWithComputedName);
@@ -1472,6 +1533,14 @@ export default function DashboardScreen() {
                             memoizedTeamPlayers.map((player, playerIndex) => {
                               const isSelected = selectedGoalUsers[index] === player.user_id;
                               
+                              console.log('🎯 Rendering player option:', {
+                                playerIndex,
+                                playerId: player.user_id,
+                                playerName: player.name,
+                                isSelected,
+                                goalIndex: index
+                              });
+                              
                               return (
                                 <TouchableOpacity
                                   key={`goal-${selectedMatch?.id}-${index}-player-${player.user_id}`}
@@ -1479,7 +1548,13 @@ export default function DashboardScreen() {
                                     styles.playerOption,
                                     isSelected && styles.playerOptionSelected
                                   ]}
-                                  onPress={() => updateGoalPlayer(index, player.user_id)}
+                                  onPress={() => {
+                                    console.log('🎯 Player option pressed:', { playerName: player.name, playerId: player.user_id, goalIndex: index });
+                                    updateGoalPlayer(index, player.user_id);
+                                  }}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`Select ${player.name} for goal ${index + 1}`}
+                                  accessibilityState={{ selected: isSelected }}
                                 >
                                   <Text style={[
                                     styles.playerOptionText,
@@ -1547,6 +1622,14 @@ export default function DashboardScreen() {
                           memoizedTeamPlayers.map((player, playerIndex) => {
                             const isSelected = selectedAssistUsers[index] === player.user_id;
                             
+                            console.log('🎯 Rendering assist player option:', {
+                              playerIndex,
+                              playerId: player.user_id,
+                              playerName: player.name,
+                              isSelected,
+                              assistIndex: index
+                            });
+                            
                             return (
                               <TouchableOpacity
                                 key={`assist-${selectedMatch?.id}-${index}-player-${player.user_id}`}
@@ -1554,7 +1637,13 @@ export default function DashboardScreen() {
                                   styles.playerOption,
                                   isSelected && styles.playerOptionSelected
                                 ]}
-                                onPress={() => updateAssistPlayer(index, player.user_id)}
+                                onPress={() => {
+                                  console.log('🎯 Assist player option pressed:', { playerName: player.name, playerId: player.user_id, assistIndex: index });
+                                  updateAssistPlayer(index, player.user_id);
+                                }}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Select ${player.name} for assist ${index + 1}`}
+                                accessibilityState={{ selected: isSelected }}
                               >
                                 <Text style={[
                                   styles.playerOptionText,
