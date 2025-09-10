@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -108,13 +108,7 @@ export default function DashboardScreen() {
 
   // Function to update goal player selection
   const updateGoalPlayer = (goalIndex: number, user_id: string) => {
-    const player = teamPlayers.find(p => p.user_id === user_id);
-    console.log('🎯 Updating goal player:', {
-      goalIndex,
-      user_id,
-      playerName: player?.name || player?.first_name || player?.last_name,
-      currentSelectedGoalUsers: selectedGoalUsers
-    });
+    const player = memoizedTeamPlayers.find(p => p.user_id === user_id);
     
     // Update the separate selection state - only update the specific index
     // If the same user is already selected, deselect them (toggle behavior)
@@ -162,13 +156,7 @@ export default function DashboardScreen() {
 
   // Function to update assist player selection
   const updateAssistPlayer = (assistIndex: number, user_id: string) => {
-    const player = teamPlayers.find(p => p.user_id === user_id);
-    console.log('🎯 Updating assist player:', {
-      assistIndex,
-      user_id,
-      playerName: player?.name || player?.first_name || player?.last_name,
-      currentSelectedAssistUsers: selectedAssistUsers
-    });
+    const player = memoizedTeamPlayers.find(p => p.user_id === user_id);
     
     // Update the separate selection state - only update the specific index
     // If the same user is already selected, deselect them (toggle behavior)
@@ -221,6 +209,9 @@ export default function DashboardScreen() {
     return `${type}-${typeIndex}-player-${user_id}-${playerName}`;
   };
   const [teamPlayers, setTeamPlayers] = useState<any[]>([]);
+  
+  // Memoize teamPlayers to prevent unnecessary re-renders
+  const memoizedTeamPlayers = useMemo(() => teamPlayers, [teamPlayers]);
   const [potmVotes, setPotmVotes] = useState<{
     first: string | null;
     second: string | null;
@@ -1297,12 +1288,26 @@ export default function DashboardScreen() {
                       value={matchResult.teamScore.toString()}
                       onChangeText={(text) => {
                         const newScore = parseInt(text) || 0;
+                        const currentScore = matchResult.teamScore;
+                        
+                        // Only update if score actually changed
+                        if (newScore === currentScore) return;
+                        
                         setMatchResult(prev => {
                           // If score is reduced, remove excess goals and assists
                           const adjustedGoals = prev.goals.slice(0, newScore);
                           const adjustedAssists = prev.assists.slice(0, newScore);
                           
-                          // Also update selection objects to match
+                          return {
+                            ...prev,
+                            teamScore: newScore,
+                            goals: adjustedGoals,
+                            assists: adjustedAssists
+                          };
+                        });
+                        
+                        // Update selection objects separately to avoid cascading re-renders
+                        if (newScore < currentScore) {
                           setSelectedGoalUsers(prev => {
                             const newState = { ...prev };
                             Object.keys(newState).forEach(key => {
@@ -1323,14 +1328,7 @@ export default function DashboardScreen() {
                             });
                             return newState;
                           });
-                          
-                          return {
-                            ...prev,
-                            teamScore: newScore,
-                            goals: adjustedGoals,
-                            assists: adjustedAssists
-                          };
-                        });
+                        }
                       }}
                       keyboardType="numeric"
                       placeholder="0"
@@ -1367,23 +1365,15 @@ export default function DashboardScreen() {
                 <Text style={styles.limitText}>
                   {matchResult.goals.length}/{matchResult.teamScore} goal scorer{matchResult.teamScore === 1 ? '' : 's'} assigned
                 </Text>
-                {matchResult.goals.map((goal, index) => {
-                  console.log(`🎯 Rendering goal ${index}:`, {
-                    goalIndex: index,
-                    goalPlayerId: goal.playerId,
-                    goalPlayerName: goal.playerName,
-                    allGoals: matchResult.goals.map(g => ({ playerId: g.playerId, playerName: g.playerName }))
-                  });
-                  
-                  return (
-                    <View key={`goal-${index}`} style={styles.statInputRow}>
+                {matchResult.goals.map((goal, index) => (
+                  <View key={`goal-${selectedMatch?.id}-${index}`} style={styles.statInputRow}>
                       <View style={styles.playerSelectContainer}>
                         <Text style={styles.playerSelectLabel}>Goal {index + 1}:</Text>
                         
                         {/* Selected Player Display */}
                         <Text style={styles.selectedPlayerText}>
                           {selectedGoalUsers[index] ? 
-                            teamPlayers.find(p => p.user_id === selectedGoalUsers[index])?.name || 
+                            memoizedTeamPlayers.find(p => p.user_id === selectedGoalUsers[index])?.name || 
                             'Unknown Player' 
                             : 'No player selected'
                           }
@@ -1412,7 +1402,7 @@ export default function DashboardScreen() {
                         
                         {/* Player Selection */}
                         <View style={styles.playerSelect}>
-                          {teamPlayers.length === 0 ? (
+                          {memoizedTeamPlayers.length === 0 ? (
                             <View style={styles.noPlayersContainer}>
                               <Text style={styles.noPlayersText}>
                                 {isLoading ? 'Loading players...' : 'No players available'}
@@ -1427,12 +1417,12 @@ export default function DashboardScreen() {
                               )}
                             </View>
                           ) : (
-                            teamPlayers.map((player, playerIndex) => {
+                            memoizedTeamPlayers.map((player, playerIndex) => {
                               const isSelected = selectedGoalUsers[index] === player.user_id;
                               
                               return (
                                 <TouchableOpacity
-                                  key={generatePlayerKey('goal', index, player, playerIndex)}
+                                  key={`goal-${selectedMatch?.id}-${index}-player-${player.user_id}`}
                                   style={[
                                     styles.playerOption,
                                     isSelected && styles.playerOptionSelected
@@ -1460,8 +1450,7 @@ export default function DashboardScreen() {
                         <X size={16} color="#FF3B30" strokeWidth={1.5} />
                       </TouchableOpacity>
                     </View>
-                  );
-                })}
+                ))}
               </View>
 
               {/* Assists Section */}
@@ -1477,18 +1466,18 @@ export default function DashboardScreen() {
                   {matchResult.assists.length}/{matchResult.teamScore} assist provider{matchResult.teamScore === 1 ? '' : 's'} assigned (max {matchResult.teamScore})
                 </Text>
                 {matchResult.assists.map((assist, index) => (
-                  <View key={index} style={styles.statInputRow}>
+                  <View key={`assist-${selectedMatch?.id}-${index}`} style={styles.statInputRow}>
                     <View style={styles.playerSelectContainer}>
                       <Text style={styles.playerSelectLabel}>Assist {index + 1}:</Text>
                                               <Text style={styles.selectedPlayerText}>
                           {selectedAssistUsers[index] ? 
-                            teamPlayers.find(p => p.user_id === selectedAssistUsers[index])?.name || 
+                            memoizedTeamPlayers.find(p => p.user_id === selectedAssistUsers[index])?.name || 
                             'Unknown Player' 
                             : 'No player selected'
                           }
                         </Text>
                       <View style={styles.playerSelect}>
-                        {teamPlayers.length === 0 ? (
+                        {memoizedTeamPlayers.length === 0 ? (
                           <View style={styles.noPlayersContainer}>
                             <Text style={styles.noPlayersText}>
                               {isLoading ? 'Loading players...' : 'No players available'}
@@ -1503,12 +1492,12 @@ export default function DashboardScreen() {
                             )}
                           </View>
                         ) : (
-                          teamPlayers.map((player, playerIndex) => {
+                          memoizedTeamPlayers.map((player, playerIndex) => {
                             const isSelected = selectedAssistUsers[index] === player.user_id;
                             
                             return (
                               <TouchableOpacity
-                                key={generatePlayerKey('assist', index, player, playerIndex)}
+                                key={`assist-${selectedMatch?.id}-${index}-player-${player.user_id}`}
                                 style={[
                                   styles.playerOption,
                                   isSelected && styles.playerOptionSelected
