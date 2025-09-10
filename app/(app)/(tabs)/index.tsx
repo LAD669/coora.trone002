@@ -84,6 +84,7 @@ function InfohubScreenContent() {
   });
   const [newComment, setNewComment] = useState('');
   const [showCommentInput, setShowCommentInput] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load posts from Supabase
   useEffect(() => {
@@ -138,6 +139,12 @@ function InfohubScreenContent() {
   const postableTab = getPostableTab();
 
   const handleCreatePost = async () => {
+    // Prevent multiple submissions
+    if (isSubmitting) {
+      console.log('Already submitting, ignoring duplicate request');
+      return;
+    }
+
     if (!canCreatePost || !postableTab) {
       Alert.alert(commonT('error'), commonT('noPermission'));
       return;
@@ -148,25 +155,42 @@ function InfohubScreenContent() {
       return;
     }
 
-    if (!newPost.title.trim() || !newPost.content.trim()) {
+    // Validate form data
+    const trimmedTitle = newPost.title.trim();
+    const trimmedContent = newPost.content.trim();
+
+    if (!trimmedTitle || !trimmedContent) {
       Alert.alert(commonT('error'), commonT('fillAllFields'));
       return;
     }
+
+    // Additional validation
+    if (trimmedTitle.length < 3) {
+      Alert.alert(commonT('error'), 'Title must be at least 3 characters long');
+      return;
+    }
+
+    if (trimmedContent.length < 10) {
+      Alert.alert(commonT('error'), 'Content must be at least 10 characters long');
+      return;
+    }
+
+    setIsSubmitting(true);
 
     console.log('Creating post with user data:', {
       userId: user.id,
       teamId: user.teamId,
       userRole: user.role,
-      postData: newPost,
+      postData: { ...newPost, title: trimmedTitle, content: trimmedContent },
       activeTab
     });
-    try {
 
+    try {
       const postData = {
-        title: newPost.title,
-        content: newPost.content,
+        title: trimmedTitle,
+        content: trimmedContent,
         imageUrl: newPost.imageUrl,
-        postType: (postableTab === 'teams' ? 'coach' : postableTab) as 'organization' | 'coach', // Map 'teams' to 'coach' for backend compatibility
+        postType: (postableTab === 'teams' ? 'coach' : postableTab) as 'organization' | 'coach',
         teamId: user.teamId!,
         authorId: user.id,
       };
@@ -175,15 +199,25 @@ function InfohubScreenContent() {
       const result = await createPost(postData);
       console.log('Post created successfully:', result);
       
+      // Reset form and close modal
       setNewPost({ title: '', content: '', imageUrl: '' });
       setModalVisible(false);
+      
+      // Show success message
       Alert.alert(commonT('success'), commonT('postCreated'));
-      loadPosts(); // Reload posts
+      
+      // Reload posts to show the new post
+      await loadPosts();
+      
     } catch (error) {
       console.error('Error creating post:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Full error details:', error);
-      Alert.alert(commonT('error'), commonT('postCreateError'));
+      
+      // Show specific error message
+      Alert.alert(commonT('error'), `${commonT('postCreateError')}: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -523,24 +557,39 @@ function InfohubScreenContent() {
               value={newPost.title}
               onChangeText={(text) => setNewPost({ ...newPost, title: text })}
               placeholderTextColor="#8E8E93"
+              accessibilityLabel={commonT('updateTitle')}
+              accessibilityHint="Enter the title for your update"
+              maxLength={100}
+              returnKeyType="next"
             />
 
             <TextInput
               style={styles.contentInput}
-              placeholder="Post content..."
+              placeholder={commonT('postContent') || "Post content..."}
               value={newPost.content}
               onChangeText={(text) => setNewPost({ ...newPost, content: text })}
               multiline
               numberOfLines={6}
               textAlignVertical="top"
               placeholderTextColor="#8E8E93"
+              accessibilityLabel={commonT('postContent') || "Post content"}
+              accessibilityHint="Enter the content for your update"
+              maxLength={1000}
+              returnKeyType="default"
             />
 
             <TouchableOpacity
-              style={styles.publishButton}
+              style={[styles.publishButton, isSubmitting && styles.publishButtonDisabled]}
               onPress={handleCreatePost}
+              disabled={isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel={commonT('publishUpdate')}
+              accessibilityHint="Publishes your update to the team"
+              accessibilityState={{ disabled: isSubmitting }}
             >
-              <Text style={styles.publishButtonText}>{commonT('publishUpdate')}</Text>
+              <Text style={styles.publishButtonText}>
+                {isSubmitting ? (commonT('publishing') || 'Publishing...') : commonT('publishUpdate')}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -1057,6 +1106,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
+  },
+  publishButtonDisabled: {
+    backgroundColor: '#8E8E93',
+    opacity: 0.6,
   },
   publishButtonText: {
     fontSize: 16,

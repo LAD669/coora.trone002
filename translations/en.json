@@ -133,6 +133,8 @@
     "teams": "Teams",
     "updateTitle": "Update Title",
     "publishUpdate": "Publish Update",
+    "publishing": "Publishing...",
+    "postContent": "Post content...",
     "postDetails": "Post Details",
     "noReactionsYet": "No reactions yet",
     "email": "Email",
