@@ -565,9 +565,17 @@ export default function DashboardScreen() {
     const currentGoalsCount = matchResult.goals.length;
     const maxGoals = matchResult.teamScore;
     
+    if (maxGoals === 0) {
+      Alert.alert(
+        'Set Team Score First', 
+        'Please set your team score before adding goal scorers.'
+      );
+      return;
+    }
+    
     if (currentGoalsCount >= maxGoals) {
       Alert.alert(
-        commonT('error'), 
+        'Maximum Goals Reached', 
         `Cannot add more goals. Team score is ${maxGoals}, so you can only assign ${maxGoals} goal scorer${maxGoals === 1 ? '' : 's'}.`
       );
       return;
@@ -615,9 +623,17 @@ export default function DashboardScreen() {
     const currentAssistsCount = matchResult.assists.length;
     const maxAssists = matchResult.teamScore; // Allow up to same number as goals
     
+    if (maxAssists === 0) {
+      Alert.alert(
+        'Set Team Score First', 
+        'Please set your team score before adding assist providers.'
+      );
+      return;
+    }
+    
     if (currentAssistsCount >= maxAssists) {
       Alert.alert(
-        commonT('error'), 
+        'Maximum Assists Reached', 
         `Cannot add more assists. Team score is ${maxAssists}, so you can only assign up to ${maxAssists} assist provider${maxAssists === 1 ? '' : 's'}.`
       );
       return;
@@ -1396,24 +1412,23 @@ export default function DashboardScreen() {
                         
                         {/* Player Selection */}
                         <View style={styles.playerSelect}>
-                          {(() => {
-                            console.log(`🎯 Rendering goal ${index} players:`, {
-                              totalTeamPlayers: teamPlayers.length,
-                              players: teamPlayers.map(p => ({
-                                user_id: p.user_id,
-                                name: p.name,
-                                role: p.role
-                              }))
-                            });
-                            return teamPlayers.map((player, playerIndex) => {
+                          {teamPlayers.length === 0 ? (
+                            <View style={styles.noPlayersContainer}>
+                              <Text style={styles.noPlayersText}>
+                                {isLoading ? 'Loading players...' : 'No players available'}
+                              </Text>
+                              {!isLoading && (
+                                <TouchableOpacity 
+                                  style={styles.retryButton}
+                                  onPress={loadTeamPlayers}
+                                >
+                                  <Text style={styles.retryButtonText}>Retry</Text>
+                                </TouchableOpacity>
+                              )}
+                            </View>
+                          ) : (
+                            teamPlayers.map((player, playerIndex) => {
                               const isSelected = selectedGoalUsers[index] === player.user_id;
-                              console.log(`🎯 Goal ${index} - Player ${player.user_id}:`, {
-                                goalIndex: index,
-                                playerUserId: player.user_id,
-                                selectedGoalUsers: selectedGoalUsers,
-                                isSelected,
-                                playerName: player.name
-                              });
                               
                               return (
                                 <TouchableOpacity
@@ -1432,8 +1447,8 @@ export default function DashboardScreen() {
                                   </Text>
                                 </TouchableOpacity>
                               );
-                            });
-                          })()}
+                            })
+                          )}
                         </View>
                       </View>
                       
@@ -1473,24 +1488,23 @@ export default function DashboardScreen() {
                           }
                         </Text>
                       <View style={styles.playerSelect}>
-                        {(() => {
-                          console.log(`🎯 Rendering assist ${index} players:`, {
-                            totalTeamPlayers: teamPlayers.length,
-                            players: teamPlayers.map(p => ({
-                              user_id: p.user_id,
-                              name: p.name,
-                              role: p.role
-                            }))
-                          });
-                          return teamPlayers.map((player, playerIndex) => {
+                        {teamPlayers.length === 0 ? (
+                          <View style={styles.noPlayersContainer}>
+                            <Text style={styles.noPlayersText}>
+                              {isLoading ? 'Loading players...' : 'No players available'}
+                            </Text>
+                            {!isLoading && (
+                              <TouchableOpacity 
+                                style={styles.retryButton}
+                                onPress={loadTeamPlayers}
+                              >
+                                <Text style={styles.retryButtonText}>Retry</Text>
+                              </TouchableOpacity>
+                            )}
+                          </View>
+                        ) : (
+                          teamPlayers.map((player, playerIndex) => {
                             const isSelected = selectedAssistUsers[index] === player.user_id;
-                            console.log(`🎯 Assist ${index} - Player ${player.user_id}:`, {
-                              assistIndex: index,
-                              playerUserId: player.user_id,
-                              selectedAssistUsers: selectedAssistUsers,
-                              isSelected,
-                              playerName: player.name
-                            });
                             
                             return (
                               <TouchableOpacity
@@ -1509,8 +1523,8 @@ export default function DashboardScreen() {
                                 </Text>
                               </TouchableOpacity>
                             );
-                          });
-                        })()}
+                          })
+                        )}
                       </View>
                     </View>
                     <TouchableOpacity 
@@ -2055,6 +2069,32 @@ const styles = StyleSheet.create({
   },
   playerOptionTextSelected: {
     color: '#FFFFFF',
+  },
+  noPlayersContainer: {
+    padding: 16,
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5E7',
+  },
+  noPlayersText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    marginBottom: 8,
+  },
+  retryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
   },
   minuteInputContainer: {
     flexDirection: 'row',
