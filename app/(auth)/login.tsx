@@ -14,16 +14,22 @@ import {
 import { useAuth } from '@/contexts/AuthProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const { t } = useLanguage();
   const { signIn, loading } = useAuth();
   const { safePush } = useNavigationReady();
+  const router = useRouter();
+  const params = useLocalSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  
+  // Get return destination from params
+  const returnTo = params.returnTo as string;
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -47,6 +53,14 @@ export default function LoginScreen() {
 
     try {
       await signIn(email, password);
+      
+      // After successful login, navigate back to the return destination
+      if (returnTo === 'settings') {
+        router.replace('/(app)/settings');
+      } else {
+        // Default navigation behavior (handled by AuthProvider)
+        console.log('No specific return destination, using default navigation');
+      }
     } catch (error) {
       Alert.alert(t('common.error'), error instanceof Error ? error.message : t('common.somethingWentWrong'));
     }
@@ -157,6 +171,15 @@ export default function LoginScreen() {
               <Text style={styles.signUpLink}>{t('auth.signUp')}</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Back to Settings Link (only show if came from settings) */}
+          {returnTo === 'settings' && (
+            <View style={styles.backToSettingsContainer}>
+              <TouchableOpacity onPress={() => router.back()}>
+                <Text style={styles.backToSettingsLink}>← Back to Settings</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -294,5 +317,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#007AFF',
     fontFamily: 'Urbanist-SemiBold',
+  },
+  backToSettingsContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  backToSettingsLink: {
+    color: '#8E8E93',
+    fontSize: 14,
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
+    textDecorationLine: 'underline',
   },
 });
