@@ -132,6 +132,8 @@
     "teams": "Teams",
     "updateTitle": "Update-Titel",
     "publishUpdate": "Update veröffentlichen",
+    "publishing": "Wird veröffentlicht...",
+    "postContent": "Post-Inhalt...",
     "postDetails": "Beitragsdetails",
     "noReactionsYet": "Noch keine Reaktionen",
     "email": "E-Mail",
