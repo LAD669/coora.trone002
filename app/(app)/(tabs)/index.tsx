@@ -226,6 +226,26 @@ function InfohubScreenContent() {
       .slice(0, 3);
   };
 
+  // New helper functions for proper reaction separation
+  const getCurrentUserReaction = (reactions: any[] = [], userId: string) => {
+    if (!Array.isArray(reactions) || !userId) return null;
+    const userReaction = reactions.find((r: any) => r?.user_id === userId);
+    return userReaction?.emoji || null;
+  };
+
+  const getReactionCounts = (reactions: any[] = []) => {
+    if (!Array.isArray(reactions)) return {};
+    
+    const emojiCounts = reactions.reduce((acc, reaction) => {
+      if (reaction?.emoji) {
+        acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    
+    return emojiCounts;
+  };
+
   const formatDate = (date: Date) => {
     if (!date || !(date instanceof Date)) return 'Unknown date';
     return date.toLocaleDateString('en-US', {
@@ -248,19 +268,19 @@ function InfohubScreenContent() {
       setSelectedPostForModal(post);
       setPostModalVisible(true);
     } else {
-      Alert.alert(commonT('error'), commonT('postNotFound'));
+      Alert.alert(commonT('error'), 'Post not found');
     }
     setShowEmojiPicker(null);
   }
 
   const handleAddComment = () => {
     if (!newComment.trim()) {
-      Alert.alert(commonT('error'), commonT('enterComment') || 'Please enter a comment');
+      Alert.alert(commonT('error'), 'Please enter a comment');
       return;
     }
     
     // For now, just show an alert since we don't have comment API yet
-    Alert.alert(commonT('comment') || 'Comment', `${commonT('comment') || 'Comment'}: "${newComment}"\n\n${commonT('commentNote') || 'Note: Comment functionality will be implemented in a future update.'}`);
+    Alert.alert('Comment', `Comment: "${newComment}"\n\nNote: Comment functionality will be implemented in a future update.`);
     setNewComment('');
     setShowCommentInput(false);
   }
@@ -329,9 +349,9 @@ function InfohubScreenContent() {
             <View style={styles.postsContainer}>
               {filteredPosts.length === 0 ? (
                 <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>{commonT('noPostsYet') || 'No posts yet'}</Text>
+                    <Text style={styles.emptyStateText}>No posts yet</Text>
                   {canCreatePost && (
-                    <Text style={styles.emptyStateSubtext}>{commonT('createFirstPost') || 'Create the first post for your team'}</Text>
+                    <Text style={styles.emptyStateSubtext}>Create the first post for your team</Text>
                   )}
                 </View>
               ) : (
@@ -396,23 +416,33 @@ function InfohubScreenContent() {
 
                 {showEmojiPicker === post.id && (
                   <View style={styles.emojiPicker}>
-                    {['👍', '❤️', '😂', '😮', '😢', '😡', '🔥', '💪', '🎯', '⚡'].map((emoji) => (
-                      <TouchableOpacity
-                        key={emoji}
-                        style={[
-                          styles.emojiButton,
-                          Array.isArray(post.post_reactions) && post.post_reactions.some((r: any) => r.user_id === user?.id && r.emoji === emoji) && styles.emojiButtonActive
-                        ]}
-                        onPress={() => handleReaction(post.id, emoji)}
-                      >
-                        <Text style={styles.emojiButtonText}>{emoji}</Text>
-                        {Array.isArray(post.post_reactions) && post.post_reactions.filter((r: any) => r.emoji === emoji).length > 0 && (
-                          <Text style={styles.emojiButtonCount}>
-                            <Text>{post.post_reactions.filter((r: any) => r.emoji === emoji).length}</Text>
-                          </Text>
-                        )}
-                      </TouchableOpacity>
-                    ))}
+                    {['👍', '❤️', '😂', '😮', '😢', '😡', '🔥', '💪', '🎯', '⚡'].map((emoji) => {
+                      const currentUserReaction = getCurrentUserReaction(post.post_reactions, user?.id || '');
+                      const reactionCounts = getReactionCounts(post.post_reactions);
+                      const isCurrentUserReacted = currentUserReaction === emoji;
+                      const emojiCount = reactionCounts[emoji] || 0;
+                      
+                      return (
+                        <TouchableOpacity
+                          key={emoji}
+                          style={[
+                            styles.emojiButton,
+                            isCurrentUserReacted && styles.emojiButtonActive
+                          ]}
+                          onPress={() => handleReaction(post.id, emoji)}
+                          accessibilityRole="button"
+                          accessibilityState={{ pressed: isCurrentUserReacted }}
+                          accessibilityLabel={`${emoji} reaction, ${emojiCount} ${emojiCount === 1 ? 'reaction' : 'reactions'}${isCurrentUserReacted ? ', you reacted' : ''}`}
+                        >
+                          <Text style={styles.emojiButtonText}>{emoji}</Text>
+                          {emojiCount > 0 && (
+                            <Text style={styles.emojiButtonCount}>
+                              <Text>{emojiCount}</Text>
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 )}
               </TouchableOpacity>
@@ -492,7 +522,7 @@ function InfohubScreenContent() {
 
             <TextInput
               style={styles.contentInput}
-              placeholder={commonT('postContentPlaceholder')}
+              placeholder="Post content..."
               value={newPost.content}
               onChangeText={(text) => setNewPost({ ...newPost, content: text })}
               multiline
@@ -594,45 +624,55 @@ function InfohubScreenContent() {
               {/* Emoji Picker in Modal */}
               {showEmojiPicker === selectedPostForModal.id && (
                 <View style={styles.emojiPicker}>
-                  {['👍', '❤️', '😂', '😮', '😢', '😡', '🔥', '💪', '🎯', '⚡'].map((emoji) => (
-                    <TouchableOpacity
-                      key={emoji}
-                      style={[
-                        styles.emojiButton,
-                        Array.isArray(selectedPostForModal.post_reactions) && selectedPostForModal.post_reactions.some((r: any) => r.user_id === user?.id && r.emoji === emoji) && styles.emojiButtonActive
-                      ]}
-                      onPress={() => {
-                        handleReaction(selectedPostForModal.id, emoji);
-                        // Update the modal post data after a short delay to allow API call to complete
-                        setTimeout(() => {
-                          const updatedPost = posts.find(p => p.id === selectedPostForModal.id);
-                          if (updatedPost) {
-                            setSelectedPostForModal(updatedPost);
-                          }
-                        }, 100);
-                      }}
-                    >
-                      <Text style={styles.emojiButtonText}>{emoji}</Text>
-                      {Array.isArray(selectedPostForModal.post_reactions) && selectedPostForModal.post_reactions.filter((r: any) => r.emoji === emoji).length > 0 && (
-                        <Text style={styles.emojiButtonCount}>
-                          <Text>{selectedPostForModal.post_reactions.filter((r: any) => r.emoji === emoji).length}</Text>
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  ))}
+                  {['👍', '❤️', '😂', '😮', '😢', '😡', '🔥', '💪', '🎯', '⚡'].map((emoji) => {
+                    const currentUserReaction = getCurrentUserReaction(selectedPostForModal.post_reactions, user?.id || '');
+                    const reactionCounts = getReactionCounts(selectedPostForModal.post_reactions);
+                    const isCurrentUserReacted = currentUserReaction === emoji;
+                    const emojiCount = reactionCounts[emoji] || 0;
+                    
+                    return (
+                      <TouchableOpacity
+                        key={emoji}
+                        style={[
+                          styles.emojiButton,
+                          isCurrentUserReacted && styles.emojiButtonActive
+                        ]}
+                        onPress={() => {
+                          handleReaction(selectedPostForModal.id, emoji);
+                          // Update the modal post data after a short delay to allow API call to complete
+                          setTimeout(() => {
+                            const updatedPost = posts.find(p => p.id === selectedPostForModal.id);
+                            if (updatedPost) {
+                              setSelectedPostForModal(updatedPost);
+                            }
+                          }, 100);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityState={{ pressed: isCurrentUserReacted }}
+                        accessibilityLabel={`${emoji} reaction, ${emojiCount} ${emojiCount === 1 ? 'reaction' : 'reactions'}${isCurrentUserReacted ? ', you reacted' : ''}`}
+                      >
+                        <Text style={styles.emojiButtonText}>{emoji}</Text>
+                        {emojiCount > 0 && (
+                          <Text style={styles.emojiButtonCount}>
+                            <Text>{emojiCount}</Text>
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               )}
 
               {/* Comment Section */}
               <View style={styles.commentSection}>
                 <View style={styles.commentHeader}>
-                  <Text style={styles.commentSectionTitle}>{commonT('comments') || 'Comments'}</Text>
+                  <Text style={styles.commentSectionTitle}>Comments</Text>
                   <TouchableOpacity 
                     style={styles.addCommentButton}
                     onPress={() => setShowCommentInput(!showCommentInput)}
                   >
                     <Text style={styles.addCommentButtonText}>
-                      {showCommentInput ? (commonT('cancel') || 'Cancel') : (commonT('addComment') || 'Add Comment')}
+                      {showCommentInput ? 'Cancel' : 'Add Comment'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -641,7 +681,7 @@ function InfohubScreenContent() {
                   <View style={styles.commentInputContainer}>
                     <TextInput
                       style={styles.commentInput}
-                      placeholder={commonT('writeComment') || 'Write a comment...'}
+                      placeholder="Write a comment..."
                       value={newComment}
                       onChangeText={setNewComment}
                       multiline
@@ -657,13 +697,13 @@ function InfohubScreenContent() {
                           setShowCommentInput(false);
                         }}
                       >
-                        <Text style={styles.cancelCommentButtonText}>{commonT('cancel') || 'Cancel'}</Text>
+                        <Text style={styles.cancelCommentButtonText}>Cancel</Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={styles.submitCommentButton}
                         onPress={handleAddComment}
                       >
-                        <Text style={styles.submitCommentButtonText}>{commonT('post') || 'Post'}</Text>
+                        <Text style={styles.submitCommentButtonText}>Post</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -671,7 +711,7 @@ function InfohubScreenContent() {
 
                 <View style={styles.commentsList}>
                   <Text style={styles.noCommentsText}>
-                    {commonT('noCommentsYet') || 'No comments yet. Be the first to comment!'}
+                    No comments yet. Be the first to comment!
                   </Text>
                 </View>
               </View>
