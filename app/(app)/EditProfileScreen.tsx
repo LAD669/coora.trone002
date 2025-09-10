@@ -17,7 +17,7 @@ import { updateUserProfile, checkUserProfile, createUserProfile } from '@/lib/su
 
 export default function EditProfileScreen() {
   const { language, t } = useLanguage();
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUserProfile } = useAuth();
   const { safeBack } = useNavigationReady();
   
   const [isLoading, setIsLoading] = useState(true);
@@ -107,6 +107,9 @@ export default function EditProfileScreen() {
       return;
     }
 
+    // Store original profile data for potential rollback
+    const originalProfile = { ...profile };
+
     try {
       setIsLoading(true);
 
@@ -118,15 +121,19 @@ export default function EditProfileScreen() {
         phone_number: profile.phone_number.trim() || undefined,
       });
 
-      // Update local user state
-      // Note: setUser is not available in AuthProvider, user updates are handled internally
-      // The user will be automatically updated when the profile is saved
-      // No need to manually update user state - it will be updated automatically
+      // Refresh user profile in AuthProvider to show updated data
+      await refreshUserProfile();
 
+      // Show success message only after successful backend update and cache refresh
       Alert.alert(t('common.success'), t('common.profileUpdated'));
       safeBack();
     } catch (error) {
       console.error('Error updating profile:', error);
+      
+      // Rollback local state to original values
+      setProfile(originalProfile);
+      
+      // Show error message
       const errorMessage = error instanceof Error ? error.message : t('common.somethingWentWrong');
       Alert.alert(t('common.error'), errorMessage);
     } finally {

@@ -22,6 +22,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   signUp: (email: string, password: string, name: string, accessCode?: string) => Promise<void>;
   clearAuthData: () => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -316,6 +317,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const refreshUserProfile = async () => {
+    if (!session?.user?.id) {
+      console.warn('Cannot refresh user profile: no session or user ID');
+      return;
+    }
+    
+    try {
+      console.log('Refreshing user profile...');
+      await loadUserProfile(session.user.id);
+      console.log('User profile refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing user profile:', error);
+      throw error;
+    }
+  };
+
   const value: AuthContextType = {
     session,
     user,
@@ -324,6 +341,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signOut,
     signUp,
     clearAuthData,
+    refreshUserProfile,
   };
 
   // Show loading screen while session is being loaded or not initialized

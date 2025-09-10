@@ -1014,9 +1014,23 @@ export const updateUserProfile = async (userId: string, updates: {
 }) => {
   console.log('📝 Updating user profile:', { userId, updates });
 
+  // Validate required fields
+  if (!userId) {
+    throw new Error('User ID is required for profile update');
+  }
+
+  // Filter out undefined values to avoid sending them to the backend
+  const cleanUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([_, value]) => value !== undefined)
+  );
+
+  if (Object.keys(cleanUpdates).length === 0) {
+    throw new Error('No valid updates provided');
+  }
+
   const { data, error } = await supabase
     .from('users')
-    .update(updates)
+    .update(cleanUpdates)
     .eq('id', userId)
     .select(`
       id,
@@ -1040,11 +1054,11 @@ export const updateUserProfile = async (userId: string, updates: {
 
   if (error) {
     console.error('❌ Error updating user profile:', error);
-    throw error;
+    throw new Error(`Profile update failed: ${error.message}`);
   }
 
   if (!data) {
-    throw new Error('Failed to update user profile');
+    throw new Error('Profile update failed: No data returned from server');
   }
 
   console.log('✅ User profile updated successfully:', data);
