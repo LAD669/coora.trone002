@@ -13,7 +13,7 @@ import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getTeamEvents, createEvent, respondToEvent, getEventResponses } from '@/lib/supabase';
-import { Plus, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Check, X, Users, UserCheck, UserX, Clock as ClockIcon } from 'lucide-react-native';
+import { Plus, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Check, X, Users, UserCheck, UserX, Clock as ClockIcon, MessageCircle } from 'lucide-react-native';
 import { Event } from '@/types';
 
 const MONTHS = [
@@ -100,6 +100,8 @@ export default function CalendarScreen() {
   });
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showResponseModal, setShowResponseModal] = useState(false);
+  const [isEventCommentsModalVisible, setEventCommentsModalVisible] = useState(false);
+  const [selectedEventForComments, setSelectedEventForComments] = useState<Event | null>(null);
 
   const canCreateEvent = user?.role === 'trainer' || user?.role === 'admin';
   const isPlayer = user?.role === 'player';
@@ -113,6 +115,11 @@ export default function CalendarScreen() {
     
     // Allow responses until the event date/time has passed
     return eventDate > now;
+  };
+
+  const handleOpenEventComments = (event: Event) => {
+    setSelectedEventForComments(event);
+    setEventCommentsModalVisible(true);
   };
 
   // Load events from database on component mount
@@ -754,6 +761,20 @@ export default function CalendarScreen() {
                       )}
                     </View>
                   )}
+                  
+                  {/* Event Actions - Chat/Comment Button */}
+                  <View style={styles.eventActions}>
+                    <TouchableOpacity 
+                      style={styles.eventActionButton}
+                      onPress={() => handleOpenEventComments(event)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Open event comments"
+                      accessibilityHint="Opens comments and chat for this event"
+                    >
+                      <MessageCircle size={16} color="#8E8E93" strokeWidth={1.5} />
+                      <Text style={styles.eventActionButtonText}>Comments</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ))
             )}
@@ -1228,6 +1249,40 @@ export default function CalendarScreen() {
               </ScrollView>
             </>
           )}
+        </View>
+      </Modal>
+
+      {/* Event Comments Modal */}
+      <Modal
+        isVisible={isEventCommentsModalVisible}
+        onBackdropPress={() => setEventCommentsModalVisible(false)}
+        style={styles.modal}
+      >
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              {selectedEventForComments ? `${selectedEventForComments.title} - Comments` : 'Event Comments'}
+            </Text>
+            <TouchableOpacity onPress={() => setEventCommentsModalVisible(false)}>
+              <X size={24} color="#8E8E93" strokeWidth={1.5} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.commentsContainer} showsVerticalScrollIndicator={false}>
+            <View style={styles.commentsPlaceholder}>
+              <MessageCircle size={48} color="#8E8E93" strokeWidth={1.5} />
+              <Text style={styles.commentsPlaceholderTitle}>Event Comments</Text>
+              <Text style={styles.commentsPlaceholderText}>
+                Comments and chat functionality for this event will be available soon.
+              </Text>
+              <Text style={styles.commentsPlaceholderSubtext}>
+                Event: {selectedEventForComments?.title}
+              </Text>
+              <Text style={styles.commentsPlaceholderSubtext}>
+                Date: {selectedEventForComments ? new Date(selectedEventForComments.date).toLocaleDateString() : ''}
+              </Text>
+            </View>
+          </ScrollView>
         </View>
       </Modal>
     </View>
@@ -1975,5 +2030,61 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
+  },
+  eventActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  eventActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+  },
+  eventActionButtonText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
+  },
+  commentsContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  commentsPlaceholder: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 32,
+  },
+  commentsPlaceholderTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-SemiBold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  commentsPlaceholderText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  commentsPlaceholderSubtext: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    textAlign: 'center',
+    marginBottom: 4,
   },
 });
