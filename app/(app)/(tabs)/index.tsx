@@ -80,6 +80,8 @@ function InfohubScreenContent() {
     content: '',
     imageUrl: '',
   });
+  const [newComment, setNewComment] = useState('');
+  const [showCommentInput, setShowCommentInput] = useState(false);
 
   // Load posts from Supabase
   useEffect(() => {
@@ -197,7 +199,8 @@ function InfohubScreenContent() {
         await addPostReaction(postId, user.id, emoji);
       }
       
-      setShowEmojiPicker(null);
+      // Keep emoji picker open for better UX
+      // setShowEmojiPicker(null);
       loadPosts(); // Reload posts to get updated reactions
     } catch (error) {
       console.error('Error handling reaction:', error);
@@ -248,6 +251,18 @@ function InfohubScreenContent() {
       Alert.alert(commonT('error'), commonT('postNotFound'));
     }
     setShowEmojiPicker(null);
+  }
+
+  const handleAddComment = () => {
+    if (!newComment.trim()) {
+      Alert.alert(commonT('error'), commonT('enterComment') || 'Please enter a comment');
+      return;
+    }
+    
+    // For now, just show an alert since we don't have comment API yet
+    Alert.alert(commonT('comment') || 'Comment', `${commonT('comment') || 'Comment'}: "${newComment}"\n\n${commonT('commentNote') || 'Note: Comment functionality will be implemented in a future update.'}`);
+    setNewComment('');
+    setShowCommentInput(false);
   }
 
   // Check if user is properly loaded
@@ -314,9 +329,9 @@ function InfohubScreenContent() {
             <View style={styles.postsContainer}>
               {filteredPosts.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>No posts yet</Text>
+                    <Text style={styles.emptyStateText}>{commonT('noPostsYet') || 'No posts yet'}</Text>
                   {canCreatePost && (
-                    <Text style={styles.emptyStateSubtext}>Create the first post for your team</Text>
+                    <Text style={styles.emptyStateSubtext}>{commonT('createFirstPost') || 'Create the first post for your team'}</Text>
                   )}
                 </View>
               ) : (
@@ -370,7 +385,10 @@ function InfohubScreenContent() {
                       <Smile size={16} color="#8E8E93" strokeWidth={1.5} />
                     </TouchableOpacity>
                     
-                    <TouchableOpacity style={styles.actionButton}>
+                    <TouchableOpacity 
+                      style={styles.actionButton}
+                      onPress={() => handlePostClick(post.id)}
+                    >
                       <MessageCircle size={16} color="#8E8E93" strokeWidth={1.5} />
                     </TouchableOpacity>
                   </View>
@@ -585,11 +603,13 @@ function InfohubScreenContent() {
                       ]}
                       onPress={() => {
                         handleReaction(selectedPostForModal.id, emoji);
-                        // Update the modal post data
-                        const updatedPost = posts.find(p => p.id === selectedPostForModal.id);
-                        if (updatedPost) {
-                          setSelectedPostForModal(updatedPost);
-                        }
+                        // Update the modal post data after a short delay to allow API call to complete
+                        setTimeout(() => {
+                          const updatedPost = posts.find(p => p.id === selectedPostForModal.id);
+                          if (updatedPost) {
+                            setSelectedPostForModal(updatedPost);
+                          }
+                        }, 100);
                       }}
                     >
                       <Text style={styles.emojiButtonText}>{emoji}</Text>
@@ -602,6 +622,59 @@ function InfohubScreenContent() {
                   ))}
                 </View>
               )}
+
+              {/* Comment Section */}
+              <View style={styles.commentSection}>
+                <View style={styles.commentHeader}>
+                  <Text style={styles.commentSectionTitle}>{commonT('comments') || 'Comments'}</Text>
+                  <TouchableOpacity 
+                    style={styles.addCommentButton}
+                    onPress={() => setShowCommentInput(!showCommentInput)}
+                  >
+                    <Text style={styles.addCommentButtonText}>
+                      {showCommentInput ? (commonT('cancel') || 'Cancel') : (commonT('addComment') || 'Add Comment')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {showCommentInput && (
+                  <View style={styles.commentInputContainer}>
+                    <TextInput
+                      style={styles.commentInput}
+                      placeholder={commonT('writeComment') || 'Write a comment...'}
+                      value={newComment}
+                      onChangeText={setNewComment}
+                      multiline
+                      numberOfLines={3}
+                      textAlignVertical="top"
+                      placeholderTextColor="#8E8E93"
+                    />
+                    <View style={styles.commentInputActions}>
+                      <TouchableOpacity 
+                        style={styles.cancelCommentButton}
+                        onPress={() => {
+                          setNewComment('');
+                          setShowCommentInput(false);
+                        }}
+                      >
+                        <Text style={styles.cancelCommentButtonText}>{commonT('cancel') || 'Cancel'}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.submitCommentButton}
+                        onPress={handleAddComment}
+                      >
+                        <Text style={styles.submitCommentButtonText}>{commonT('post') || 'Post'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+
+                <View style={styles.commentsList}>
+                  <Text style={styles.noCommentsText}>
+                    {commonT('noCommentsYet') || 'No comments yet. Be the first to comment!'}
+                  </Text>
+                </View>
+              </View>
             </ScrollView>
           ) : (
             <View style={styles.postModalContent}>
@@ -1141,5 +1214,87 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '500',
     fontFamily: 'Urbanist-Medium',
+  },
+  commentSection: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  commentSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  addCommentButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  addCommentButtonText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
+  },
+  commentInputContainer: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  commentInput: {
+    fontSize: 16,
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-Regular',
+    minHeight: 80,
+    textAlignVertical: 'top',
+    marginBottom: 12,
+  },
+  commentInputActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  cancelCommentButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  cancelCommentButtonText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+  },
+  submitCommentButton: {
+    backgroundColor: '#1A1A1A',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  submitCommentButtonText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
+  },
+  commentsList: {
+    minHeight: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noCommentsText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
 });
