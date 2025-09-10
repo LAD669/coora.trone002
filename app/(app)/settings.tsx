@@ -109,25 +109,59 @@ export default function SettingsScreen() {
     }
   };
 
-  const addNewAccount = () => {
+  const addNewAccount = async () => {
     // Store current session before logging out
     if (user) {
-      const currentSession = {
-        id: user.id,
-        user: {
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        },
-        access_token: '', // Get from current session
-        refresh_token: '', // Get from current session
-      };
-      
-      // Navigate to login screen with return navigation info
-      safePush({
-        pathname: '/(auth)/login',
-        params: { returnTo: 'settings' }
-      });
+      try {
+        // Get current session from Supabase
+        const { data: { session: currentSupabaseSession } } = await supabase.auth.getSession();
+        
+        if (currentSupabaseSession) {
+          const currentSession = {
+            id: user.id,
+            user: {
+              email: user.email,
+              name: user.name,
+              role: user.role,
+            },
+            access_token: currentSupabaseSession.access_token,
+            refresh_token: currentSupabaseSession.refresh_token,
+          };
+          
+          // Store current session in storage
+          await storage.setItem('current_session', JSON.stringify(currentSession));
+          
+          // Add to stored sessions if not already there
+          const existingSessions = storedSessions || [];
+          const sessionExists = existingSessions.some(s => s.id === user.id);
+          
+          if (!sessionExists) {
+            const updatedSessions = [...existingSessions, currentSession];
+            await storage.setItem('stored_sessions', JSON.stringify(updatedSessions));
+            setStoredSessions(updatedSessions);
+          }
+          
+          console.log('AppContent: Current session stored before adding new account:', {
+            userId: user.id,
+            email: user.email,
+            hasAccessToken: !!currentSupabaseSession.access_token,
+            hasRefreshToken: !!currentSupabaseSession.refresh_token
+          });
+        }
+        
+        // Navigate to login screen with return navigation info
+        safePush({
+          pathname: '/(auth)/login',
+          params: { returnTo: 'settings' }
+        });
+      } catch (error) {
+        console.error('Error storing current session before adding new account:', error);
+        // Still navigate to login even if storing fails
+        safePush({
+          pathname: '/(auth)/login',
+          params: { returnTo: 'settings' }
+        });
+      }
     }
   };
 
