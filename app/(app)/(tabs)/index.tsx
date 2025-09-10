@@ -16,7 +16,7 @@ import Header from '@/components/Header';
 import { Plus, MoveHorizontal as MoreHorizontal, Heart, MessageCircle, Building2, Users, Smile } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getTeamPosts, createPost, addPostReaction, removePostReaction } from '@/lib/supabase';
+import { getTeamPosts, createPost, addPostReaction, removePostReaction, getPostComments, createPostComment, type Comment } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 
 // Error Boundary Component
@@ -85,6 +85,9 @@ function InfohubScreenContent() {
   const [newComment, setNewComment] = useState('');
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   // Load posts from Supabase
   useEffect(() => {
@@ -303,22 +306,71 @@ function InfohubScreenContent() {
     if (post) {
       setSelectedPostForModal(post);
       setPostModalVisible(true);
+      loadComments(postId);
     } else {
       Alert.alert(commonT('error'), 'Post not found');
     }
     setShowEmojiPicker(null);
   }
 
-  const handleAddComment = () => {
+  const loadComments = async (postId: string) => {
+    setIsLoadingComments(true);
+    try {
+      const commentsData = await getPostComments(postId);
+      setComments(commentsData);
+    } catch (error) {
+      console.error('Error loading comments:', error);
+      setComments([]);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  }
+
+  const handleAddComment = async () => {
     if (!newComment.trim()) {
       Alert.alert(commonT('error'), 'Please enter a comment');
       return;
     }
-    
-    // For now, just show an alert since we don't have comment API yet
-    Alert.alert('Comment', `Comment: "${newComment}"\n\nNote: Comment functionality will be implemented in a future update.`);
-    setNewComment('');
-    setShowCommentInput(false);
+
+    if (!selectedPostForModal?.id) {
+      Alert.alert(commonT('error'), 'No post selected');
+      return;
+    }
+
+    if (isSubmittingComment) {
+      console.log('Already submitting comment, ignoring duplicate request');
+      return;
+    }
+
+    setIsSubmittingComment(true);
+
+    try {
+      const commentData = {
+        postId: selectedPostForModal.id,
+        content: newComment.trim(),
+      };
+
+      console.log('Creating comment:', commentData);
+      const newCommentData = await createPostComment(commentData);
+      console.log('Comment created successfully:', newCommentData);
+
+      // Add the new comment to the list
+      setComments(prev => [...prev, newCommentData]);
+      
+      // Clear form and close input
+      setNewComment('');
+      setShowCommentInput(false);
+      
+      // Show success message
+      Alert.alert(commonT('success'), commonT('comments.success'));
+      
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      Alert.alert(commonT('error'), `${commonT('comments.error')}: ${errorMessage}`);
+    } finally {
+      setIsSubmittingComment(false);
+    }
   }
 
   // Check if user is properly loaded
@@ -727,9 +779,11 @@ function InfohubScreenContent() {
                   <TouchableOpacity 
                     style={styles.addCommentButton}
                     onPress={() => setShowCommentInput(!showCommentInput)}
+                    accessibilityRole="button"
+                    accessibilityLabel={showCommentInput ? commonT('cancel') : commonT('comments.add')}
                   >
                     <Text style={styles.addCommentButtonText}>
-                      {showCommentInput ? (commonT('cancel') || 'Cancel') : (commonT('addComment') || 'Add Comment')}
+                      {showCommentInput ? (commonT('cancel') || 'Cancel') : (commonT('comments.add') || 'Comment')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -738,13 +792,16 @@ function InfohubScreenContent() {
                   <View style={styles.commentInputContainer}>
                     <TextInput
                       style={styles.commentInput}
-                      placeholder={commonT('writeComment') || "Write a comment..."}
+                      placeholder={commonT('comments.addPlaceholder') || "Write a comment..."}
                       value={newComment}
                       onChangeText={setNewComment}
                       multiline
                       numberOfLines={3}
                       textAlignVertical="top"
                       placeholderTextColor="#8E8E93"
+                      accessibilityLabel={commonT('comments.addPlaceholder') || "Write a comment"}
+                      accessibilityHint="Enter your comment text"
+                      maxLength={500}
                     />
                     <View style={styles.commentInputActions}>
                       <TouchableOpacity 
@@ -757,19 +814,48 @@ function InfohubScreenContent() {
                         <Text style={styles.cancelCommentButtonText}>{commonT('cancel') || 'Cancel'}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
-                        style={styles.submitCommentButton}
+                        style={[styles.submitCommentButton, isSubmittingComment && styles.submitCommentButtonDisabled]}
                         onPress={handleAddComment}
+                        disabled={isSubmittingComment}
+                        accessibilityRole="button"
+                        accessibilityLabel={commonT('comments.add') || 'Comment'}
+                        accessibilityHint="Submits your comment"
+                        accessibilityState={{ disabled: isSubmittingComment }}
                       >
-                        <Text style={styles.submitCommentButtonText}>{commonT('post') || 'Post'}</Text>
+                        <Text style={styles.submitCommentButtonText}>
+                          {isSubmittingComment ? (commonT('publishing') || 'Posting...') : (commonT('post') || 'Post')}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   </View>
                 )}
 
                 <View style={styles.commentsList}>
-                  <Text style={styles.noCommentsText}>
-                    {commonT('noCommentsYet') || 'No comments yet. Be the first to comment!'}
-                  </Text>
+                  {isLoadingComments ? (
+                    <Text style={styles.loadingCommentsText}>
+                      {commonT('loading') || 'Loading comments...'}
+                    </Text>
+                  ) : comments.length === 0 ? (
+                    <Text style={styles.noCommentsText}>
+                      {commonT('comments.empty') || 'No comments yet'}
+                    </Text>
+                  ) : (
+                    comments.map((comment) => (
+                      <View key={comment.id} style={styles.commentItem}>
+                        <View style={styles.commentHeader}>
+                          <Text style={styles.commentAuthor}>
+                            {comment.author?.name || 'Unknown User'}
+                          </Text>
+                          <Text style={styles.commentDate}>
+                            {new Date(comment.created_at).toLocaleDateString()}
+                          </Text>
+                        </View>
+                        <Text style={styles.commentContent}>
+                          {comment.content}
+                        </Text>
+                      </View>
+                    ))
+                  )}
                 </View>
               </View>
             </ScrollView>
@@ -1385,6 +1471,42 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '500',
     fontFamily: 'Urbanist-Medium',
+  },
+
+  submitCommentButtonDisabled: {
+    backgroundColor: '#8E8E93',
+    opacity: 0.6,
+  },
+  loadingCommentsText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    textAlign: 'center',
+    paddingVertical: 16,
+  },
+  commentItem: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  commentAuthor: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  commentDate: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+  },
+  commentContent: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-Regular',
+    marginTop: 4,
+    lineHeight: 20,
   },
   commentsList: {
     minHeight: 60,

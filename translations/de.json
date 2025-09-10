@@ -136,6 +136,14 @@
     "postContent": "Post-Inhalt...",
     "postDetails": "Beitragsdetails",
     "noReactionsYet": "Noch keine Reaktionen",
+    "comments": {
+      "title": "Kommentare",
+      "add": "Kommentieren",
+      "addPlaceholder": "Kommentar schreiben…",
+      "success": "Kommentar veröffentlicht",
+      "error": "Kommentar konnte nicht veröffentlicht werden",
+      "empty": "Noch keine Kommentare"
+    },
     "email": "E-Mail",
     "password": "Passwort",
     "fullName": "Vollständiger Name",

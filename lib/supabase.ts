@@ -659,6 +659,109 @@ export const removePostReaction = async (postId: string, userId: string, emoji: 
   if (error) throw error;
 };
 
+// Comment types
+export type Comment = {
+  id: string;
+  post_id: string;
+  content: string;
+  author_id: string;
+  author: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  created_at: string;
+  updated_at?: string;
+};
+
+export type CreateCommentDto = {
+  postId: string;
+  content: string;
+};
+
+// Get comments for a post
+export const getPostComments = async (postId: string): Promise<Comment[]> => {
+  console.log('Getting comments for post:', postId);
+  
+  const { data, error } = await supabase
+    .from('post_comments')
+    .select(`
+      id,
+      post_id,
+      content,
+      author_id,
+      created_at,
+      updated_at,
+      author:users!post_comments_author_id_fkey (
+        id,
+        name,
+        email
+      )
+    `)
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching post comments:', error);
+    throw new Error(`Failed to fetch comments: ${error.message}`);
+  }
+
+  console.log('Comments fetched successfully:', data);
+  
+  // Transform the data to match our Comment type
+  const transformedData = (data || []).map((comment: any) => ({
+    ...comment,
+    author: Array.isArray(comment.author) ? comment.author[0] : comment.author
+  }));
+  
+  return transformedData;
+};
+
+// Create a new comment
+export const createPostComment = async (dto: CreateCommentDto): Promise<Comment> => {
+  console.log('Creating comment:', dto);
+  
+  const { data, error } = await supabase
+    .from('post_comments')
+    .insert({
+      post_id: dto.postId,
+      content: dto.content.trim(),
+    })
+    .select(`
+      id,
+      post_id,
+      content,
+      author_id,
+      created_at,
+      updated_at,
+      author:users!post_comments_author_id_fkey (
+        id,
+        name,
+        email
+      )
+    `)
+    .single();
+
+  if (error) {
+    console.error('Error creating post comment:', error);
+    throw new Error(`Failed to create comment: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error('Failed to create comment: No data returned');
+  }
+
+  console.log('Comment created successfully:', data);
+  
+  // Transform the data to match our Comment type
+  const transformedData = {
+    ...data,
+    author: Array.isArray(data.author) ? data.author[0] : data.author
+  };
+  
+  return transformedData;
+};
+
 export const createEvent = async (event: {
   title: string;
   eventType: 'training' | 'match';

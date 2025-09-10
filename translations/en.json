@@ -137,6 +137,14 @@
     "postContent": "Post content...",
     "postDetails": "Post Details",
     "noReactionsYet": "No reactions yet",
+    "comments": {
+      "title": "Comments",
+      "add": "Comment",
+      "addPlaceholder": "Write a comment…",
+      "success": "Comment posted",
+      "error": "Could not post comment",
+      "empty": "No comments yet"
+    },
     "email": "Email",
     "password": "Password",
     "fullName": "Full Name",
