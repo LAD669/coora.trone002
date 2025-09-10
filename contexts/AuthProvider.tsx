@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { getUserProfile } from '@/lib/supabase';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { clearAllAuthData } from '@/lib/clearAuthData';
+import { storage } from '@/lib/storage';
 
 interface AuthUser {
   id: string;
@@ -140,14 +141,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('Loading user profile for:', userId);
       const userProfile = await getUserProfile(userId);
       
-      setUser({
+      const authUser = {
         id: userProfile.id,
         name: userProfile.name,
         email: userProfile.email,
         role: userProfile.role,
         teamId: userProfile.team_id || undefined,
         clubId: userProfile.club_id || undefined,
-      });
+      };
+      
+      setUser(authUser);
+      
+      // Store the session in storage for multi-account support
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession) {
+          const sessionData = {
+            id: authUser.id,
+            user: {
+              email: authUser.email,
+              name: authUser.name,
+              role: authUser.role,
+            },
+            access_token: currentSession.access_token,
+            refresh_token: currentSession.refresh_token,
+          };
+          
+          // Store current session
+          await storage.setItem('current_session', JSON.stringify(sessionData));
+          
+          // Add to stored sessions if not already there
+          const existingSessionsStr = await storage.getItem('stored_sessions');
+          const existingSessions = existingSessionsStr ? JSON.parse(existingSessionsStr) : [];
+          const sessionExists = existingSessions.some((s: any) => s.id === authUser.id);
+          
+          if (!sessionExists) {
+            const updatedSessions = [...existingSessions, sessionData];
+            await storage.setItem('stored_sessions', JSON.stringify(updatedSessions));
+            console.log('New session stored for multi-account support:', authUser.email);
+          }
+        }
+      } catch (storageError) {
+        console.error('Error storing session:', storageError);
+        // Don't fail the login process if storage fails
+      }
       
       console.log('User profile loaded successfully');
       
