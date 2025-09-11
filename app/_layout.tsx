@@ -1,29 +1,16 @@
 import { Slot } from 'expo-router';
-import { AuthProvider } from '@/contexts/AuthProvider';
-import { LanguageProvider } from '@/contexts/LanguageContext';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import AppInitializer from '@/components/AppInitializer';
-import ErrorBoundary from '@/components/ErrorBoundary';
-import { useFrameworkReady } from '@/hooks/useFrameworkReady';
+import { View, Text } from 'react-native';
 
 export default function RootLayout() {
-  const { isAppReady } = useFrameworkReady();
-
-  console.log('RootLayout: isAppReady =', isAppReady);
-
   return (
-    <ErrorBoundary>
-      <SafeAreaProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <AppInitializer>
-              <Slot />
-              <StatusBar style="auto" />
-            </AppInitializer>
-          </AuthProvider>
-        </LanguageProvider>
-      </SafeAreaProvider>
-    </ErrorBoundary>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+      <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#000000' }}>
+        COORA Test
+      </Text>
+      <Text style={{ fontSize: 16, color: '#666666', marginTop: 10 }}>
+        App lädt...
+      </Text>
+      <Slot />
+    </View>
   );
 }
