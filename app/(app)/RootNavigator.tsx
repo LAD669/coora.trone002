@@ -13,11 +13,22 @@ export default function RootNavigator() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  // Role-based navigation
-  if (roles.includes('manager')) {
-    return <ManagerTabs />;
-  }
-
-  // Default to player tabs for all other roles (admin, trainer, player, parent)
-  return <PlayerTabs />;
+  // Role-based navigation with Stack for additional screens
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen 
+        name="(tabs)" 
+        component={roles.includes('manager') ? ManagerTabs : PlayerTabs}
+        options={{ 
+          headerShown: false,
+          gestureEnabled: true 
+        }} 
+      />
+      <Stack.Screen name="notifications" />
+      <Stack.Screen name="settings" />
+      <Stack.Screen name="EditProfileScreen" />
+      <Stack.Screen name="live-ticker" />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
 }
