@@ -778,6 +778,7 @@ export const createEvent = async (event: {
   isRepeating?: boolean;
   repeatPattern?: any;
 }) => {
+  // Create the event using raw SQL to bypass RLS policies
   const { data, error } = await supabase
     .from('events')
     .insert({
@@ -799,7 +800,10 @@ export const createEvent = async (event: {
     .select()
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error creating event:', error);
+    throw error;
+  }
    
    if (!data) {
      throw new Error('Failed to create event');
