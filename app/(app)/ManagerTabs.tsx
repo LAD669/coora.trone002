@@ -8,7 +8,7 @@ import ManagerDashboardScreen from './(tabs)/ManagerDashboard';
 import ManagerCalendarScreen from './(tabs)/ManagerCalendar';
 import ManagerTeamsScreen from './(tabs)/ManagerTeams';
 import ManagerInfoHubScreen from './(tabs)/ManagerInfoHub';
-import SettingsScreen from './(tabs)/settings';
+import SettingsScreen from './settings';
 
 const Tab = createBottomTabNavigator();
 
