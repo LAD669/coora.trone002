@@ -1580,8 +1580,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 24,
-    maxHeight: '80%',
+    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 0,
+    maxHeight: '90%',
+    minHeight: '60%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1605,8 +1608,6 @@ const styles = StyleSheet.create({
   },
   modalScrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 16,
     paddingBottom: 20,
   },
   input: {
