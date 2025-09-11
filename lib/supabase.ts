@@ -157,17 +157,6 @@ export const createAccessCode = async (accessCode: {
   return data;
 };
 
-export const getClubTeams = async (clubId: string) => {
-  const { data, error } = await supabase
-    .from('teams')
-    .select('*')
-    .eq('club_id', clubId)
-    .order('name');
-  
-  if (error) throw error;
-  return data;
-};
-
 export const getClubUsers = async (clubId: string) => {
   const { data, error } = await supabase
     .from('users')
