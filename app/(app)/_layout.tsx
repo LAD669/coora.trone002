@@ -5,7 +5,6 @@ import { Redirect } from 'expo-router';
 import { useSession, useAuth } from '@/contexts/AuthProvider';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { storage } from '@/lib/storage';
-import RootNavigator from './RootNavigator';
 
 function AppContent() {
   const { session, loading, userId } = useSession();
@@ -83,8 +82,7 @@ function AppContent() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen 
-        name="RootNavigator" 
-        component={RootNavigator}
+        name="(tabs)" 
         options={{ 
           headerShown: false,
           gestureEnabled: true 

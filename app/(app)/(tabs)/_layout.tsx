@@ -6,11 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { getNotifications } from '@/lib/supabase';
+import ManagerTabs from '../ManagerTabs';
 
 export default function TabLayout() {
   const { t: tabsT } = useTranslation('tabs');
   const { t: commonT } = useTranslation('common');
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const { safePush } = useNavigationReady();
   
   const [unreadCount, setUnreadCount] = useState(0);
@@ -72,6 +73,11 @@ export default function TabLayout() {
       </TouchableOpacity>
     </View>
   );
+
+  // Role-based navigation - only manager role sees ManagerTabs
+  if (roles.includes('manager')) {
+    return <ManagerTabs />;
+  }
 
   return (
     <Tabs
