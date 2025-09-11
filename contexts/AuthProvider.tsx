@@ -3,7 +3,6 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 import { getUserProfile } from '@/lib/supabase';
 import { LoadingScreen } from '@/components/LoadingScreen';
-import { clearAllAuthData } from '@/lib/clearAuthData';
 import { storage } from '@/lib/storage';
 
 interface AuthUser {
@@ -326,6 +325,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = async () => {
     setLoading(true);
     try {
+      console.log('Starting sign out process...');
+      
       // Entferne den Expo Push Token vor dem Logout
       try {
         const { removeExpoPushTokenFromSupabase } = await import('@/lib/pushNotifications');
@@ -334,11 +335,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.error('Error removing push notification token:', pushError);
       }
       
+      // Sign out from Supabase
       await supabase.auth.signOut();
+      
+      // Clear local state immediately
       setUser(null);
       setSession(null);
+      
+      // Clear stored data
+      await clearAuthData();
+      
+      console.log('Sign out completed successfully');
     } catch (error) {
       console.error('Sign out error:', error);
+      // Even if there's an error, clear local state
+      setUser(null);
+      setSession(null);
       throw error;
     } finally {
       setLoading(false);
@@ -347,9 +359,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const clearAuthData = async () => {
     try {
-      await clearAllAuthData();
-      setUser(null);
-      setSession(null);
+      console.log('Clearing auth data...');
+      
+      // Clear stored tokens and session data
+      await storage.removeItem('supabase.auth.token');
+      await storage.removeItem('supabase.auth.refreshToken');
+      await storage.removeItem('stored_sessions');
+      await storage.removeItem('current_session');
+      
+      console.log('Auth data cleared successfully');
     } catch (error) {
       console.error('Error clearing auth data:', error);
       throw error;
