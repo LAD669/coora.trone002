@@ -129,12 +129,11 @@ export async function getPOMMatchPlayers(matchId: string): Promise<POMPlayer[]> 
       throw matchError;
     }
 
-    // Get team players
+    // Get all team users (not just players)
     const { data: players, error: playersError } = await supabase
       .from('users')
-      .select('id, name, first_name, last_name, position, jersey_number, user_points')
+      .select('id, name, first_name, last_name, position, jersey_number, user_points, role')
       .eq('team_id', match.team_id)
-      .eq('role', 'player')
       .order('jersey_number', { ascending: true });
 
     if (playersError) {
@@ -152,11 +151,11 @@ export async function getPOMMatchPlayers(matchId: string): Promise<POMPlayer[]> 
       user_points: player.user_points || 0
     }));
 
-    console.log(`✅ ${pomPlayers.length} Spieler für POM-Match gefunden`);
+    console.log(`✅ ${pomPlayers.length} Team-User für POM-Match gefunden`);
     return pomPlayers;
 
   } catch (error) {
-    console.error('❌ Fehler beim Laden der POM-Match-Spieler:', error);
+    console.error('❌ Fehler beim Laden der POM-Match-Team-User:', error);
     throw error;
   }
 }
