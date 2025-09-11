@@ -1,4 +1,3 @@
-import { Slot } from 'expo-router';
 import { View, Text } from 'react-native';
 
 export default function RootLayout() {
@@ -10,7 +9,6 @@ export default function RootLayout() {
       <Text style={{ fontSize: 16, color: '#666666', marginTop: 10 }}>
         App lädt...
       </Text>
-      <Slot />
     </View>
   );
 }
