@@ -362,12 +362,12 @@ function InfohubScreenContent() {
       setShowCommentInput(false);
       
       // Show success message
-      Alert.alert(commonT('success'), commonT('comments.success'));
+      Alert.alert(commonT('success'), 'Comment posted successfully');
       
     } catch (error) {
       console.error('Error creating comment:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      Alert.alert(commonT('error'), `${commonT('comments.error')}: ${errorMessage}`);
+      Alert.alert(commonT('error'), `Could not post comment: ${errorMessage}`);
     } finally {
       setIsSubmittingComment(false);
     }
@@ -519,7 +519,7 @@ function InfohubScreenContent() {
                           ]}
                           onPress={() => handleReaction(post.id, emoji)}
                           accessibilityRole="button"
-                          accessibilityState={{ pressed: isCurrentUserReacted }}
+                          accessibilityState={{ selected: isCurrentUserReacted }}
                           accessibilityLabel={`${emoji} reaction, ${emojiCount} ${emojiCount === 1 ? 'reaction' : 'reactions'}${isCurrentUserReacted ? ', you reacted' : ''}`}
                         >
                           <Text style={styles.emojiButtonText}>{emoji}</Text>
@@ -617,14 +617,14 @@ function InfohubScreenContent() {
 
             <TextInput
               style={styles.contentInput}
-              placeholder={commonT('postContent') || "Post content..."}
+              placeholder="Post content..."
               value={newPost.content}
               onChangeText={(text) => setNewPost({ ...newPost, content: text })}
               multiline
               numberOfLines={6}
               textAlignVertical="top"
               placeholderTextColor="#8E8E93"
-              accessibilityLabel={commonT('postContent') || "Post content"}
+              accessibilityLabel="Post content"
               accessibilityHint="Enter the content for your update"
               maxLength={1000}
               returnKeyType="default"
@@ -640,7 +640,7 @@ function InfohubScreenContent() {
               accessibilityState={{ disabled: isSubmitting }}
             >
               <Text style={styles.publishButtonText}>
-                {isSubmitting ? (commonT('publishing') || 'Publishing...') : commonT('publishUpdate')}
+                {isSubmitting ? 'Publishing...' : commonT('publishUpdate')}
               </Text>
             </TouchableOpacity>
           </ScrollView>
@@ -757,7 +757,7 @@ function InfohubScreenContent() {
                           }, 100);
                         }}
                         accessibilityRole="button"
-                        accessibilityState={{ pressed: isCurrentUserReacted }}
+                        accessibilityState={{ selected: isCurrentUserReacted }}
                         accessibilityLabel={`${emoji} reaction, ${emojiCount} ${emojiCount === 1 ? 'reaction' : 'reactions'}${isCurrentUserReacted ? ', you reacted' : ''}`}
                       >
                         <Text style={styles.emojiButtonText}>{emoji}</Text>
@@ -775,15 +775,15 @@ function InfohubScreenContent() {
               {/* Comment Section */}
               <View style={styles.commentSection}>
                 <View style={styles.commentHeader}>
-                  <Text style={styles.commentSectionTitle}>{commonT('comments') || 'Comments'}</Text>
+                  <Text style={styles.commentSectionTitle}>Comments</Text>
                   <TouchableOpacity 
                     style={styles.addCommentButton}
                     onPress={() => setShowCommentInput(!showCommentInput)}
                     accessibilityRole="button"
-                    accessibilityLabel={showCommentInput ? commonT('cancel') : commonT('comments.add')}
+                    accessibilityLabel={showCommentInput ? commonT('cancel') : 'Comment'}
                   >
                     <Text style={styles.addCommentButtonText}>
-                      {showCommentInput ? (commonT('cancel') || 'Cancel') : (commonT('comments.add') || 'Comment')}
+                      {showCommentInput ? commonT('cancel') : 'Comment'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -792,14 +792,14 @@ function InfohubScreenContent() {
                   <View style={styles.commentInputContainer}>
                     <TextInput
                       style={styles.commentInput}
-                      placeholder={commonT('comments.addPlaceholder') || "Write a comment..."}
+                      placeholder="Write a comment..."
                       value={newComment}
                       onChangeText={setNewComment}
                       multiline
                       numberOfLines={3}
                       textAlignVertical="top"
                       placeholderTextColor="#8E8E93"
-                      accessibilityLabel={commonT('comments.addPlaceholder') || "Write a comment"}
+                      accessibilityLabel="Write a comment"
                       accessibilityHint="Enter your comment text"
                       maxLength={500}
                     />
@@ -818,12 +818,12 @@ function InfohubScreenContent() {
                         onPress={handleAddComment}
                         disabled={isSubmittingComment}
                         accessibilityRole="button"
-                        accessibilityLabel={commonT('comments.add') || 'Comment'}
+                        accessibilityLabel='Comment'
                         accessibilityHint="Submits your comment"
                         accessibilityState={{ disabled: isSubmittingComment }}
                       >
                         <Text style={styles.submitCommentButtonText}>
-                          {isSubmittingComment ? (commonT('publishing') || 'Posting...') : (commonT('post') || 'Post')}
+                          {isSubmittingComment ? 'Posting...' : commonT('create')}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -837,7 +837,7 @@ function InfohubScreenContent() {
                     </Text>
                   ) : comments.length === 0 ? (
                     <Text style={styles.noCommentsText}>
-                      {commonT('comments.empty') || 'No comments yet'}
+                      No comments yet
                     </Text>
                   ) : (
                     comments.map((comment) => (

@@ -56,6 +56,7 @@ export default function LoginScreen() {
       
       // After successful login, navigate back to the return destination
       if (returnTo === 'settings') {
+        console.log('Login successful, navigating back to settings');
         router.replace('/(app)/settings');
       } else {
         // Default navigation behavior (handled by AuthProvider)

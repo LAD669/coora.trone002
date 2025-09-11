@@ -10,7 +10,7 @@ interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'trainer' | 'player' | 'parent';
+  role: 'admin' | 'trainer' | 'player' | 'parent' | 'manager';
   teamId?: string;
   clubId?: string;
 }
@@ -18,6 +18,8 @@ interface AuthUser {
 interface AuthContextType {
   session: Session | null | undefined; // undefined = initializing, null = no session, Session = valid session
   user: AuthUser | null;
+  roles: string[];
+  clubId: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -35,6 +37,8 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null | undefined>(undefined); // Start as undefined (initializing)
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [clubId, setClubId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -56,6 +60,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           
           setSession(null);
           setUser(null);
+          setRoles([]);
+          setClubId(null);
           console.log('Session null — showing login');
         } else {
           console.log('Session loaded:', initialSession ? 'exists' : 'null');
@@ -89,6 +95,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         setSession(null);
         setUser(null);
+        setRoles([]);
+        setClubId(null);
         console.log('Session null — showing login');
       } finally {
         setLoading(false);
@@ -109,6 +117,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('Token refresh failed, clearing session');
         setSession(null);
         setUser(null);
+        setRoles([]);
+        setClubId(null);
         return;
       }
       
@@ -128,6 +138,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         console.log('Session null — showing login');
         setUser(null);
+        setRoles([]);
+        setClubId(null);
       }
     });
 
@@ -151,6 +163,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
       
       setUser(authUser);
+      
+      // Set roles array and clubId for role-based navigation
+      setRoles([userProfile.role]);
+      setClubId(userProfile.club_id || null);
       
       // Store the session in storage for multi-account support
       try {
@@ -199,6 +215,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error('Error loading user profile:', error);
       setUser(null);
+      setRoles([]);
+      setClubId(null);
     }
   };
 
@@ -335,6 +353,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
+      setRoles([]);
+      setClubId(null);
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;
@@ -348,6 +368,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await clearAllAuthData();
       setUser(null);
       setSession(null);
+      setRoles([]);
+      setClubId(null);
     } catch (error) {
       console.error('Error clearing auth data:', error);
       throw error;
@@ -373,6 +395,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     session,
     user,
+    roles,
+    clubId,
     loading,
     signIn,
     signOut,

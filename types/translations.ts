@@ -101,8 +101,18 @@ export interface TranslationKeys {
     teams: string;
     updateTitle: string;
     publishUpdate: string;
+    publishing: string;
+    postContent: string;
     postDetails: string;
     noReactionsYet: string;
+    comments: {
+      title: string;
+      add: string;
+      addPlaceholder: string;
+      success: string;
+      error: string;
+      empty: string;
+    };
   };
   auth: {
     signIn: string;

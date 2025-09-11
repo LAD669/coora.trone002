@@ -5,6 +5,7 @@ import { Redirect } from 'expo-router';
 import { useSession, useAuth } from '@/contexts/AuthProvider';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { storage } from '@/lib/storage';
+import RootNavigator from './RootNavigator';
 
 function AppContent() {
   const { session, loading, userId } = useSession();
@@ -78,23 +79,8 @@ function AppContent() {
 
   console.log('AppContent: Valid session found, rendering app');
 
-  // Render Stack with all screens when session exists
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen 
-        name="(tabs)" 
-        options={{ 
-          headerShown: false,
-          gestureEnabled: true 
-        }} 
-      />
-      <Stack.Screen name="notifications" />
-      <Stack.Screen name="settings" />
-      <Stack.Screen name="EditProfileScreen" />
-      <Stack.Screen name="live-ticker" />
-      <Stack.Screen name="+not-found" />
-    </Stack>
-  );
+  // Render role-based navigation
+  return <RootNavigator />;
 }
 
 export default function AppLayout() {

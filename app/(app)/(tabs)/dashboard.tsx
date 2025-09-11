@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import Header from '@/components/Header';
@@ -16,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamGoals, createTeamGoal, getTeamStats, getClubStats, getTeamUsers, getTeamEvents, submitMatchResult } from '@/lib/supabase';
 import { sendPushNotification } from '@/lib/notifications';
+import { getEligiblePOMMatches, getPOMMatchPlayers, submitPOMVote } from '@/lib/pomVoting';
 
 // Default stats structure - always visible with zero values
 const defaultStats = [
@@ -367,6 +370,7 @@ export default function DashboardScreen() {
       loadDashboardData();
       loadCompletedMatches();
       loadTeamPlayers();
+      loadPOMMatches();
     }
   }, [user]);
 
@@ -544,6 +548,30 @@ export default function DashboardScreen() {
     }
   };
 
+  const loadPOMMatches = async () => {
+    if (!user?.id) return;
+
+    try {
+      const eligibleMatches = await getEligiblePOMMatches(user.id);
+      
+      // Transform to match the expected format
+      const formattedMatches = eligibleMatches.map(match => ({
+        id: match.id,
+        title: match.title,
+        date: match.event_date,
+        opponent: match.title.includes('vs ') ? match.title.split('vs ')[1] : 'Opponent',
+        result: 'Completed', // All eligible matches are completed
+        is_eligible: match.is_eligible
+      }));
+
+      setRecentMatches(formattedMatches);
+      console.log(`✅ Loaded ${formattedMatches.length} eligible POM matches`);
+    } catch (error) {
+      console.error('Error loading POM matches:', error);
+      setRecentMatches([]);
+    }
+  };
+
   const loadTeamPlayers = async () => {
     if (!user) {
       console.warn('⚠️ Cannot load players: No user object available');
@@ -677,7 +705,7 @@ export default function DashboardScreen() {
     }
   };
 
-  const handleMatchSelect = (match: any) => {
+  const handleMatchSelect = async (match: any) => {
     setSelectedMatch(match);
     setMatchResult({
       teamScore: 0,
@@ -694,6 +722,23 @@ export default function DashboardScreen() {
     // Reset selection state for new match
     setSelectedGoalUsers({});
     setSelectedAssistUsers({});
+
+    // Load players for POM voting
+    try {
+      const players = await getPOMMatchPlayers(match.id);
+      setSelectedMatch(prev => ({
+        ...prev,
+        players: players.map(player => ({
+          id: player.id,
+          name: player.name,
+          position: player.position,
+          jersey_number: player.jersey_number,
+          user_points: player.user_points
+        }))
+      }));
+    } catch (error) {
+      console.error('Error loading match players:', error);
+    }
   };
 
   const handleCloseMatchResultsModal = () => {
@@ -940,8 +985,8 @@ export default function DashboardScreen() {
     });
   };
 
-  const submitPotmVotes = () => {
-    if (!potmVotes.first) {
+  const submitPotmVotes = async () => {
+    if (!potmVotes.first || !selectedMatch || !user?.id) {
       Alert.alert(commonT('error'), `${commonT('fillAllFields')} - ${commonT('firstPlace')}`);
       return;
     }
@@ -953,21 +998,38 @@ export default function DashboardScreen() {
     };
 
     let message = `Player of the Match votes for ${selectedMatch.opponent}:\n\n`;
-    if (selectedPlayers.first) message += `🥇 ${commonT('firstPlace')}: ${selectedPlayers.first}\n`;
-    if (selectedPlayers.second) message += `🥈 ${commonT('secondPlace')}: ${selectedPlayers.second}\n`;
-    if (selectedPlayers.third) message += `🥉 ${commonT('thirdPlace')}: ${selectedPlayers.third}\n`;
-    message += `\n${commonT('votesSubmitted')}!`;
+    if (selectedPlayers.first) message += `🥇 ${commonT('firstPlace')}: ${selectedPlayers.first} (+1000 Punkte)\n`;
+    if (selectedPlayers.second) message += `🥈 ${commonT('secondPlace')}: ${selectedPlayers.second} (+500 Punkte)\n`;
+    if (selectedPlayers.third) message += `🥉 ${commonT('thirdPlace')}: ${selectedPlayers.third} (+250 Punkte)\n`;
 
     Alert.alert(
-      commonT('votesSubmitted'),
+      commonT('confirmVotes'),
       message,
       [
-        {
-          text: commonT('confirm'),
-          onPress: () => {
-            setPotmModalVisible(false);
-            setSelectedMatch(null);
-            setPotmVotes({ first: null, second: null, third: null });
+        { text: commonT('cancel'), style: 'cancel' },
+        { 
+          text: commonT('submitVotes'), 
+          onPress: async () => {
+            try {
+              await submitPOMVote(user.id, {
+                match_id: selectedMatch.id,
+                player1_id: potmVotes.first!,
+                player2_id: potmVotes.second || null,
+                player3_id: potmVotes.third || null
+              });
+
+              Alert.alert(commonT('success'), 'POM-Votes erfolgreich abgegeben! Punkte wurden automatisch vergeben.');
+              setPotmModalVisible(false);
+              setSelectedMatch(null);
+              setPotmVotes({ first: null, second: null, third: null });
+              
+              // Reload POM matches to update eligibility
+              loadPOMMatches();
+            } catch (error) {
+              console.error('Error submitting POM votes:', error);
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+              Alert.alert(commonT('error'), `Fehler beim Abgeben der Votes: ${errorMessage}`);
+            }
           }
         }
       ]
@@ -1230,6 +1292,20 @@ export default function DashboardScreen() {
           </View>
         )}
 
+        {/* Player of the Match Voting Section */}
+        <View style={styles.pomVotingSection}>
+          <View style={styles.pomVotingHeader}>
+            <Text style={styles.pomVotingTitle}>Player of the Match Voting</Text>
+            <Text style={styles.pomVotingSubtitle}>Stimme für die besten Spieler ab</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.pomVotingButton}
+            onPress={() => setPotmModalVisible(true)}
+          >
+            <Text style={styles.pomVotingButtonText}>Jetzt abstimmen</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -1239,8 +1315,12 @@ export default function DashboardScreen() {
         isVisible={isCreateGoalModalVisible}
         onBackdropPress={() => setCreateGoalModalVisible(false)}
         style={styles.modal}
+        avoidKeyboard={true}
       >
-        <View style={styles.modalContent}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContent}
+        >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{commonT('createTeamGoal')}</Text>
             <TouchableOpacity onPress={() => setCreateGoalModalVisible(false)}>
@@ -1248,7 +1328,12 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            style={styles.modalForm} 
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.modalFormContent}
+          >
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>{commonT('goalTitle')} *</Text>
               <TextInput
@@ -1335,7 +1420,7 @@ export default function DashboardScreen() {
               <Text style={styles.createButtonText}>{commonT('create')}</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Match Results Modal */}
@@ -1343,8 +1428,12 @@ export default function DashboardScreen() {
         isVisible={isMatchResultsModalVisible}
         onBackdropPress={handleCloseMatchResultsModal}
         style={styles.modal}
+        avoidKeyboard={true}
       >
-        <View style={styles.modalContent}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContent}
+        >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
               {completedMatches.length > 0 ? 'Enter Match Results' : 'Match Results'}
@@ -1734,7 +1823,7 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             </ScrollView>
           )}
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Player of the Match Modal */}
@@ -1742,8 +1831,12 @@ export default function DashboardScreen() {
         isVisible={isPotmModalVisible}
         onBackdropPress={() => setPotmModalVisible(false)}
         style={styles.modal}
+        avoidKeyboard={true}
       >
-        <View style={styles.modalContent}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContent}
+        >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{commonT('playerOfTheMatch')}</Text>
             <TouchableOpacity onPress={() => setPotmModalVisible(false)}>
@@ -1920,7 +2013,7 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             </ScrollView>
           )}
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -2527,6 +2620,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
   },
+  modalFormContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
   formGroup: {
     marginBottom: 24,
   },
@@ -2944,5 +3041,59 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '500',
     fontFamily: 'Urbanist-Medium',
+  },
+
+  // POM Voting Section styles
+  pomVotingSection: {
+    backgroundColor: '#8B5CF6',
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 24,
+    marginBottom: 16,
+    shadowColor: '#8B5CF6',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  pomVotingHeader: {
+    marginBottom: 16,
+  },
+  pomVotingTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    fontFamily: 'Urbanist-Bold',
+    marginBottom: 4,
+  },
+  pomVotingSubtitle: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    opacity: 0.9,
+    fontFamily: 'Urbanist-Regular',
+  },
+  pomVotingButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  pomVotingButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#8B5CF6',
+    fontFamily: 'Urbanist-SemiBold',
   },
 });

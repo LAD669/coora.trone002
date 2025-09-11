@@ -1,7 +1,10 @@
 import { supabase } from './supabaseClient';
 
 /**
- * Notification-Interface für TypeScript
+ * @deprecated Diese Datei verwendet die alte notifications-Struktur (user-basiert).
+ * Verwende stattdessen lib/teamNotifications.ts für die neue team-basierte Struktur.
+ * 
+ * Notification-Interface für TypeScript (alte Struktur)
  */
 export interface DatabaseNotification {
   id: string;

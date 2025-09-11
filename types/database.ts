@@ -114,6 +114,7 @@ export interface Database {
           height_cm: number | null
           weight_kg: number | null
           expo_push_token: string | null
+          user_points: number
           created_at: string
           updated_at: string
         }
@@ -134,6 +135,7 @@ export interface Database {
           height_cm?: number | null
           weight_kg?: number | null
           expo_push_token?: string | null
+          user_points?: number
           created_at?: string
           updated_at?: string
         }
@@ -154,6 +156,7 @@ export interface Database {
           height_cm?: number | null
           weight_kg?: number | null
           expo_push_token?: string | null
+          user_points?: number
           created_at?: string
           updated_at?: string
         }
@@ -418,35 +421,6 @@ export interface Database {
           updated_at?: string
         }
       }
-      notifications: {
-        Row: {
-          id: string
-          user_id: string
-          title: string
-          body: string
-          read: boolean
-          created_at: string
-          updated_at?: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title: string
-          body: string
-          read?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          body?: string
-          read?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-      }
       goals: {
         Row: {
           id: string
@@ -656,6 +630,35 @@ export interface Database {
           joined_at?: string
           created_at?: string
           updated_at?: string
+        }
+      }
+      pom_votes: {
+        Row: {
+          id: string
+          match_id: string
+          voter_id: string
+          player1_id: string
+          player2_id: string | null
+          player3_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          match_id: string
+          voter_id: string
+          player1_id: string
+          player2_id?: string | null
+          player3_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          match_id?: string
+          voter_id?: string
+          player1_id?: string
+          player2_id?: string | null
+          player3_id?: string | null
+          created_at?: string
         }
       }
     }
