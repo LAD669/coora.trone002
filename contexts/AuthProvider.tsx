@@ -54,8 +54,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           
           setSession(null);
           setUser(null);
-          setRoles([]);
-          setClubId(null);
           console.log('Session null — showing login');
         } else {
           console.log('Session loaded:', initialSession ? 'exists' : 'null');
@@ -89,8 +87,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         setSession(null);
         setUser(null);
-        setRoles([]);
-        setClubId(null);
         console.log('Session null — showing login');
       } finally {
         setLoading(false);

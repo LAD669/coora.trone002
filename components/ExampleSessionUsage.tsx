@@ -51,7 +51,6 @@ export default function ExampleSessionUsage() {
           <Text style={styles.subtitle}>Profile Information</Text>
           <Text style={styles.text}>Role: {user.role}</Text>
           {user.teamId && <Text style={styles.text}>Team ID: {user.teamId}</Text>}
-          {user.clubId && <Text style={styles.text}>Club ID: {user.clubId}</Text>}
         </View>
       )}
     </View>
