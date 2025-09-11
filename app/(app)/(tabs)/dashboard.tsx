@@ -89,9 +89,10 @@ export default function DashboardScreen() {
   console.log('DashboardScreen - User role:', user?.role);
   console.log('DashboardScreen - Roles array:', roles);
   console.log('DashboardScreen - Is manager?', roles.includes('manager'));
+  console.log('DashboardScreen - Direct role check:', user?.role === 'manager');
   
-  // Role-based rendering
-  if (roles.includes('manager')) {
+  // Role-based rendering - check both roles array and direct user role
+  if (user?.role === 'manager' || roles.includes('manager')) {
     console.log('DashboardScreen - Rendering ManagerDashboardScreen');
     return <ManagerDashboardScreen />;
   }

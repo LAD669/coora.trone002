@@ -889,9 +889,10 @@ export default function InfohubScreen() {
   console.log('InfohubScreen - User role:', user?.role);
   console.log('InfohubScreen - Roles array:', roles);
   console.log('InfohubScreen - Is manager?', roles.includes('manager'));
+  console.log('InfohubScreen - Direct role check:', user?.role === 'manager');
   
-  // Role-based rendering
-  if (roles.includes('manager')) {
+  // Role-based rendering - check both roles array and direct user role
+  if (user?.role === 'manager' || roles.includes('manager')) {
     console.log('InfohubScreen - Rendering ManagerInfoHubScreen');
     return <ManagerInfoHubScreen />;
   }

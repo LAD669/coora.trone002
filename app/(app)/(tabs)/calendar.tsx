@@ -82,9 +82,10 @@ export default function CalendarScreen() {
   console.log('CalendarScreen - User role:', user?.role);
   console.log('CalendarScreen - Roles array:', roles);
   console.log('CalendarScreen - Is manager?', roles.includes('manager'));
+  console.log('CalendarScreen - Direct role check:', user?.role === 'manager');
   
-  // Role-based rendering
-  if (roles.includes('manager')) {
+  // Role-based rendering - check both roles array and direct user role
+  if (user?.role === 'manager' || roles.includes('manager')) {
     console.log('CalendarScreen - Rendering ManagerCalendarScreen');
     return <ManagerCalendarScreen />;
   }

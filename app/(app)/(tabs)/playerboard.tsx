@@ -171,9 +171,10 @@ export default function PlayerboardScreen() {
   console.log('PlayerboardScreen - User role:', user?.role);
   console.log('PlayerboardScreen - Roles array:', roles);
   console.log('PlayerboardScreen - Is manager?', roles.includes('manager'));
+  console.log('PlayerboardScreen - Direct role check:', user?.role === 'manager');
   
-  // Role-based rendering
-  if (roles.includes('manager')) {
+  // Role-based rendering - check both roles array and direct user role
+  if (user?.role === 'manager' || roles.includes('manager')) {
     console.log('PlayerboardScreen - Rendering ManagerTeamsScreen');
     return <ManagerTeamsScreen />;
   }
