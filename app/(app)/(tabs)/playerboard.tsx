@@ -19,7 +19,6 @@ import { Users, Target, Plus, X, User, Phone, Calendar, Ruler, Weight, Trophy, A
 import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamUsers, createPlayer, supabase } from '@/lib/supabase';
 import { getSafeKey } from '@/lib/helpers';
-import ManagerTeamsScreen from './ManagerTeams';
 
 const { width } = Dimensions.get('window');
 
@@ -164,22 +163,8 @@ const formations = [
 
 export default function PlayerboardScreen() {
   const { t } = useLanguage();
-  const { user, roles } = useAuth();
+  const { user } = useAuth();
   const { safePush } = useNavigationReady();
-  
-  // Debug logging
-  console.log('PlayerboardScreen - User role:', user?.role);
-  console.log('PlayerboardScreen - Roles array:', roles);
-  console.log('PlayerboardScreen - Is manager?', roles.includes('manager'));
-  console.log('PlayerboardScreen - Direct role check:', user?.role === 'manager');
-  
-  // Role-based rendering - check both roles array and direct user role
-  if (user?.role === 'manager' || roles.includes('manager')) {
-    console.log('PlayerboardScreen - Rendering ManagerTeamsScreen');
-    return <ManagerTeamsScreen />;
-  }
-  
-  console.log('PlayerboardScreen - Rendering default PlayerboardScreen');
   
   // const [view, setView] = useState<'list' | 'lineup'>('list'); // LINEUP VIEW DEACTIVATED
   const [view, setView] = useState<'list' | 'lineup'>('list'); // Force list view only

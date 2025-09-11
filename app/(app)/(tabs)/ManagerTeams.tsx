@@ -5,90 +5,83 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  RefreshControl,
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { Users, Settings, Plus, ChevronRight, Trophy, Calendar } from 'lucide-react-native';
-import { getClubTeams, getClubTeamStats } from '@/lib/supabase';
-
-interface ClubTeam {
-  id: string;
-  name: string;
-  sport: string;
-  color: string;
-  created_at: string;
-  player_count: number;
-  recent_matches: number;
-  win_rate: number;
-  total_points: number;
-}
+import { getClubTeams } from '@/lib/supabase';
+import { 
+  Users, 
+  Trophy, 
+  TrendingUp, 
+  Calendar,
+  Plus,
+  Edit
+} from 'lucide-react-native';
 
 export default function ManagerTeamsScreen() {
   const { t } = useTranslation('manager');
-  const { user } = useAuth();
-  const [teams, setTeams] = useState<ClubTeam[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { clubId } = useAuth();
+  const [teams, setTeams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user?.clubId) {
-      loadClubTeams();
+    if (clubId) {
+      loadTeams();
     }
-  }, [user?.clubId]);
+  }, [clubId]);
 
-  const loadClubTeams = async () => {
-    if (!user?.clubId) return;
-
+  const loadTeams = async () => {
     try {
-      setIsLoading(true);
-      const clubTeams = await getClubTeams(user.clubId);
-      setTeams(clubTeams);
+      setLoading(true);
+      const data = await getClubTeams(clubId!);
+      setTeams(data);
     } catch (error) {
       console.error('Error loading club teams:', error);
       Alert.alert(t('error'), t('teamsLoadError'));
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadClubTeams();
-    setRefreshing(false);
-  };
-
-  const handleTeamPress = (team: ClubTeam) => {
-    // Navigate to team detail with manager permissions
-    // This would typically use navigation.navigate('TeamDetail', { teamId: team.id, canEdit: true })
-    Alert.alert(t('teamDetails'), `${t('openingTeam')} ${team.name}`);
+  const handleTeamPress = (team: any) => {
+    // Navigate to team detail screen with edit permissions
+    Alert.alert(
+      t('teamDetails'),
+      `${team.name} - ${team.sport}\n${team.player_count} ${t('players')}`
+    );
   };
 
   const handleCreateTeam = () => {
-    // Navigate to create team screen
     Alert.alert(t('createTeam'), t('createTeamDescription'));
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.container}>
         <Text style={styles.loadingText}>{t('loading')}</Text>
       </View>
     );
   }
 
+  if (teams.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyState}>
+          <Users size={48} color="#8E8E93" />
+          <Text style={styles.emptyTitle}>{t('noTeams')}</Text>
+          <Text style={styles.emptyDescription}>{t('noTeamsDescription')}</Text>
+          <TouchableOpacity style={styles.createButton} onPress={handleCreateTeam}>
+            <Plus size={20} color="#FFFFFF" />
+            <Text style={styles.createButtonText}>{t('createFirstTeam')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('teams')}</Text>
         <TouchableOpacity style={styles.createButton} onPress={handleCreateTeam}>
@@ -97,93 +90,67 @@ export default function ManagerTeamsScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.teamsContainer}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {teams.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Users size={48} color="#8E8E93" />
-            <Text style={styles.emptyTitle}>{t('noTeams')}</Text>
-            <Text style={styles.emptySubtitle}>{t('noTeamsDescription')}</Text>
-            <TouchableOpacity style={styles.emptyActionButton} onPress={handleCreateTeam}>
-              <Text style={styles.emptyActionButtonText}>{t('createFirstTeam')}</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.teamsList}>
-            {teams.map((team) => (
-              <TouchableOpacity
-                key={team.id}
-                style={styles.teamCard}
-                onPress={() => handleTeamPress(team)}
-              >
-                <View style={styles.teamHeader}>
-                  <View style={styles.teamInfo}>
-                    <View style={[styles.teamColorIndicator, { backgroundColor: team.color }]} />
-                    <View style={styles.teamDetails}>
-                      <Text style={styles.teamName}>{team.name}</Text>
-                      <Text style={styles.teamSport}>{team.sport}</Text>
-                    </View>
-                  </View>
-                  <ChevronRight size={20} color="#8E8E93" />
-                </View>
-
-                <View style={styles.teamStats}>
-                  <View style={styles.statItem}>
-                    <Users size={16} color="#8E8E93" />
-                    <Text style={styles.statText}>{team.player_count} {t('players')}</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Trophy size={16} color="#8E8E93" />
-                    <Text style={styles.statText}>{team.win_rate}% {t('winRate')}</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Calendar size={16} color="#8E8E93" />
-                    <Text style={styles.statText}>{team.recent_matches} {t('recentMatches')}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.teamFooter}>
-                  <Text style={styles.teamCreated}>
-                    {t('created')}: {formatDate(team.created_at)}
-                  </Text>
-                  <View style={styles.teamActions}>
-                    <TouchableOpacity style={styles.actionButton}>
-                      <Settings size={16} color="#007AFF" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </ScrollView>
-    </View>
+      <View style={styles.teamsList}>
+        {teams.map((team) => (
+          <TouchableOpacity
+            key={team.id}
+            style={styles.teamCard}
+            onPress={() => handleTeamPress(team)}
+          >
+            <View style={styles.teamHeader}>
+              <View style={styles.teamInfo}>
+                <Text style={styles.teamName}>{team.name}</Text>
+                <Text style={styles.teamSport}>{team.sport}</Text>
+              </View>
+              <View style={styles.teamActions}>
+                <TouchableOpacity style={styles.editButton}>
+                  <Edit size={16} color="#007AFF" />
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            <View style={styles.teamStats}>
+              <View style={styles.statItem}>
+                <Users size={16} color="#8E8E93" />
+                <Text style={styles.statValue}>{team.player_count}</Text>
+                <Text style={styles.statLabel}>{t('players')}</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <Trophy size={16} color="#8E8E93" />
+                <Text style={styles.statValue}>{team.win_rate}%</Text>
+                <Text style={styles.statLabel}>{t('winRate')}</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <Calendar size={16} color="#8E8E93" />
+                <Text style={styles.statValue}>{team.recent_matches}</Text>
+                <Text style={styles.statLabel}>{t('recentMatches')}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.teamFooter}>
+              <Text style={styles.teamCreated}>
+                {t('created')}: {new Date(team.created_at).toLocaleDateString()}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#8E8E93',
-    fontFamily: 'Urbanist-Regular',
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
     paddingBottom: 16,
   },
   title: {
@@ -192,73 +159,59 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontFamily: 'Urbanist-Bold',
   },
-  createButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  createButtonText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontFamily: 'Urbanist-Medium',
-    marginLeft: 4,
-  },
-  teamsContainer: {
-    flex: 1,
+  loadingText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginTop: 50,
+    fontFamily: 'Urbanist-Regular',
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 60,
+    padding: 24,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'Urbanist-SemiBold',
     marginTop: 16,
-    marginBottom: 8,
   },
-  emptySubtitle: {
-    fontSize: 16,
+  emptyDescription: {
+    fontSize: 14,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
     textAlign: 'center',
-    lineHeight: 24,
+    marginTop: 8,
     marginBottom: 24,
   },
-  emptyActionButton: {
+  createButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: '#007AFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
-  emptyActionButtonText: {
-    fontSize: 16,
+  createButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#FFFFFF',
-    fontFamily: 'Urbanist-Medium',
+    fontFamily: 'Urbanist-SemiBold',
   },
   teamsList: {
-    padding: 20,
+    paddingHorizontal: 24,
   },
   teamCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
   teamHeader: {
     flexDirection: 'row',
@@ -267,17 +220,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   teamInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  teamColorIndicator: {
-    width: 4,
-    height: 40,
-    borderRadius: 2,
-    marginRight: 12,
-  },
-  teamDetails: {
     flex: 1,
   },
   teamName: {
@@ -285,48 +227,50 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'Urbanist-SemiBold',
-    marginBottom: 2,
   },
   teamSport: {
     fontSize: 14,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
+    marginTop: 2,
+  },
+  teamActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editButton: {
+    padding: 8,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 6,
   },
   teamStats: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     marginBottom: 16,
   },
   statItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    gap: 4,
   },
-  statText: {
-    fontSize: 14,
+  statValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  statLabel: {
+    fontSize: 12,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
-    marginLeft: 4,
   },
   teamFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingTop: 12,
   },
   teamCreated: {
     fontSize: 12,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
-  },
-  teamActions: {
-    flexDirection: 'row',
-  },
-  actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F8F9FA',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

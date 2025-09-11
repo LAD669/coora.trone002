@@ -19,7 +19,6 @@ import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamGoals, createTeamGoal, getTeamStats, getClubStats, getTeamUsers, getTeamEvents, submitMatchResult } from '@/lib/supabase';
 import { sendPushNotification } from '@/lib/notifications';
 import { getEligiblePOMMatches, getPOMMatchPlayers, submitPOMVote } from '@/lib/pomVoting';
-import ManagerDashboardScreen from './ManagerDashboard';
 
 // Default stats structure - always visible with zero values
 const defaultStats = [
@@ -83,21 +82,7 @@ const defaultStats = [
 export default function DashboardScreen() {
   const { t: commonT } = useTranslation('common');
   const { t: tabsT } = useTranslation('tabs');
-  const { user, roles } = useAuth();
-  
-  // Debug logging
-  console.log('DashboardScreen - User role:', user?.role);
-  console.log('DashboardScreen - Roles array:', roles);
-  console.log('DashboardScreen - Is manager?', roles.includes('manager'));
-  console.log('DashboardScreen - Direct role check:', user?.role === 'manager');
-  
-  // Role-based rendering - check both roles array and direct user role
-  if (user?.role === 'manager' || roles.includes('manager')) {
-    console.log('DashboardScreen - Rendering ManagerDashboardScreen');
-    return <ManagerDashboardScreen />;
-  }
-  
-  console.log('DashboardScreen - Rendering default DashboardScreen');
+  const { user } = useAuth();
   
   const canManagePlayers = user?.role === 'trainer' || user?.role === 'admin';
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);

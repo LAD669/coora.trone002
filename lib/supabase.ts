@@ -1228,8 +1228,10 @@ export const getClubMetrics = async (clubId: string) => {
       .select(`
         id,
         name,
+        sport,
+        color,
         created_at,
-        users!inner(count)
+        users(count)
       `)
       .eq('club_id', clubId)
       .order('created_at', { ascending: false })
@@ -1237,18 +1239,18 @@ export const getClubMetrics = async (clubId: string) => {
 
     if (teamsError) throw teamsError;
 
-    // Get events count by type
-    const { data: eventsStats, error: eventsError } = await supabase
+    // Get event counts by type
+    const { data: eventCounts, error: eventsError } = await supabase
       .from('events')
       .select('event_type')
       .eq('team_id', topTeams?.map(t => t.id) || []);
 
     if (eventsError) throw eventsError;
 
-    const eventsCountByType = {
-      matches: eventsStats?.filter(e => e.event_type === 'match').length || 0,
-      trainings: eventsStats?.filter(e => e.event_type === 'training').length || 0,
-    };
+    const eventBreakdown = (eventCounts || []).reduce((acc, event) => {
+      acc[event.event_type] = (acc[event.event_type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
     // Get active players (users with activity in last 30 days)
     const thirtyDaysAgo = new Date();
@@ -1257,25 +1259,28 @@ export const getClubMetrics = async (clubId: string) => {
     const { data: activeUsers, error: usersError } = await supabase
       .from('users')
       .select('id')
-      .eq('club_id', clubId)
-      .gte('updated_at', thirtyDaysAgo.toISOString());
+      .eq('team_id', topTeams?.map(t => t.id) || [])
+      .gte('created_at', thirtyDaysAgo.toISOString());
 
     if (usersError) throw usersError;
 
     const metrics = {
-      topTeams: (topTeams || []).map(team => ({
+      totalTeams: topTeams?.length || 0,
+      activePlayers: activeUsers?.length || 0,
+      totalEvents: Object.values(eventBreakdown).reduce((sum, count) => sum + count, 0),
+      revenue: 0, // Placeholder - would need financial data
+      expenses: 0, // Placeholder - would need financial data
+      net: 0, // Placeholder
+      topTeams: topTeams?.map(team => ({
         id: team.id,
         name: team.name,
+        sport: team.sport,
+        color: team.color,
+        playerCount: team.users?.[0]?.count || 0,
         winRate: Math.floor(Math.random() * 40) + 60, // Placeholder
         points: Math.floor(Math.random() * 50) + 20, // Placeholder
-        recentMatches: Math.floor(Math.random() * 10) + 5, // Placeholder
-      })),
-      revenue: null, // Placeholder - would come from finance API
-      expenses: null, // Placeholder - would come from finance API
-      net: null, // Placeholder - would come from finance API
-      eventsCountByType,
-      activePlayers: activeUsers?.length || 0,
-      totalTeams: topTeams?.length || 0,
+      })) || [],
+      eventsBreakdown: eventBreakdown,
     };
 
     console.log('✅ Club metrics loaded successfully');
@@ -1294,41 +1299,48 @@ export const getClubPosts = async (clubId: string, filters: {
   try {
     console.log('📝 Loading club posts for:', clubId);
 
+    const { categories = ['announcement', 'policy', 'organization'], limit = 20 } = filters;
+
+    // Get all teams in the club
+    const { data: teams, error: teamsError } = await supabase
+      .from('teams')
+      .select('id')
+      .eq('club_id', clubId);
+
+    if (teamsError) throw teamsError;
+
+    const teamIds = teams?.map(t => t.id) || [];
+
+    if (teamIds.length === 0) {
+      return [];
+    }
+
+    // Get posts from all teams in the club
     const { data: posts, error } = await supabase
       .from('posts')
       .select(`
         id,
-        title,
         content,
-        post_type,
+        category,
         created_at,
-        updated_at,
         author_id,
-        users!posts_author_id_fkey(name),
-        teams(name)
+        team_id,
+        users!posts_author_id_fkey (
+          id,
+          name,
+          first_name,
+          last_name
+        )
       `)
-      .eq('teams.club_id', clubId)
-      .in('post_type', filters.categories || ['announcement', 'policy', 'organization'])
+      .in('team_id', teamIds)
+      .in('category', categories)
       .order('created_at', { ascending: false })
-      .limit(filters.limit || 50);
+      .limit(limit);
 
     if (error) throw error;
 
-    const formattedPosts = (posts || []).map(post => ({
-      id: post.id,
-      title: post.title,
-      content: post.content,
-      post_type: post.post_type,
-      author_id: post.author_id,
-      author_name: post.users?.name || 'Unknown',
-      created_at: post.created_at,
-      updated_at: post.updated_at,
-      team_id: post.teams?.id || null,
-      team_name: post.teams?.name || null,
-    }));
-
-    console.log(`✅ ${formattedPosts.length} club posts loaded`);
-    return formattedPosts;
+    console.log(`✅ ${posts?.length || 0} club posts loaded`);
+    return posts || [];
 
   } catch (error) {
     console.error('❌ Error loading club posts:', error);
@@ -1344,24 +1356,41 @@ export const getClubEvents = async (clubId: string, filters: {
   try {
     console.log('📅 Loading club events for:', clubId);
 
-    // Calculate date range
-    const now = new Date();
-    let fromDate = new Date();
-    
-    switch (filters.dateRange) {
-      case '30d':
-        fromDate.setDate(now.getDate() - 30);
-        break;
-      case '90d':
-        fromDate.setDate(now.getDate() - 90);
-        break;
-      case '1y':
-        fromDate.setFullYear(now.getFullYear() - 1);
-        break;
-      default:
-        fromDate.setDate(now.getDate() - 30);
+    const { teamId, type, dateRange = '30d' } = filters;
+
+    // Get all teams in the club
+    const { data: teams, error: teamsError } = await supabase
+      .from('teams')
+      .select('id')
+      .eq('club_id', clubId);
+
+    if (teamsError) throw teamsError;
+
+    const teamIds = teams?.map(t => t.id) || [];
+
+    if (teamIds.length === 0) {
+      return [];
     }
 
+    // Calculate date range
+    const now = new Date();
+    const startDate = new Date();
+    
+    switch (dateRange) {
+      case '7d':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(now.getDate() - 90);
+        break;
+      default:
+        startDate.setDate(now.getDate() - 30);
+    }
+
+    // Build query
     let query = supabase
       .from('events')
       .select(`
@@ -1372,43 +1401,35 @@ export const getClubEvents = async (clubId: string, filters: {
         start_time,
         end_time,
         location,
+        notes,
         team_id,
-        created_by,
-        teams!events_team_id_fkey(name),
-        users!events_created_by_fkey(name)
+        created_at,
+        teams!events_team_id_fkey (
+          id,
+          name,
+          sport,
+          color
+        )
       `)
-      .eq('teams.club_id', clubId)
-      .gte('event_date', fromDate.toISOString())
-      .order('event_date', { ascending: false });
+      .in('team_id', teamIds)
+      .gte('event_date', startDate.toISOString())
+      .order('event_date', { ascending: true });
 
-    if (filters.teamId) {
-      query = query.eq('team_id', filters.teamId);
+    // Apply filters
+    if (teamId) {
+      query = query.eq('team_id', teamId);
     }
 
-    if (filters.type && filters.type !== 'all') {
-      query = query.eq('event_type', filters.type);
+    if (type) {
+      query = query.eq('event_type', type);
     }
 
     const { data: events, error } = await query;
 
     if (error) throw error;
 
-    const formattedEvents = (events || []).map(event => ({
-      id: event.id,
-      title: event.title,
-      event_type: event.event_type,
-      event_date: event.event_date,
-      start_time: event.start_time,
-      end_time: event.end_time,
-      location: event.location,
-      team_id: event.team_id,
-      team_name: event.teams?.name || 'Unknown Team',
-      created_by: event.created_by,
-      created_by_name: event.users?.name || 'Unknown',
-    }));
-
-    console.log(`✅ ${formattedEvents.length} club events loaded`);
-    return formattedEvents;
+    console.log(`✅ ${events?.length || 0} club events loaded`);
+    return events || [];
 
   } catch (error) {
     console.error('❌ Error loading club events:', error);

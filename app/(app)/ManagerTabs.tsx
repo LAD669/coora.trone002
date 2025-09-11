@@ -3,7 +3,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Users, Home, Info, Settings } from 'lucide-react-native';
 
-// Import manager screens
 import ManagerDashboardScreen from './(tabs)/ManagerDashboard';
 import ManagerCalendarScreen from './(tabs)/ManagerCalendar';
 import ManagerTeamsScreen from './(tabs)/ManagerTeams';

@@ -79,11 +79,12 @@ function AppContent() {
 
   console.log('AppContent: Valid session found, rendering app');
 
-  // Render Stack with role-based navigation and additional screens
+  // Render role-based navigation with additional screens
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen 
-        name="(tabs)" 
+        name="RootNavigator" 
+        component={RootNavigator}
         options={{ 
           headerShown: false,
           gestureEnabled: true 

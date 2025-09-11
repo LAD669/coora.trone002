@@ -5,156 +5,117 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  RefreshControl,
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { Calendar, MessageSquare, Users, AlertCircle } from 'lucide-react-native';
 import { getClubPosts } from '@/lib/supabase';
-
-interface ClubPost {
-  id: string;
-  title: string;
-  content: string;
-  post_type: 'organization' | 'announcement' | 'policy';
-  author_id: string;
-  author_name: string;
-  created_at: string;
-  updated_at: string;
-  team_id: string | null;
-  team_name: string | null;
-}
+import { 
+  MessageSquare, 
+  Building2, 
+  FileText,
+  AlertCircle,
+  Calendar
+} from 'lucide-react-native';
 
 export default function ManagerInfoHubScreen() {
   const { t } = useTranslation('manager');
-  const { user } = useAuth();
-  const [posts, setPosts] = useState<ClubPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { clubId } = useAuth();
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user?.clubId) {
-      loadClubPosts();
+    if (clubId) {
+      loadPosts();
     }
-  }, [user?.clubId]);
+  }, [clubId]);
 
-  const loadClubPosts = async () => {
-    if (!user?.clubId) return;
-
+  const loadPosts = async () => {
     try {
-      setIsLoading(true);
-      const clubPosts = await getClubPosts(user.clubId, {
+      setLoading(true);
+      const data = await getClubPosts(clubId!, {
         categories: ['announcement', 'policy', 'organization'],
-        limit: 50,
+        limit: 20
       });
-      setPosts(clubPosts);
+      setPosts(data);
     } catch (error) {
       console.error('Error loading club posts:', error);
       Alert.alert(t('error'), t('postsLoadError'));
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadClubPosts();
-    setRefreshing(false);
-  };
-
-  const getPostIcon = (postType: string) => {
-    switch (postType) {
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
       case 'announcement':
-        return <AlertCircle size={20} color="#FF9500" />;
+        return <AlertCircle size={20} color="#007AFF" />;
       case 'policy':
-        return <MessageSquare size={20} color="#007AFF" />;
+        return <FileText size={20} color="#FF9500" />;
       case 'organization':
-        return <Users size={20} color="#34C759" />;
+        return <Building2 size={20} color="#34C759" />;
       default:
         return <MessageSquare size={20} color="#8E8E93" />;
     }
   };
 
-  const getPostTypeLabel = (postType: string) => {
-    switch (postType) {
-      case 'announcement':
-        return t('postTypes.announcement');
-      case 'policy':
-        return t('postTypes.policy');
-      case 'organization':
-        return t('postTypes.organization');
-      default:
-        return t('postTypes.general');
-    }
+  const getCategoryLabel = (category: string) => {
+    return t(`postTypes.${category}`) || category;
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.container}>
         <Text style={styles.loadingText}>{t('loading')}</Text>
       </View>
     );
   }
 
+  if (posts.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyState}>
+          <MessageSquare size={48} color="#8E8E93" />
+          <Text style={styles.emptyTitle}>{t('noPosts')}</Text>
+          <Text style={styles.emptyDescription}>{t('noPostsDescription')}</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('infoHub')}</Text>
         <Text style={styles.subtitle}>{t('organizationalContent')}</Text>
       </View>
 
-      {posts.length === 0 ? (
-        <View style={styles.emptyState}>
-          <MessageSquare size={48} color="#8E8E93" />
-          <Text style={styles.emptyTitle}>{t('noPosts')}</Text>
-          <Text style={styles.emptySubtitle}>{t('noPostsDescription')}</Text>
-        </View>
-      ) : (
-        <View style={styles.postsList}>
-          {posts.map((post) => (
-            <View key={post.id} style={styles.postCard}>
-              <View style={styles.postHeader}>
-                <View style={styles.postTypeContainer}>
-                  {getPostIcon(post.post_type)}
-                  <Text style={styles.postTypeLabel}>
-                    {getPostTypeLabel(post.post_type)}
-                  </Text>
-                </View>
-                <Text style={styles.postDate}>{formatDate(post.created_at)}</Text>
-              </View>
-
-              <Text style={styles.postTitle}>{post.title}</Text>
-              <Text style={styles.postContent} numberOfLines={3}>
-                {post.content}
+      {posts.map((post) => (
+        <View key={post.id} style={styles.postCard}>
+          <View style={styles.postHeader}>
+            <View style={styles.categoryContainer}>
+              {getCategoryIcon(post.category)}
+              <Text style={styles.categoryLabel}>
+                {getCategoryLabel(post.category)}
               </Text>
-
-              <View style={styles.postFooter}>
-                <View style={styles.authorInfo}>
-                  <Text style={styles.authorName}>{post.author_name}</Text>
-                  {post.team_name && (
-                    <Text style={styles.teamName}>• {post.team_name}</Text>
-                  )}
-                </View>
-              </View>
             </View>
-          ))}
+            <Text style={styles.postDate}>
+              {new Date(post.created_at).toLocaleDateString()}
+            </Text>
+          </View>
+          
+          <Text style={styles.postContent}>{post.content}</Text>
+          
+          <View style={styles.postFooter}>
+            <Text style={styles.postAuthor}>
+              {post.users?.name || post.users?.first_name || 'Unknown'}
+            </Text>
+            <Text style={styles.postTeam}>
+              {post.team_id ? 'Team Post' : 'Club Post'}
+            </Text>
+          </View>
         </View>
-      )}
+      ))}
     </ScrollView>
   );
 }
@@ -162,21 +123,10 @@ export default function ManagerInfoHubScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#8E8E93',
-    fontFamily: 'Urbanist-Regular',
+    backgroundColor: '#FFFFFF',
   },
   header: {
-    padding: 20,
+    padding: 24,
     paddingBottom: 16,
   },
   title: {
@@ -184,51 +134,48 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'Urbanist-Bold',
-    marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
     color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    marginTop: 4,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginTop: 50,
     fontFamily: 'Urbanist-Regular',
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 60,
+    padding: 24,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'Urbanist-SemiBold',
     marginTop: 16,
-    marginBottom: 8,
   },
-  emptySubtitle: {
-    fontSize: 16,
+  emptyDescription: {
+    fontSize: 14,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
     textAlign: 'center',
-    lineHeight: 24,
-  },
-  postsList: {
-    paddingHorizontal: 20,
+    marginTop: 8,
   },
   postCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
+    marginHorizontal: 24,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
   postHeader: {
     flexDirection: 'row',
@@ -236,57 +183,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  postTypeContainer: {
+  categoryContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
-  postTypeLabel: {
+  categoryLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: '#1A1A1A',
     fontFamily: 'Urbanist-SemiBold',
-    marginLeft: 6,
-    textTransform: 'uppercase',
   },
   postDate: {
     fontSize: 12,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
   },
-  postTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    fontFamily: 'Urbanist-SemiBold',
-    marginBottom: 8,
-    lineHeight: 24,
-  },
   postContent: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#1A1A1A',
     fontFamily: 'Urbanist-Regular',
-    lineHeight: 24,
-    marginBottom: 16,
+    lineHeight: 20,
+    marginBottom: 12,
   },
   postFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  authorInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  authorName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1A1A1A',
-    fontFamily: 'Urbanist-Medium',
-  },
-  teamName: {
-    fontSize: 14,
+  postAuthor: {
+    fontSize: 12,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
-    marginLeft: 4,
+  },
+  postTeam: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
   },
 });

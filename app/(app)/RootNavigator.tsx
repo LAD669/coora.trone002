@@ -1,4 +1,5 @@
 import React from 'react';
+import { Stack } from 'expo-router';
 import { useAuth } from '@/contexts/AuthProvider';
 import { Redirect } from 'expo-router';
 import ManagerTabs from './ManagerTabs';
@@ -12,11 +13,11 @@ export default function RootNavigator() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  // Role-based navigation - direct component rendering
+  // Strict role-based navigation - only manager role sees ManagerTabs
   if (roles.includes('manager')) {
     return <ManagerTabs />;
   }
 
-  // Default to player tabs for all other roles (admin, trainer, player, parent)
+  // All other roles (admin, trainer, player, parent) see PlayerTabs
   return <PlayerTabs />;
 }

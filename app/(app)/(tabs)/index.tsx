@@ -18,7 +18,6 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamPosts, createPost, addPostReaction, removePostReaction, getPostComments, createPostComment, type Comment } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
-import ManagerInfoHubScreen from './ManagerInfoHub';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -883,22 +882,6 @@ function InfohubScreenContent() {
 }
 
 export default function InfohubScreen() {
-  const { roles, user } = useAuth();
-  
-  // Debug logging
-  console.log('InfohubScreen - User role:', user?.role);
-  console.log('InfohubScreen - Roles array:', roles);
-  console.log('InfohubScreen - Is manager?', roles.includes('manager'));
-  console.log('InfohubScreen - Direct role check:', user?.role === 'manager');
-  
-  // Role-based rendering - check both roles array and direct user role
-  if (user?.role === 'manager' || roles.includes('manager')) {
-    console.log('InfohubScreen - Rendering ManagerInfoHubScreen');
-    return <ManagerInfoHubScreen />;
-  }
-  
-  console.log('InfohubScreen - Rendering default InfohubScreenContent');
-  // Default player/trainer info hub
   return (
     <ErrorBoundary fallback={ErrorFallback}>
       <InfohubScreenContent />

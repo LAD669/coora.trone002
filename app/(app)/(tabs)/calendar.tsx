@@ -17,7 +17,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { getTeamEvents, createEvent, respondToEvent, getEventResponses } from '@/lib/supabase';
 import { Plus, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Check, X, Users, UserCheck, UserX, Clock as ClockIcon, MessageCircle } from 'lucide-react-native';
 import { Event } from '@/types';
-import ManagerCalendarScreen from './ManagerCalendar';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -75,22 +74,8 @@ const isToday = (date: Date) => {
 };
 
 export default function CalendarScreen() {
-  const { user, roles } = useAuth();
+  const { user } = useAuth();
   const { t } = useLanguage();
-  
-  // Debug logging
-  console.log('CalendarScreen - User role:', user?.role);
-  console.log('CalendarScreen - Roles array:', roles);
-  console.log('CalendarScreen - Is manager?', roles.includes('manager'));
-  console.log('CalendarScreen - Direct role check:', user?.role === 'manager');
-  
-  // Role-based rendering - check both roles array and direct user role
-  if (user?.role === 'manager' || roles.includes('manager')) {
-    console.log('CalendarScreen - Rendering ManagerCalendarScreen');
-    return <ManagerCalendarScreen />;
-  }
-  
-  console.log('CalendarScreen - Rendering default CalendarScreen');
   
   const [events, setEvents] = useState<Event[]>([]);
   const [isModalVisible, setModalVisible] = useState(false);

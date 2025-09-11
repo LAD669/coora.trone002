@@ -6,169 +6,119 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  RefreshControl,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { Trophy, TrendingUp, Users, Calendar, DollarSign, Activity } from 'lucide-react-native';
 import { getClubMetrics } from '@/lib/supabase';
-
-interface ClubMetrics {
-  topTeams: Array<{
-    id: string;
-    name: string;
-    winRate: number;
-    points: number;
-    recentMatches: number;
-  }>;
-  revenue: number | null;
-  expenses: number | null;
-  net: number | null;
-  eventsCountByType: {
-    matches: number;
-    trainings: number;
-  };
-  activePlayers: number;
-  totalTeams: number;
-}
+import { 
+  Users, 
+  Calendar, 
+  Trophy, 
+  TrendingUp, 
+  DollarSign,
+  Activity,
+  BarChart3
+} from 'lucide-react-native';
 
 export default function ManagerDashboardScreen() {
   const { t } = useTranslation('manager');
-  const { user } = useAuth();
-  const [metrics, setMetrics] = useState<ClubMetrics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { user, clubId } = useAuth();
+  const [metrics, setMetrics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user?.clubId) {
-      loadClubMetrics();
+    if (clubId) {
+      loadMetrics();
     }
-  }, [user?.clubId]);
+  }, [clubId]);
 
-  const loadClubMetrics = async () => {
-    if (!user?.clubId) return;
-
+  const loadMetrics = async () => {
     try {
-      setIsLoading(true);
-      const clubMetrics = await getClubMetrics(user.clubId);
-      setMetrics(clubMetrics);
+      setLoading(true);
+      const data = await getClubMetrics(clubId!);
+      setMetrics(data);
     } catch (error) {
       console.error('Error loading club metrics:', error);
       Alert.alert(t('error'), t('metricsLoadError'));
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadClubMetrics();
-    setRefreshing(false);
-  };
-
-  const renderMetricCard = (
-    title: string,
-    value: string | number,
-    icon: React.ComponentType<any>,
-    color: string,
-    subtitle?: string
-  ) => (
-    <View style={styles.metricCard}>
-      <View style={styles.metricHeader}>
-        <View style={[styles.metricIcon, { backgroundColor: color + '15' }]}>
-          {React.createElement(icon, { size: 24, color: color })}
-        </View>
-        <Text style={styles.metricTitle}>{title}</Text>
-      </View>
-      <Text style={styles.metricValue}>{value}</Text>
-      {subtitle && <Text style={styles.metricSubtitle}>{subtitle}</Text>}
-    </View>
-  );
-
-  const renderTopTeams = () => {
-    if (!metrics?.topTeams?.length) return null;
-
+  if (loading) {
     return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('metrics.topTeams')}</Text>
-        {metrics.topTeams.map((team, index) => (
-          <View key={team.id} style={styles.teamCard}>
-            <View style={styles.teamRank}>
-              <Text style={styles.teamRankText}>#{index + 1}</Text>
-            </View>
-            <View style={styles.teamInfo}>
-              <Text style={styles.teamName}>{team.name}</Text>
-              <Text style={styles.teamStats}>
-                {t('metrics.winRate')}: {team.winRate}% • {t('metrics.points')}: {team.points}
-              </Text>
-            </View>
-            <View style={styles.teamBadge}>
-              <Trophy size={20} color="#FF9500" />
-            </View>
-          </View>
-        ))}
-      </View>
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.container}>
         <Text style={styles.loadingText}>{t('loading')}</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>{t('welcome')}</Text>
-        <Text style={styles.subtitleText}>{t('clubOverview')}</Text>
+        <Text style={styles.title}>{t('welcome')}</Text>
+        <Text style={styles.subtitle}>{t('clubOverview')}</Text>
       </View>
 
-      <View style={styles.metricsGrid}>
-        {renderMetricCard(
-          t('metrics.totalTeams'),
-          metrics?.totalTeams || 0,
-          Users,
-          '#8E4EC6'
-        )}
-        {renderMetricCard(
-          t('metrics.activePlayers'),
-          metrics?.activePlayers || 0,
-          Activity,
-          '#34C759'
-        )}
-        {renderMetricCard(
-          t('metrics.totalEvents'),
-          (metrics?.eventsCountByType?.matches || 0) + (metrics?.eventsCountByType?.trainings || 0),
-          Calendar,
-          '#007AFF'
-        )}
-        {renderMetricCard(
-          t('metrics.revenue'),
-          metrics?.revenue ? `€${metrics.revenue.toLocaleString()}` : 'N/A',
-          DollarSign,
-          '#34C759',
-          metrics?.expenses ? `-€${metrics.expenses.toLocaleString()}` : undefined
-        )}
+      {/* KPIs Grid */}
+      <View style={styles.kpiGrid}>
+        <View style={styles.kpiCard}>
+          <Users size={24} color="#007AFF" />
+          <Text style={styles.kpiValue}>{metrics?.totalTeams || 0}</Text>
+          <Text style={styles.kpiLabel}>{t('metrics.totalTeams')}</Text>
+        </View>
+        
+        <View style={styles.kpiCard}>
+          <Activity size={24} color="#34C759" />
+          <Text style={styles.kpiValue}>{metrics?.activePlayers || 0}</Text>
+          <Text style={styles.kpiLabel}>{t('metrics.activePlayers')}</Text>
+        </View>
+        
+        <View style={styles.kpiCard}>
+          <Calendar size={24} color="#FF9500" />
+          <Text style={styles.kpiValue}>{metrics?.totalEvents || 0}</Text>
+          <Text style={styles.kpiLabel}>{t('metrics.totalEvents')}</Text>
+        </View>
+        
+        <View style={styles.kpiCard}>
+          <DollarSign size={24} color="#FF3B30" />
+          <Text style={styles.kpiValue}>N/A</Text>
+          <Text style={styles.kpiLabel}>{t('metrics.revenue')}</Text>
+        </View>
       </View>
 
-      {renderTopTeams()}
+      {/* Top Teams */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('metrics.topTeams')}</Text>
+        {metrics?.topTeams?.map((team: any, index: number) => (
+          <View key={team.id} style={styles.teamCard}>
+            <View style={styles.teamInfo}>
+              <Text style={styles.teamName}>{team.name}</Text>
+              <Text style={styles.teamSport}>{team.sport}</Text>
+            </View>
+            <View style={styles.teamStats}>
+              <Text style={styles.teamStat}>{team.winRate}% {t('metrics.winRate')}</Text>
+              <Text style={styles.teamStat}>{team.points} {t('metrics.points')}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
 
+      {/* Events Breakdown */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('metrics.eventsBreakdown')}</Text>
-        <View style={styles.eventsBreakdown}>
-          <View style={styles.eventTypeCard}>
-            <Text style={styles.eventTypeTitle}>{t('metrics.matches')}</Text>
-            <Text style={styles.eventTypeCount}>{metrics?.eventsCountByType?.matches || 0}</Text>
+        <View style={styles.breakdownGrid}>
+          <View style={styles.breakdownItem}>
+            <Text style={styles.breakdownValue}>
+              {metrics?.eventsBreakdown?.match || 0}
+            </Text>
+            <Text style={styles.breakdownLabel}>{t('metrics.matches')}</Text>
           </View>
-          <View style={styles.eventTypeCard}>
-            <Text style={styles.eventTypeTitle}>{t('metrics.trainings')}</Text>
-            <Text style={styles.eventTypeCount}>{metrics?.eventsCountByType?.trainings || 0}</Text>
+          <View style={styles.breakdownItem}>
+            <Text style={styles.breakdownValue}>
+              {metrics?.eventsBreakdown?.training || 0}
+            </Text>
+            <Text style={styles.breakdownLabel}>{t('metrics.trainings')}</Text>
           </View>
         </View>
       </View>
@@ -179,89 +129,62 @@ export default function ManagerDashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#8E8E93',
-    fontFamily: 'Urbanist-Regular',
+    backgroundColor: '#FFFFFF',
   },
   header: {
-    padding: 20,
+    padding: 24,
     paddingBottom: 16,
   },
-  welcomeText: {
+  title: {
     fontSize: 28,
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'Urbanist-Bold',
-    marginBottom: 4,
   },
-  subtitleText: {
+  subtitle: {
     fontSize: 16,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
+    marginTop: 4,
   },
-  metricsGrid: {
+  loadingText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginTop: 50,
+    fontFamily: 'Urbanist-Regular',
+  },
+  kpiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     gap: 12,
   },
-  metricCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    width: '48%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  metricHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  metricIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  metricTitle: {
-    fontSize: 14,
-    color: '#8E8E93',
-    fontFamily: 'Urbanist-Regular',
+  kpiCard: {
     flex: 1,
+    minWidth: '45%',
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
   },
-  metricValue: {
+  kpiValue: {
     fontSize: 24,
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'Urbanist-Bold',
+    marginTop: 8,
   },
-  metricSubtitle: {
+  kpiLabel: {
     fontSize: 12,
-    color: '#FF3B30',
+    color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
     marginTop: 4,
+    textAlign: 'center',
   },
   section: {
-    marginTop: 24,
-    paddingHorizontal: 20,
+    padding: 24,
+    paddingTop: 16,
   },
   sectionTitle: {
     fontSize: 20,
@@ -271,35 +194,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   teamCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: '#F8F9FA',
     padding: 16,
-    marginBottom: 8,
+    borderRadius: 12,
+    marginBottom: 12,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  teamRank: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  teamRankText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    fontFamily: 'Urbanist-SemiBold',
   },
   teamInfo: {
     flex: 1,
@@ -309,50 +210,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'Urbanist-SemiBold',
-    marginBottom: 2,
+  },
+  teamSport: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    marginTop: 2,
   },
   teamStats: {
+    alignItems: 'flex-end',
+  },
+  teamStat: {
     fontSize: 14,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
   },
-  teamBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FF950015',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  eventsBreakdown: {
+  breakdownGrid: {
     flexDirection: 'row',
     gap: 12,
   },
-  eventTypeCard: {
+  breakdownItem: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: '#F8F9FA',
     padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
-  eventTypeTitle: {
-    fontSize: 14,
-    color: '#8E8E93',
-    fontFamily: 'Urbanist-Regular',
-    marginBottom: 4,
-  },
-  eventTypeCount: {
-    fontSize: 24,
+  breakdownValue: {
+    fontSize: 20,
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'Urbanist-Bold',
+  },
+  breakdownLabel: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    marginTop: 4,
   },
 });

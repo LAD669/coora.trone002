@@ -5,320 +5,173 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  RefreshControl,
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { Calendar, Clock, MapPin, Users, Filter } from 'lucide-react-native';
-import { getClubEvents } from '@/lib/supabase';
-
-interface ClubEvent {
-  id: string;
-  title: string;
-  event_type: 'training' | 'match';
-  event_date: string;
-  start_time: string | null;
-  end_time: string | null;
-  location: string;
-  team_id: string;
-  team_name: string;
-  created_by: string;
-  created_by_name: string;
-}
-
-interface EventFilters {
-  teamId: string | null;
-  type: 'all' | 'match' | 'training';
-  dateRange: '30d' | '90d' | '1y';
-}
+import { getClubEvents, getClubTeams } from '@/lib/supabase';
+import { 
+  Calendar, 
+  Clock, 
+  MapPin, 
+  Users, 
+  Filter,
+  ChevronDown
+} from 'lucide-react-native';
 
 export default function ManagerCalendarScreen() {
   const { t } = useTranslation('manager');
-  const { user } = useAuth();
-  const [events, setEvents] = useState<ClubEvent[]>([]);
-  const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [filters, setFilters] = useState<EventFilters>({
-    teamId: null,
-    type: 'all',
-    dateRange: '30d',
-  });
-  const [showFilters, setShowFilters] = useState(false);
+  const { clubId } = useAuth();
+  const [events, setEvents] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.clubId) {
-      loadClubData();
+    if (clubId) {
+      loadData();
     }
-  }, [user?.clubId]);
+  }, [clubId]);
 
-  useEffect(() => {
-    if (user?.clubId) {
-      loadClubEvents();
-    }
-  }, [user?.clubId, filters]);
-
-  const loadClubData = async () => {
-    if (!user?.clubId) return;
-
+  const loadData = async () => {
     try {
-      // Load teams for filter
-      const clubTeams = await getClubTeams(user.clubId);
-      setTeams(clubTeams);
+      setLoading(true);
+      const [eventsData, teamsData] = await Promise.all([
+        getClubEvents(clubId!, {
+          teamId: selectedTeam,
+          type: selectedType,
+          dateRange: '30d'
+        }),
+        getClubTeams(clubId!)
+      ]);
+      setEvents(eventsData);
+      setTeams(teamsData);
     } catch (error) {
       console.error('Error loading club data:', error);
-    }
-  };
-
-  const loadClubEvents = async () => {
-    if (!user?.clubId) return;
-
-    try {
-      setIsLoading(true);
-      const clubEvents = await getClubEvents(user.clubId, {
-        teamId: filters.teamId,
-        type: filters.type === 'all' ? null : filters.type,
-        dateRange: filters.dateRange,
-      });
-      setEvents(clubEvents);
-    } catch (error) {
-      console.error('Error loading club events:', error);
       Alert.alert(t('error'), t('eventsLoadError'));
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadClubEvents();
-    setRefreshing(false);
-  };
+  useEffect(() => {
+    if (clubId) {
+      loadData();
+    }
+  }, [selectedTeam, selectedType]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
-
-  const formatTime = (timeString: string | null) => {
-    if (!timeString) return '';
-    const time = new Date(timeString);
-    return time.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const getEventIcon = (eventType: string) => {
-    switch (eventType) {
+  const getEventIcon = (type: string) => {
+    switch (type) {
       case 'match':
-        return <Users size={20} color="#FF3B30" />;
+        return <Users size={16} color="#FF3B30" />;
       case 'training':
-        return <Clock size={20} color="#007AFF" />;
+        return <Clock size={16} color="#007AFF" />;
       default:
-        return <Calendar size={20} color="#8E8E93" />;
+        return <Calendar size={16} color="#8E8E93" />;
     }
   };
 
-  const getEventTypeLabel = (eventType: string) => {
-    switch (eventType) {
-      case 'match':
-        return t('eventTypes.match');
-      case 'training':
-        return t('eventTypes.training');
-      default:
-        return t('eventTypes.other');
-    }
+  const getEventTypeLabel = (type: string) => {
+    return t(`eventTypes.${type}`) || type;
   };
 
-  const filteredEvents = events.filter((event) => {
-    if (filters.teamId && event.team_id !== filters.teamId) return false;
-    if (filters.type !== 'all' && event.event_type !== filters.type) return false;
-    return true;
-  });
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.container}>
         <Text style={styles.loadingText}>{t('loading')}</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('calendar')}</Text>
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setShowFilters(!showFilters)}
-        >
-          <Filter size={20} color="#007AFF" />
-          <Text style={styles.filterButtonText}>{t('filters')}</Text>
+        <Text style={styles.subtitle}>Club-wide events</Text>
+      </View>
+
+      {/* Filters */}
+      <View style={styles.filtersContainer}>
+        <TouchableOpacity style={styles.filterButton}>
+          <Filter size={16} color="#007AFF" />
+          <Text style={styles.filterText}>{t('filters.team')}</Text>
+          <ChevronDown size={16} color="#8E8E93" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.filterButton}>
+          <Filter size={16} color="#007AFF" />
+          <Text style={styles.filterText}>{t('filters.type')}</Text>
+          <ChevronDown size={16} color="#8E8E93" />
         </TouchableOpacity>
       </View>
 
-      {showFilters && (
-        <View style={styles.filtersContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.filterRow}>
-              <TouchableOpacity
-                style={[
-                  styles.filterChip,
-                  filters.type === 'all' && styles.filterChipActive,
-                ]}
-                onPress={() => setFilters({ ...filters, type: 'all' })}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    filters.type === 'all' && styles.filterChipTextActive,
-                  ]}
-                >
-                  {t('filters.allTypes')}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.filterChip,
-                  filters.type === 'match' && styles.filterChipActive,
-                ]}
-                onPress={() => setFilters({ ...filters, type: 'match' })}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    filters.type === 'match' && styles.filterChipTextActive,
-                  ]}
-                >
-                  {t('filters.matches')}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.filterChip,
-                  filters.type === 'training' && styles.filterChipActive,
-                ]}
-                onPress={() => setFilters({ ...filters, type: 'training' })}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    filters.type === 'training' && styles.filterChipTextActive,
-                  ]}
-                >
-                  {t('filters.trainings')}
-                </Text>
-              </TouchableOpacity>
-
-              {teams.map((team) => (
-                <TouchableOpacity
-                  key={team.id}
-                  style={[
-                    styles.filterChip,
-                    filters.teamId === team.id && styles.filterChipActive,
-                  ]}
-                  onPress={() =>
-                    setFilters({
-                      ...filters,
-                      teamId: filters.teamId === team.id ? null : team.id,
-                    })
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      filters.teamId === team.id && styles.filterChipTextActive,
-                    ]}
-                  >
-                    {team.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
+      {/* Events List */}
+      {events.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Calendar size={48} color="#8E8E93" />
+          <Text style={styles.emptyTitle}>{t('noEvents')}</Text>
+          <Text style={styles.emptyDescription}>{t('noEventsDescription')}</Text>
         </View>
-      )}
-
-      <ScrollView
-        style={styles.eventsContainer}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {filteredEvents.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Calendar size={48} color="#8E8E93" />
-            <Text style={styles.emptyTitle}>{t('noEvents')}</Text>
-            <Text style={styles.emptySubtitle}>{t('noEventsDescription')}</Text>
-          </View>
-        ) : (
-          <View style={styles.eventsList}>
-            {filteredEvents.map((event) => (
-              <View key={event.id} style={styles.eventCard}>
-                <View style={styles.eventHeader}>
-                  <View style={styles.eventTypeContainer}>
-                    {getEventIcon(event.event_type)}
-                    <Text style={styles.eventTypeLabel}>
-                      {getEventTypeLabel(event.event_type)}
-                    </Text>
-                  </View>
-                  <Text style={styles.eventDate}>{formatDate(event.event_date)}</Text>
+      ) : (
+        <View style={styles.eventsList}>
+          {events.map((event) => (
+            <View key={event.id} style={styles.eventCard}>
+              <View style={styles.eventHeader}>
+                <View style={styles.eventTypeContainer}>
+                  {getEventIcon(event.event_type)}
+                  <Text style={styles.eventTypeLabel}>
+                    {getEventTypeLabel(event.event_type)}
+                  </Text>
                 </View>
-
-                <Text style={styles.eventTitle}>{event.title}</Text>
-
-                <View style={styles.eventDetails}>
+                <Text style={styles.eventDate}>
+                  {new Date(event.event_date).toLocaleDateString()}
+                </Text>
+              </View>
+              
+              <Text style={styles.eventTitle}>{event.title}</Text>
+              
+              {event.teams && (
+                <Text style={styles.eventTeam}>
+                  {event.teams.name} ({event.teams.sport})
+                </Text>
+              )}
+              
+              <View style={styles.eventDetails}>
+                {event.start_time && (
                   <View style={styles.eventDetail}>
-                    <Clock size={16} color="#8E8E93" />
+                    <Clock size={14} color="#8E8E93" />
                     <Text style={styles.eventDetailText}>
-                      {formatTime(event.start_time)} - {formatTime(event.end_time)}
+                      {new Date(event.start_time).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </Text>
                   </View>
+                )}
+                
+                {event.location && (
                   <View style={styles.eventDetail}>
-                    <MapPin size={16} color="#8E8E93" />
+                    <MapPin size={14} color="#8E8E93" />
                     <Text style={styles.eventDetailText}>{event.location}</Text>
                   </View>
-                  <View style={styles.eventDetail}>
-                    <Users size={16} color="#8E8E93" />
-                    <Text style={styles.eventDetailText}>{event.team_name}</Text>
-                  </View>
-                </View>
+                )}
               </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
-    </View>
+            </View>
+          ))}
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#8E8E93',
-    fontFamily: 'Urbanist-Regular',
+    backgroundColor: '#FFFFFF',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
+    padding: 24,
     paddingBottom: 16,
   },
   title: {
@@ -327,94 +180,72 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontFamily: 'Urbanist-Bold',
   },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+  subtitle: {
+    fontSize: 16,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    marginTop: 4,
   },
-  filterButtonText: {
-    fontSize: 14,
-    color: '#007AFF',
-    fontFamily: 'Urbanist-Medium',
-    marginLeft: 4,
+  loadingText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginTop: 50,
+    fontFamily: 'Urbanist-Regular',
   },
   filtersContainer: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    paddingVertical: 12,
-  },
-  filterRow: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+    gap: 12,
+    marginBottom: 16,
+  },
+  filterButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-  },
-  filterChip: {
     backgroundColor: '#F8F9FA',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderRadius: 8,
   },
-  filterChipActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  filterChipText: {
+  filterText: {
     fontSize: 14,
-    color: '#8E8E93',
-    fontFamily: 'Urbanist-Medium',
-  },
-  filterChipTextActive: {
-    color: '#FFFFFF',
-  },
-  eventsContainer: {
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-Regular',
     flex: 1,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 60,
+    padding: 24,
+    marginTop: 50,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'Urbanist-SemiBold',
     marginTop: 16,
-    marginBottom: 8,
   },
-  emptySubtitle: {
-    fontSize: 16,
+  emptyDescription: {
+    fontSize: 14,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
     textAlign: 'center',
-    lineHeight: 24,
+    marginTop: 8,
   },
   eventsList: {
-    padding: 20,
+    paddingHorizontal: 24,
   },
   eventCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
   eventHeader: {
     flexDirection: 'row',
@@ -425,14 +256,13 @@ const styles = StyleSheet.create({
   eventTypeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   eventTypeLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: '#1A1A1A',
     fontFamily: 'Urbanist-SemiBold',
-    marginLeft: 6,
-    textTransform: 'uppercase',
   },
   eventDate: {
     fontSize: 12,
@@ -440,12 +270,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Regular',
   },
   eventTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'Urbanist-SemiBold',
-    marginBottom: 16,
-    lineHeight: 24,
+    marginBottom: 8,
+  },
+  eventTeam: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    marginBottom: 12,
   },
   eventDetails: {
     gap: 8,
@@ -453,11 +288,11 @@ const styles = StyleSheet.create({
   eventDetail: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   eventDetailText: {
     fontSize: 14,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',
-    marginLeft: 8,
   },
 });
