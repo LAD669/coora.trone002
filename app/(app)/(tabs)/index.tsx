@@ -883,13 +883,20 @@ function InfohubScreenContent() {
 }
 
 export default function InfohubScreen() {
-  const { roles } = useAuth();
+  const { roles, user } = useAuth();
+  
+  // Debug logging
+  console.log('InfohubScreen - User role:', user?.role);
+  console.log('InfohubScreen - Roles array:', roles);
+  console.log('InfohubScreen - Is manager?', roles.includes('manager'));
   
   // Role-based rendering
   if (roles.includes('manager')) {
+    console.log('InfohubScreen - Rendering ManagerInfoHubScreen');
     return <ManagerInfoHubScreen />;
   }
   
+  console.log('InfohubScreen - Rendering default InfohubScreenContent');
   // Default player/trainer info hub
   return (
     <ErrorBoundary fallback={ErrorFallback}>

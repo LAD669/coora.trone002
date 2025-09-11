@@ -167,10 +167,18 @@ export default function PlayerboardScreen() {
   const { user, roles } = useAuth();
   const { safePush } = useNavigationReady();
   
+  // Debug logging
+  console.log('PlayerboardScreen - User role:', user?.role);
+  console.log('PlayerboardScreen - Roles array:', roles);
+  console.log('PlayerboardScreen - Is manager?', roles.includes('manager'));
+  
   // Role-based rendering
   if (roles.includes('manager')) {
+    console.log('PlayerboardScreen - Rendering ManagerTeamsScreen');
     return <ManagerTeamsScreen />;
   }
+  
+  console.log('PlayerboardScreen - Rendering default PlayerboardScreen');
   
   // const [view, setView] = useState<'list' | 'lineup'>('list'); // LINEUP VIEW DEACTIVATED
   const [view, setView] = useState<'list' | 'lineup'>('list'); // Force list view only

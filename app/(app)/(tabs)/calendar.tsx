@@ -78,10 +78,18 @@ export default function CalendarScreen() {
   const { user, roles } = useAuth();
   const { t } = useLanguage();
   
+  // Debug logging
+  console.log('CalendarScreen - User role:', user?.role);
+  console.log('CalendarScreen - Roles array:', roles);
+  console.log('CalendarScreen - Is manager?', roles.includes('manager'));
+  
   // Role-based rendering
   if (roles.includes('manager')) {
+    console.log('CalendarScreen - Rendering ManagerCalendarScreen');
     return <ManagerCalendarScreen />;
   }
+  
+  console.log('CalendarScreen - Rendering default CalendarScreen');
   
   const [events, setEvents] = useState<Event[]>([]);
   const [isModalVisible, setModalVisible] = useState(false);

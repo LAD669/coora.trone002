@@ -85,10 +85,18 @@ export default function DashboardScreen() {
   const { t: tabsT } = useTranslation('tabs');
   const { user, roles } = useAuth();
   
+  // Debug logging
+  console.log('DashboardScreen - User role:', user?.role);
+  console.log('DashboardScreen - Roles array:', roles);
+  console.log('DashboardScreen - Is manager?', roles.includes('manager'));
+  
   // Role-based rendering
   if (roles.includes('manager')) {
+    console.log('DashboardScreen - Rendering ManagerDashboardScreen');
     return <ManagerDashboardScreen />;
   }
+  
+  console.log('DashboardScreen - Rendering default DashboardScreen');
   
   const canManagePlayers = user?.role === 'trainer' || user?.role === 'admin';
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
