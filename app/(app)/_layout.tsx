@@ -79,8 +79,23 @@ function AppContent() {
 
   console.log('AppContent: Valid session found, rendering app');
 
-  // Render role-based navigation directly
-  return <RootNavigator />;
+  // Render Stack with role-based navigation and additional screens
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen 
+        name="(tabs)" 
+        options={{ 
+          headerShown: false,
+          gestureEnabled: true 
+        }} 
+      />
+      <Stack.Screen name="notifications" />
+      <Stack.Screen name="settings" />
+      <Stack.Screen name="EditProfileScreen" />
+      <Stack.Screen name="live-ticker" />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
 }
 
 export default function AppLayout() {

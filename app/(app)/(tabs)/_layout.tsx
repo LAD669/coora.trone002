@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
-import { MessageSquare, Calendar, Users, ChartBar as BarChart3, Zap, Settings, Bell } from 'lucide-react-native';
+import { MessageSquare, Calendar, Users, ChartBar as BarChart3, Zap, Settings, Bell, Home, Info } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
@@ -10,7 +10,8 @@ import { getNotifications } from '@/lib/supabase';
 export default function TabLayout() {
   const { t: tabsT } = useTranslation('tabs');
   const { t: commonT } = useTranslation('common');
-  const { user } = useAuth();
+  const { t: managerT } = useTranslation('manager');
+  const { user, roles } = useAuth();
   const { safePush } = useNavigationReady();
   
   const [unreadCount, setUnreadCount] = useState(0);
@@ -73,6 +74,9 @@ export default function TabLayout() {
     </View>
   );
 
+  // Role-based tab configuration
+  const isManager = roles.includes('manager');
+
   return (
     <Tabs
       screenOptions={{
@@ -97,9 +101,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: tabsT('home'),
+          title: isManager ? managerT('infoHub') : tabsT('home'),
           headerShown: true,
-          headerTitle: 'Info-Hub',
+          headerTitle: isManager ? managerT('infoHub') : 'Info-Hub',
           headerTitleStyle: {
             fontSize: 28,
             fontFamily: 'Urbanist-SemiBold',
@@ -120,14 +124,14 @@ export default function TabLayout() {
           },
           headerRight: HeaderRight,
           tabBarIcon: ({ size, color }) => (
-            <MessageSquare size={24} color={color} strokeWidth={1.5} />
+            isManager ? <Info size={24} color={color} strokeWidth={1.5} /> : <MessageSquare size={24} color={color} strokeWidth={1.5} />
           ),
         }}
       />
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: tabsT('dashboard'),
+          title: isManager ? managerT('dashboard') : tabsT('dashboard'),
           tabBarIcon: ({ size, color }) => (
             <BarChart3 size={24} color={color} strokeWidth={1.5} />
           ),
@@ -136,7 +140,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="calendar"
         options={{
-          title: tabsT('calendar'),
+          title: isManager ? managerT('calendar') : tabsT('calendar'),
           tabBarIcon: ({ size, color }) => (
             <Calendar size={24} color={color} strokeWidth={1.5} />
           ),
@@ -145,7 +149,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="playerboard"
         options={{
-          title: tabsT('playerboard'),
+          title: isManager ? managerT('teams') : tabsT('playerboard'),
           tabBarIcon: ({ size, color }) => (
             <Users size={24} color={color} strokeWidth={1.5} />
           ),

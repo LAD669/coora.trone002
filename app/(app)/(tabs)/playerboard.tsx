@@ -19,6 +19,7 @@ import { Users, Target, Plus, X, User, Phone, Calendar, Ruler, Weight, Trophy, A
 import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamUsers, createPlayer, supabase } from '@/lib/supabase';
 import { getSafeKey } from '@/lib/helpers';
+import ManagerTeamsScreen from './ManagerTeams';
 
 const { width } = Dimensions.get('window');
 
@@ -163,8 +164,13 @@ const formations = [
 
 export default function PlayerboardScreen() {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const { safePush } = useNavigationReady();
+  
+  // Role-based rendering
+  if (roles.includes('manager')) {
+    return <ManagerTeamsScreen />;
+  }
   
   // const [view, setView] = useState<'list' | 'lineup'>('list'); // LINEUP VIEW DEACTIVATED
   const [view, setView] = useState<'list' | 'lineup'>('list'); // Force list view only
