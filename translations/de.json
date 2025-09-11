@@ -303,35 +303,5 @@
       "training": "Training",
       "other": "Andere"
     },
-    "metrics": {
-      "totalTeams": "Gesamte Teams",
-      "activePlayers": "Aktive Spieler",
-      "totalEvents": "Gesamte Events",
-      "revenue": "Einnahmen",
-      "expenses": "Ausgaben",
-      "net": "Saldo",
-      "topTeams": "Beste Teams",
-      "winRate": "Gewinnrate",
-      "points": "Punkte",
-      "eventsBreakdown": "Event-Aufschlüsselung",
-      "matches": "Spiele",
-      "trainings": "Trainings"
-    },
-    "noPosts": "Keine organisatorischen Beiträge",
-    "noPostsDescription": "Derzeit sind keine organisatorischen Inhalte verfügbar",
-    "noEvents": "Keine Events gefunden",
-    "noEventsDescription": "Keine Events entsprechen Ihren aktuellen Filtern",
-    "noTeams": "Keine Teams gefunden",
-    "noTeamsDescription": "In diesem Verein sind keine Teams verfügbar",
-    "createTeam": "Team erstellen",
-    "createTeamDescription": "Erstellen Sie ein neues Team für Ihren Verein",
-    "createFirstTeam": "Erstes Team erstellen",
-    "teamDetails": "Team-Details",
-    "openingTeam": "Öffne Team",
-    "players": "Spieler",
-    "winRate": "Gewinnrate",
-    "recentMatches": "letzte Spiele",
-    "created": "Erstellt",
-    "organizationalContent": "Nur organisatorische Inhalte"
   }
 } 
