@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import Header from '@/components/Header';
@@ -809,8 +811,12 @@ export default function CalendarScreen() {
         isVisible={isModalVisible}
         onBackdropPress={() => setModalVisible(false)}
         style={styles.modal}
+        avoidKeyboard={true}
       >
-        <View style={styles.modalContent}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContent}
+        >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t('calendar.schedule.title')}</Text>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
@@ -822,6 +828,7 @@ export default function CalendarScreen() {
             style={styles.modalScrollView}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.modalScrollContent}
           >
           <TextInput
             style={styles.input}
@@ -1150,7 +1157,7 @@ export default function CalendarScreen() {
             <Text style={styles.createButtonText}>{t('calendar.actions.schedule')}</Text>
           </TouchableOpacity>
           </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Response Details Modal for Trainers */}
@@ -1594,7 +1601,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Regular',
   },
   modalScrollView: {
-    maxHeight: '80%',
+    flex: 1,
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
   input: {
     fontSize: 16,
