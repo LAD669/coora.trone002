@@ -1,4 +1,5 @@
 import React from 'react';
+import { Stack } from 'expo-router';
 import { useAuth } from '@/contexts/AuthProvider';
 import { Redirect } from 'expo-router';
 import ManagerTabs from './ManagerTabs';

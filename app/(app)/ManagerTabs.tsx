@@ -1,6 +1,5 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Users, Home, Info, Settings } from 'lucide-react-native';
 
@@ -10,13 +9,10 @@ import ManagerCalendarScreen from './(tabs)/ManagerCalendar';
 import ManagerTeamsScreen from './(tabs)/ManagerTeams';
 import ManagerInfoHubScreen from './(tabs)/ManagerInfoHub';
 import SettingsScreen from './(tabs)/settings';
-import NotificationsScreen from './(tabs)/notifications';
-import EditProfileScreen from './EditProfileScreen';
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
 
-function ManagerTabNavigator() {
+export default function ManagerTabs() {
   const { t } = useTranslation('manager');
 
   return (
@@ -91,15 +87,5 @@ function ManagerTabNavigator() {
         }}
       />
     </Tab.Navigator>
-  );
-}
-
-export default function ManagerTabs() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="ManagerTabs" component={ManagerTabNavigator} />
-      <Stack.Screen name="notifications" component={NotificationsScreen} />
-      <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
-    </Stack.Navigator>
   );
 }
