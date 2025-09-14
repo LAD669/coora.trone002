@@ -169,7 +169,8 @@ describe('RBAC Query Tests', () => {
           id: 'player2',
           first_name: 'Jane',
           last_name: 'Doe',
-          role: 'player'
+          jersey_number: 10,
+          position: 'Forward'
         }
       ];
 
@@ -190,7 +191,8 @@ describe('RBAC Query Tests', () => {
           id: 'player1',
           first_name: 'John',
           last_name: 'Doe',
-          role: 'player'
+          jersey_number: 7,
+          position: 'Midfielder'
         }
       ];
 
@@ -215,6 +217,36 @@ describe('RBAC Query Tests', () => {
 
       // Verify sorting by first_name ascending
       expect(mockSupabase.from().select().eq().eq().eq().neq().order).toHaveBeenCalledWith('first_name', { ascending: true });
+    });
+
+    it('should log debug info when no eligibles found', async () => {
+      const mockDebugData = [
+        {
+          id: 'trainer1',
+          first_name: 'Coach',
+          last_name: 'Smith',
+          role: 'trainer',
+          team_id: 'team1',
+          active: true
+        }
+      ];
+
+      // Mock empty eligibles
+      mockSupabase.from().select().eq().eq().eq().neq().order.mockReturnValueOnce({
+        data: [],
+        error: null
+      });
+
+      // Mock debug query for all team members
+      mockSupabase.from().select().eq.mockReturnValue({
+        data: mockDebugData,
+        error: null
+      });
+
+      await getTeamPlayersForPOM('team1', 'player1');
+
+      // Verify debug query was called
+      expect(mockSupabase.from().select().eq).toHaveBeenCalledWith('team_id', 'team1');
     });
   });
 
