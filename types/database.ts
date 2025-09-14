@@ -114,6 +114,7 @@ export interface Database {
           height_cm: number | null
           weight_kg: number | null
           expo_push_token: string | null
+          active: boolean
           created_at: string
           updated_at: string
         }
@@ -134,6 +135,7 @@ export interface Database {
           height_cm?: number | null
           weight_kg?: number | null
           expo_push_token?: string | null
+          active?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -154,6 +156,7 @@ export interface Database {
           height_cm?: number | null
           weight_kg?: number | null
           expo_push_token?: string | null
+          active?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -627,38 +630,6 @@ export interface Database {
           sent?: boolean
           read_by?: Json
           created_at?: string
-        }
-      }
-      team_members: {
-        Row: {
-          id: string
-          team_id: string
-          user_id: string
-          team_role: 'trainer' | 'player' | 'admin'
-          active: boolean
-          joined_at: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          team_id: string
-          user_id: string
-          team_role: 'trainer' | 'player' | 'admin'
-          active?: boolean
-          joined_at?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          team_id?: string
-          user_id?: string
-          team_role?: 'trainer' | 'player' | 'admin'
-          active?: boolean
-          joined_at?: string
-          created_at?: string
-          updated_at?: string
         }
       }
       pom_votes: {

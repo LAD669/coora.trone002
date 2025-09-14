@@ -15,7 +15,6 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamGoals, createTeamGoal, getTeamStats, getClubStats, getTeamUsers, getTeamEvents, submitMatchResult } from '@/lib/supabase';
-import { sendPushNotification } from '@/lib/notifications';
 
 // Default stats structure - always visible with zero values
 const defaultStats = [
@@ -1065,6 +1064,25 @@ export default function DashboardScreen() {
             </View>
           </View>
         )}
+
+        {/* POM Voting Section */}
+        <View style={styles.section}>
+          <TouchableOpacity 
+            style={styles.pomButton}
+            onPress={() => router.push('/POMVotingScreen')}
+          >
+            <View style={styles.pomIcon}>
+              <Trophy size={20} color="#FFD700" strokeWidth={2} />
+            </View>
+            <View style={styles.pomContent}>
+              <Text style={styles.pomTitle}>POM Voting</Text>
+              <Text style={styles.pomSubtitle}>
+                Vote for Player of the Match • 1st: 100P • 2nd: 50P • 3rd: 25P
+              </Text>
+            </View>
+            <ChevronRight size={20} color="#8E8E93" strokeWidth={1.5} />
+          </TouchableOpacity>
+        </View>
 
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
@@ -2379,7 +2397,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Urbanist-Medium',
   },
-  potmButton: {
+  pomButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
@@ -2395,28 +2413,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
-    marginTop: 16,
   },
-  potmIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFD700',
+  pomIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFBF0',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
-  potmContent: {
+  pomContent: {
     flex: 1,
   },
-  potmTitle: {
-    fontSize: 18,
+  pomTitle: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'Urbanist-SemiBold',
     marginBottom: 4,
   },
-  potmSubtitle: {
+  pomSubtitle: {
     fontSize: 14,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',

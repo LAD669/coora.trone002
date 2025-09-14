@@ -1,14 +1,14 @@
--- Add active field to team_members table and create necessary indexes
+-- Add active field to users table and create necessary indexes
 -- This migration fixes RBAC issues by adding proper filtering capabilities
 
--- Add active field to team_members table
-ALTER TABLE team_members ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true;
+-- Add active field to users table (for team membership status)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true;
 
 -- Create index for efficient team member queries
-CREATE INDEX IF NOT EXISTS idx_team_members_team_id_role ON team_members(team_id, team_role);
+CREATE INDEX IF NOT EXISTS idx_users_team_id_role ON users(team_id, role);
 
 -- Create index for active team members
-CREATE INDEX IF NOT EXISTS idx_team_members_active ON team_members(active) WHERE active = true;
+CREATE INDEX IF NOT EXISTS idx_users_active ON users(active) WHERE active = true;
 
 -- Create team_users_view for efficient team member queries
 CREATE OR REPLACE VIEW team_users_view AS
@@ -25,14 +25,13 @@ SELECT
   u.weight_kg,
   u.created_at,
   u.updated_at,
-  tm.id as team_member_id,
-  tm.team_role,
-  tm.joined_at,
-  tm.team_id,
-  tm.active
+  u.id as team_member_id,
+  u.role as team_role,
+  u.created_at as joined_at,
+  u.team_id,
+  u.active
 FROM users u
-JOIN team_members tm ON tm.user_id = u.id
-WHERE tm.active = true;
+WHERE u.active = true AND u.team_id IS NOT NULL;
 
 -- Grant access to the view
 GRANT SELECT ON team_users_view TO authenticated;

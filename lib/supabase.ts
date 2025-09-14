@@ -1347,59 +1347,50 @@ export const getPOMLeaderboard = async (teamId: string, limit: number = 10) => {
   }
 };
 
-// Direct function to get team players from team_members for POM voting
+// Direct function to get team players from users table for POM voting
 // Excludes self and trainers, only returns active players
 export const getTeamPlayersForPOM = async (teamId: string, currentUserId?: string) => {
-  console.log('🏆 Getting team players for POM from team_members:', { teamId, currentUserId });
+  console.log('🏆 Getting team players for POM from users table:', { teamId, currentUserId });
 
   try {
     let query = supabase
-      .from('team_members')
-      .select(`
-        user_id,
-        users!inner(
-          id,
-          first_name,
-          last_name,
-          name,
-          position
-        )
-      `)
+      .from('users')
+      .select('*')
       .eq('team_id', teamId)
-      .eq('team_role', 'player')
+      .eq('role', 'player')
       .eq('active', true);
 
     // Exclude current user if provided
     if (currentUserId) {
-      query = query.neq('user_id', currentUserId);
+      query = query.neq('id', currentUserId);
     }
 
-    const { data, error } = await query.order('users.first_name', { ascending: true });
+    const { data, error } = await query.order('first_name', { ascending: true });
 
     if (error) {
       console.error('❌ Error getting team players for POM:', error);
       throw error;
     }
 
-    console.log('🔍 POM - Raw team_members data:', {
+    console.log('🔍 POM - Raw users data:', {
       totalPlayers: data?.length || 0,
       samplePlayer: data?.[0],
       allPlayers: data?.map(p => ({
-        id: p.users.id,
-        name: p.users.name,
-        first_name: p.users.first_name,
-        last_name: p.users.last_name,
-        position: p.users.position
+        id: p.id,
+        name: p.name,
+        first_name: p.first_name,
+        last_name: p.last_name,
+        position: p.position
       }))
     });
 
     // Transform to Player interface
     const players = (data || []).map(p => ({
-      id: p.users.id,
-      name: p.users.name || `${p.users.first_name || ''} ${p.users.last_name || ''}`.trim() || 'Unknown Player',
-      first_name: p.users.first_name || '',
-      last_name: p.users.last_name || '',
-      position: p.users.position || undefined,
+      id: p.id,
+      name: p.name || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown Player',
+      first_name: p.first_name || '',
+      last_name: p.last_name || '',
+      position: p.position || undefined,
     }));
 
     console.log('🔍 POM - Transformed players:', {
@@ -1424,32 +1415,32 @@ export const getTrainerTeamPlayers = async (trainerId: string): Promise<Transfor
   console.log('🔍 getTrainerTeamPlayers called for trainerId:', trainerId);
 
   try {
-    // First get all team IDs where this user is a trainer
-    const { data: trainerTeams, error: trainerError } = await supabase
-      .from('team_members')
+    // First get the trainer's team ID
+    const { data: trainer, error: trainerError } = await supabase
+      .from('users')
       .select('team_id')
-      .eq('user_id', trainerId)
-      .eq('team_role', 'trainer')
-      .eq('active', true);
+      .eq('id', trainerId)
+      .eq('role', 'trainer')
+      .eq('active', true)
+      .single();
 
     if (trainerError) {
-      console.error('❌ Error getting trainer teams:', trainerError);
+      console.error('❌ Error getting trainer team:', trainerError);
       throw trainerError;
     }
 
-    if (!trainerTeams || trainerTeams.length === 0) {
-      console.log('⚠️ No teams found for trainer:', trainerId);
+    if (!trainer || !trainer.team_id) {
+      console.log('⚠️ No team found for trainer:', trainerId);
       return [];
     }
 
-    const teamIds = trainerTeams.map(t => t.team_id);
-    console.log('🔍 Trainer team IDs:', teamIds);
+    console.log('🔍 Trainer team ID:', trainer.team_id);
 
-    // Get all players from these teams
+    // Get all players from this team
     const { data, error } = await supabase
       .from('team_users_view')
       .select('*')
-      .in('team_id', teamIds)
+      .eq('team_id', trainer.team_id)
       .eq('team_role', 'player')
       .eq('active', true)
       .order('first_name', { ascending: true });
@@ -1483,7 +1474,7 @@ export const getTrainerTeamPlayers = async (trainerId: string): Promise<Transfor
 
     console.log('🔍 getTrainerTeamPlayers - Final data:', {
       trainerId,
-      teamCount: teamIds.length,
+      teamId: trainer.team_id,
       playerCount: transformedData.length,
       samplePlayer: transformedData[0] ? {
         id: transformedData[0].id,
