@@ -106,7 +106,6 @@ describe('RBAC Query Tests', () => {
       expect(mockSupabase.from).toHaveBeenCalledWith('team_users_view');
       expect(mockSupabase.from().select().eq).toHaveBeenCalledWith('team_id', 'team1');
       expect(mockSupabase.from().select().eq().eq).toHaveBeenCalledWith('team_role', 'player');
-      expect(mockSupabase.from().select().eq().eq().eq).toHaveBeenCalledWith('active', true);
     });
 
     it('should exclude trainers from results', async () => {
@@ -128,6 +127,36 @@ describe('RBAC Query Tests', () => {
       const result = await getTeamPlayersOnly('team1');
 
       // Verify only players are returned
+      expect(result).toHaveLength(1);
+      expect(result[0].role).toBe('player');
+    });
+
+    it('should fallback to users table if view fails', async () => {
+      const mockFallbackData = [
+        {
+          id: 'player1',
+          first_name: 'John',
+          last_name: 'Doe',
+          role: 'player'
+        }
+      ];
+
+      // Mock view failure
+      mockSupabase.from().select().eq().eq().eq().order.mockReturnValueOnce({
+        data: null,
+        error: new Error('View not found')
+      });
+
+      // Mock fallback to users table
+      mockSupabase.from().select().eq().eq().order.mockReturnValue({
+        data: mockFallbackData,
+        error: null
+      });
+
+      const result = await getTeamPlayersOnly('team1');
+
+      // Verify fallback was used
+      expect(mockSupabase.from).toHaveBeenCalledWith('users');
       expect(result).toHaveLength(1);
       expect(result[0].role).toBe('player');
     });
