@@ -1411,13 +1411,14 @@ export const getTeamPlayersForPOM = async (teamId: string, currentUserId?: strin
   console.log('🏆 Getting team players for POM from users table:', { teamId, currentUserId });
 
   try {
+    // Build query to get users with role=PLAYER in the specified team
     let query = supabase
       .from('users')
-      .select('*')
+      .select('id, first_name, last_name, jersey_number, position')
       .eq('team_id', teamId)
       .eq('role', 'player');
 
-    // Try to filter by active field if it exists, otherwise skip
+    // Try to filter by active field if it exists
     try {
       query = query.eq('active', true);
     } catch (activeError) {
@@ -1436,14 +1437,40 @@ export const getTeamPlayersForPOM = async (teamId: string, currentUserId?: strin
       throw error;
     }
 
+    // Debug logging for eligibles count
+    console.log('🔍 POM eligibles count:', data?.length || 0);
+
+    // If no eligibles found, log all team members for debugging
+    if (!data || data.length === 0) {
+      console.log('⚠️ No eligibles found, checking all team members...');
+      
+      const { data: allTeamMembers, error: debugError } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, role, team_id, active')
+        .eq('team_id', teamId);
+
+      if (!debugError && allTeamMembers) {
+        console.log('🔍 All team members for debugging:', {
+          teamId,
+          totalMembers: allTeamMembers.length,
+          members: allTeamMembers.map(m => ({
+            id: m.id,
+            name: `${m.first_name || ''} ${m.last_name || ''}`.trim(),
+            role: m.role,
+            active: m.active
+          }))
+        });
+      }
+    }
+
     console.log('🔍 POM - Raw users data:', {
       totalPlayers: data?.length || 0,
       samplePlayer: data?.[0],
       allPlayers: data?.map(p => ({
         id: p.id,
-        name: p.name,
         first_name: p.first_name,
         last_name: p.last_name,
+        jersey_number: p.jersey_number,
         position: p.position
       }))
     });
@@ -1451,7 +1478,7 @@ export const getTeamPlayersForPOM = async (teamId: string, currentUserId?: strin
     // Transform to Player interface
     const players = (data || []).map(p => ({
       id: p.id,
-      name: p.name || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown Player',
+      name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown Player',
       first_name: p.first_name || '',
       last_name: p.last_name || '',
       position: p.position || undefined,
