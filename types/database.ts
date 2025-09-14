@@ -635,6 +635,7 @@ export interface Database {
           team_id: string
           user_id: string
           team_role: 'trainer' | 'player' | 'admin'
+          active: boolean
           joined_at: string
           created_at: string
           updated_at: string
@@ -644,6 +645,7 @@ export interface Database {
           team_id: string
           user_id: string
           team_role: 'trainer' | 'player' | 'admin'
+          active?: boolean
           joined_at?: string
           created_at?: string
           updated_at?: string
@@ -653,7 +655,119 @@ export interface Database {
           team_id?: string
           user_id?: string
           team_role?: 'trainer' | 'player' | 'admin'
+          active?: boolean
           joined_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      pom_votes: {
+        Row: {
+          id: string
+          event_id: string
+          voter_id: string
+          first_place_player_id: string | null
+          second_place_player_id: string | null
+          third_place_player_id: string | null
+          team_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          voter_id: string
+          first_place_player_id?: string | null
+          second_place_player_id?: string | null
+          third_place_player_id?: string | null
+          team_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          voter_id?: string
+          first_place_player_id?: string | null
+          second_place_player_id?: string | null
+          third_place_player_id?: string | null
+          team_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      pom_results: {
+        Row: {
+          id: string
+          event_id: string
+          team_id: string
+          total_votes: number
+          voting_closed: boolean
+          closed_by: string | null
+          closed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          team_id: string
+          total_votes?: number
+          voting_closed?: boolean
+          closed_by?: string | null
+          closed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          team_id?: string
+          total_votes?: number
+          voting_closed?: boolean
+          closed_by?: string | null
+          closed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      pom_player_standings: {
+        Row: {
+          id: string
+          event_id: string
+          player_id: string
+          team_id: string
+          first_place_votes: number
+          second_place_votes: number
+          third_place_votes: number
+          total_points: number
+          final_position: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          player_id: string
+          team_id: string
+          first_place_votes?: number
+          second_place_votes?: number
+          third_place_votes?: number
+          total_points?: number
+          final_position?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          player_id?: string
+          team_id?: string
+          first_place_votes?: number
+          second_place_votes?: number
+          third_place_votes?: number
+          total_points?: number
+          final_position?: number | null
           created_at?: string
           updated_at?: string
         }
