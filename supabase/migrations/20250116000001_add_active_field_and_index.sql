@@ -10,8 +10,11 @@ CREATE INDEX IF NOT EXISTS idx_users_team_id_role ON users(team_id, role);
 -- Create index for active team members
 CREATE INDEX IF NOT EXISTS idx_users_active ON users(active) WHERE active = true;
 
+-- Drop existing view if it exists
+DROP VIEW IF EXISTS team_users_view;
+
 -- Create team_users_view for efficient team member queries
-CREATE OR REPLACE VIEW team_users_view AS
+CREATE VIEW team_users_view AS
 SELECT 
   u.id,
   u.first_name,
