@@ -309,57 +309,115 @@ export const getTeamUsers = async (teamId: string): Promise<TransformedTeamMembe
   return sortedData;
 };
 
-// New function specifically for Playerboard - only returns PLAYERs with active=true
+// New function specifically for Playerboard - only returns PLAYERs
 export const getTeamPlayersOnly = async (teamId: string): Promise<TransformedTeamMember[]> => {
   console.log('🔍 getTeamPlayersOnly called for teamId:', teamId);
   
-  const { data, error } = await supabase
-    .from('team_users_view')
-    .select('*')
-    .eq('team_id', teamId)
-    .eq('team_role', 'player')
-    .eq('active', true)
-    .order('first_name', { ascending: true });
+  try {
+    // Try to use team_users_view first, fallback to users table
+    let query = supabase
+      .from('team_users_view')
+      .select('*')
+      .eq('team_id', teamId)
+      .eq('team_role', 'player');
 
-  if (error) {
+    // Try to filter by active field if it exists
+    try {
+      query = query.eq('active', true);
+    } catch (activeError) {
+      console.log('⚠️ Active field not available in view, skipping active filter');
+    }
+
+    const { data, error } = await query.order('first_name', { ascending: true });
+
+    if (error) {
+      console.log('⚠️ team_users_view not available, falling back to users table');
+      
+      // Fallback to users table
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('team_id', teamId)
+        .eq('role', 'player')
+        .order('first_name', { ascending: true });
+
+      if (fallbackError) {
+        console.error('❌ Error fetching team players from users table:', fallbackError);
+        throw fallbackError;
+      }
+
+      // Transform fallback data
+      const transformedData: TransformedTeamMember[] = (fallbackData || [])
+        .map(user => ({
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          position: user.position,
+          role: user.role,
+          jersey_number: user.jersey_number,
+          phone_number: user.phone_number,
+          date_of_birth: user.date_of_birth,
+          height_cm: user.height_cm,
+          weight_kg: user.weight_kg,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          team_member_id: user.id,
+          joined_at: user.created_at
+        }));
+
+      console.log('🔍 getTeamPlayersOnly - Fallback data:', {
+        teamId,
+        playerCount: transformedData.length,
+        samplePlayer: transformedData[0] ? {
+          id: transformedData[0].id,
+          first_name: transformedData[0].first_name,
+          last_name: transformedData[0].last_name,
+          role: transformedData[0].role
+        } : null
+      });
+
+      return transformedData;
+    }
+
+    console.log('🔍 Raw players data from view:', data?.length || 0);
+
+    // Transform the data to include role field based on team_role
+    const transformedData: TransformedTeamMember[] = (data || [])
+      .map(user => ({
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        position: user.position,
+        role: user.team_role,
+        jersey_number: user.jersey_number,
+        phone_number: user.phone_number,
+        date_of_birth: user.date_of_birth,
+        height_cm: user.height_cm,
+        weight_kg: user.weight_kg,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        team_member_id: user.team_member_id,
+        joined_at: user.joined_at
+      }));
+    
+    console.log('🔍 getTeamPlayersOnly - Final data:', {
+      teamId,
+      playerCount: transformedData.length,
+      samplePlayer: transformedData[0] ? {
+        id: transformedData[0].id,
+        first_name: transformedData[0].first_name,
+        last_name: transformedData[0].last_name,
+        role: transformedData[0].role
+      } : null
+    });
+    
+    return transformedData;
+  } catch (error) {
     console.error('❌ Error fetching team players:', error);
-    throw error;
+    return [];
   }
-
-  console.log('🔍 Raw players data from view:', data?.length || 0);
-
-  // Transform the data to include role field based on team_role
-  const transformedData: TransformedTeamMember[] = (data || [])
-    .map(user => ({
-      id: user.id,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      position: user.position,
-      role: user.team_role,
-      jersey_number: user.jersey_number,
-      phone_number: user.phone_number,
-      date_of_birth: user.date_of_birth,
-      height_cm: user.height_cm,
-      weight_kg: user.weight_kg,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-      team_member_id: user.team_member_id,
-      joined_at: user.joined_at
-    }));
-  
-  console.log('🔍 getTeamPlayersOnly - Final data:', {
-    teamId,
-    playerCount: transformedData.length,
-    samplePlayer: transformedData[0] ? {
-      id: transformedData[0].id,
-      first_name: transformedData[0].first_name,
-      last_name: transformedData[0].last_name,
-      role: transformedData[0].role
-    } : null
-  });
-  
-  return transformedData;
 };
 
 export const getAllViewTeamUsers = async (): Promise<any[]> => {
@@ -1357,8 +1415,14 @@ export const getTeamPlayersForPOM = async (teamId: string, currentUserId?: strin
       .from('users')
       .select('*')
       .eq('team_id', teamId)
-      .eq('role', 'player')
-      .eq('active', true);
+      .eq('role', 'player');
+
+    // Try to filter by active field if it exists, otherwise skip
+    try {
+      query = query.eq('active', true);
+    } catch (activeError) {
+      console.log('⚠️ Active field not available, skipping active filter');
+    }
 
     // Exclude current user if provided
     if (currentUserId) {
@@ -1416,13 +1480,20 @@ export const getTrainerTeamPlayers = async (trainerId: string): Promise<Transfor
 
   try {
     // First get the trainer's team ID
-    const { data: trainer, error: trainerError } = await supabase
+    let trainerQuery = supabase
       .from('users')
       .select('team_id')
       .eq('id', trainerId)
-      .eq('role', 'trainer')
-      .eq('active', true)
-      .single();
+      .eq('role', 'trainer');
+
+    // Try to filter by active field if it exists
+    try {
+      trainerQuery = trainerQuery.eq('active', true);
+    } catch (activeError) {
+      console.log('⚠️ Active field not available, skipping active filter for trainer');
+    }
+
+    const { data: trainer, error: trainerError } = await trainerQuery.single();
 
     if (trainerError) {
       console.error('❌ Error getting trainer team:', trainerError);
@@ -1436,18 +1507,71 @@ export const getTrainerTeamPlayers = async (trainerId: string): Promise<Transfor
 
     console.log('🔍 Trainer team ID:', trainer.team_id);
 
-    // Get all players from this team
-    const { data, error } = await supabase
+    // Try to get players from team_users_view first, fallback to users table
+    let playersQuery = supabase
       .from('team_users_view')
       .select('*')
       .eq('team_id', trainer.team_id)
-      .eq('team_role', 'player')
-      .eq('active', true)
-      .order('first_name', { ascending: true });
+      .eq('team_role', 'player');
+
+    // Try to filter by active field if it exists
+    try {
+      playersQuery = playersQuery.eq('active', true);
+    } catch (activeError) {
+      console.log('⚠️ Active field not available in view, skipping active filter');
+    }
+
+    const { data, error } = await playersQuery.order('first_name', { ascending: true });
 
     if (error) {
-      console.error('❌ Error getting trainer team players:', error);
-      throw error;
+      console.log('⚠️ team_users_view not available, falling back to users table');
+      
+      // Fallback to users table
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('team_id', trainer.team_id)
+        .eq('role', 'player')
+        .order('first_name', { ascending: true });
+
+      if (fallbackError) {
+        console.error('❌ Error getting trainer team players from users table:', fallbackError);
+        throw fallbackError;
+      }
+
+      // Transform fallback data
+      const transformedData: TransformedTeamMember[] = (fallbackData || [])
+        .map(user => ({
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          position: user.position,
+          role: user.role,
+          jersey_number: user.jersey_number,
+          phone_number: user.phone_number,
+          date_of_birth: user.date_of_birth,
+          height_cm: user.height_cm,
+          weight_kg: user.weight_kg,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          team_member_id: user.id,
+          joined_at: user.created_at
+        }));
+
+      console.log('🔍 getTrainerTeamPlayers - Fallback data:', {
+        trainerId,
+        teamId: trainer.team_id,
+        playerCount: transformedData.length,
+        samplePlayer: transformedData[0] ? {
+          id: transformedData[0].id,
+          first_name: transformedData[0].first_name,
+          last_name: transformedData[0].last_name,
+          role: transformedData[0].role
+        } : null
+      });
+
+      return transformedData;
     }
 
     console.log('🔍 Raw trainer team players data:', data?.length || 0);
