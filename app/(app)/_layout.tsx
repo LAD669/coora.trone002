@@ -41,10 +41,11 @@ function AppContent() {
   console.log('AppContent: Valid session found, rendering app');
 
   // Check if user is a manager and redirect accordingly
-  if (user.role === 'manager') {
-    console.log('AppContent: User is a manager, redirecting to manager tabs');
-    return <Redirect href="/(app)/manager-tabs" />;
-  }
+  // Temporarily disabled to fix infinite loop
+  // if (user.role === 'manager') {
+  //   console.log('AppContent: User is a manager, redirecting to manager tabs');
+  //   return <Redirect href="/(app)/manager-tabs" />;
+  // }
 
   // Render Stack with all screens when session exists (for non-managers)
   return (
