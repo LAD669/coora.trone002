@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { MessageSquare, Calendar, Users, ChartBar as BarChart3, FileText, Settings, Bell } from 'lucide-react-native';
+import { MessageSquare, Calendar, Users, ChartBar as BarChart3 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 
@@ -60,42 +60,6 @@ export default function TabLayout() {
         name="playerboard"
         options={{
           title: tabsT('playerboard'),
-          tabBarIcon: ({ size, color }) => (
-            <Users size={24} color={color} strokeWidth={1.5} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="documents"
-        options={{
-          title: 'Documents',
-          tabBarIcon: ({ size, color }) => (
-            <FileText size={24} color={color} strokeWidth={1.5} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="chat"
-        options={{
-          title: 'Chat',
-          tabBarIcon: ({ size, color }) => (
-            <MessageSquare size={24} color={color} strokeWidth={1.5} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="calendar-alt"
-        options={{
-          title: 'Calendar',
-          tabBarIcon: ({ size, color }) => (
-            <Calendar size={24} color={color} strokeWidth={1.5} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="people"
-        options={{
-          title: 'People',
           tabBarIcon: ({ size, color }) => (
             <Users size={24} color={color} strokeWidth={1.5} />
           ),
