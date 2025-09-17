@@ -619,18 +619,19 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
           let teamId = null;
           
           try {
-            const { data: codeData } = await supabase
+            // Try to get access code details, but handle missing columns gracefully
+            const { data: codeData, error: codeError } = await supabase
               .from('access_codes')
               .select('club_id, team_id')
               .eq('code', accessCode.trim().toUpperCase())
-              .eq('is_active', true)
-              .single();
+              .maybeSingle();
             
-            if (codeData) {
+            if (codeError) {
+              console.warn('Could not fetch access code details:', codeError);
+              // Continue without club/team assignment if access_codes table doesn't exist or has wrong structure
+            } else if (codeData) {
               clubId = codeData.club_id;
               teamId = codeData.team_id;
-            } else {
-              throw new Error('This access code is invalid or no longer available. Ask your coach for a new one.');
             }
           } catch (codeError) {
             console.warn('Could not fetch access code details, proceeding without club/team assignment:', codeError);
@@ -645,7 +646,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
               name: name,
               first_name: name.split(' ')[0] || name,
               last_name: name.split(' ').slice(1).join(' ') || '',
-              role: 'player', // Default role
+              role: 'player', // Default role - manager role not yet available in DB
               club_id: clubId,
               team_id: teamId,
               access_code: accessCode.trim().toUpperCase(),

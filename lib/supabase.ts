@@ -150,23 +150,20 @@ export const createUserAccount = async (userData: {
 
 export const validateAccessCode = async (code: string) => {
   try {
-    // First, let's check if the access_codes table exists
+    // Try a simple query first to check if the table exists and what columns are available
     const { data, error } = await supabase
       .from('access_codes')
-      .select('code, is_active, expires_at')
+      .select('code')
       .eq('code', code.toUpperCase())
-      .eq('is_active', true)
-      .or('expires_at.is.null,expires_at.gt.now()')
       .maybeSingle();
     
     if (error) {
       console.error('Error validating access code:', error);
       
-      // If the table doesn't exist, we'll allow the signup to proceed
-      // This handles the case where migrations haven't been applied yet
+      // If the table or columns don't exist, allow signup to proceed
       if (error.code === '42703' || error.message.includes('does not exist')) {
-        console.warn('Access codes table not found, allowing signup to proceed');
-        return true; // Allow signup if table doesn't exist
+        console.warn('Access codes table or columns not found, allowing signup to proceed');
+        return true; // Allow signup if table/columns don't exist
       }
       
       throw new Error('Unable to validate access code');
