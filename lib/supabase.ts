@@ -76,49 +76,71 @@ export const restoreSession = async () => {
 };
 
 export const getUserProfile = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('users')
-    .select(`
-      id,
-      email,
-      name,
-      first_name,
-      last_name,
-      role,
-      team_id,
-      club_id,
-      phone_number,
-      position,
-      height_cm,
-      weight_kg,
-      jersey_number,
-      date_of_birth,
-      created_at,
-      updated_at,
-      teams:team_id (
-        id,
-        name,
-        sport,
-        color,
-        club_id
-      ),
-      clubs:club_id (
-        id,
-        name,
-        description,
-        logo_url
-      )
-    `)
-    .eq('id', userId)
-    .maybeSingle();
-  
-  if (error) throw error;
-  
-  if (!data) {
-    throw new Error('User profile not found. Please contact your administrator.');
+  try {
+    // First try the safe function that bypasses RLS
+    const { data, error } = await supabase
+      .rpc('get_user_profile_safe', { user_id: userId });
+    
+    if (error) {
+      console.error('Error with safe user profile function:', error);
+      // Fallback to direct query if safe function doesn't exist
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('users')
+        .select(`
+          id,
+          email,
+          name,
+          first_name,
+          last_name,
+          role,
+          team_id,
+          club_id,
+          phone_number,
+          position,
+          height_cm,
+          weight_kg,
+          jersey_number,
+          date_of_birth,
+          created_at,
+          updated_at,
+          teams:team_id (
+            id,
+            name,
+            sport,
+            color,
+            club_id
+          ),
+          clubs:club_id (
+            id,
+            name,
+            description,
+            logo_url
+          )
+        `)
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (fallbackError) {
+        console.error('Fallback query also failed:', fallbackError);
+        throw fallbackError;
+      }
+      
+      if (!fallbackData) {
+        throw new Error('User profile not found. Please contact your administrator.');
+      }
+      
+      return fallbackData;
+    }
+    
+    if (!data || data.length === 0) {
+      throw new Error('User profile not found. Please contact your administrator.');
+    }
+    
+    return data[0];
+  } catch (error) {
+    console.error('Error getting user profile:', error);
+    throw error;
   }
-  
-  return data;
 };
 
 export const getClub = async (clubId: string) => {
