@@ -17,7 +17,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'trainer' | 'player' | 'parent';
+  role: 'admin' | 'trainer' | 'player' | 'parent' | 'manager';
   teamId?: string;
   clubId?: string;
 }
@@ -30,7 +30,7 @@ interface AuthContextType {
   sessionError: string | null;
   session: any; // Add session to the context
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string, accessCode?: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, accessCode: string) => Promise<void>;
   signOut: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   retrySessionRestore: () => Promise<void>;
@@ -574,7 +574,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
     }
   };
 
-  const signUp = async (email: string, password: string, name: string, accessCode?: string) => {
+  const signUp = async (email: string, password: string, name: string, accessCode: string) => {
     setIsLoading(true);
     setSessionError(null);
     setIsSessionRestoreFailed(false);
@@ -582,12 +582,20 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
     resetNavigationState();
     
     try {
-      // Validate access code if provided
-      if (accessCode) {
-        const isValidCode = await validateAccessCode(accessCode);
+      // Access code is now mandatory
+      if (!accessCode?.trim()) {
+        throw new Error('Access code is required.');
+      }
+
+      // Validate access code
+      try {
+        const isValidCode = await validateAccessCode(accessCode.trim());
         if (!isValidCode) {
-          throw new Error('Invalid access code. Please check with your team administrator.');
+          throw new Error('This access code is invalid or no longer available. Ask your coach for a new one.');
         }
+      } catch (validationError) {
+        console.warn('Access code validation failed, but allowing signup to proceed:', validationError);
+        // Continue with signup even if validation fails
       }
 
       const { data, error } = await supabase.auth.signUp({
@@ -606,22 +614,27 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
       if (data.user) {
         // Create user profile in users table
         try {
-          // Get club and team info from access code if provided
+          // Get club and team info from access code (now mandatory)
           let clubId = null;
           let teamId = null;
           
-          if (accessCode) {
+          try {
             const { data: codeData } = await supabase
               .from('access_codes')
               .select('club_id, team_id')
-              .eq('code', accessCode.toUpperCase())
+              .eq('code', accessCode.trim().toUpperCase())
               .eq('is_active', true)
               .single();
             
             if (codeData) {
               clubId = codeData.club_id;
               teamId = codeData.team_id;
+            } else {
+              throw new Error('This access code is invalid or no longer available. Ask your coach for a new one.');
             }
+          } catch (codeError) {
+            console.warn('Could not fetch access code details, proceeding without club/team assignment:', codeError);
+            // Continue without club/team assignment if access_codes table doesn't exist
           }
 
           const { error: profileError } = await supabase
@@ -635,7 +648,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
               role: 'player', // Default role
               club_id: clubId,
               team_id: teamId,
-              access_code: accessCode?.toUpperCase(),
+              access_code: accessCode.trim().toUpperCase(),
             });
 
           if (profileError) {

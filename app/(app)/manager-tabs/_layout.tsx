@@ -5,16 +5,16 @@ import { Redirect } from 'expo-router';
 import { useSession, useAuth } from '@/contexts/AuthProvider';
 import { LoadingScreen } from '@/components/LoadingScreen';
 
-function AppContent() {
+function ManagerAppContent() {
   const { session, loading, userId } = useSession();
   const { user } = useAuth();
 
   // Add safety logging
-  console.log('AppContent: loading:', loading, 'session:', session === undefined ? 'initializing' : session ? 'exists' : 'null', 'userId:', userId, 'user:', user ? 'exists' : 'null');
+  console.log('ManagerAppContent: loading:', loading, 'session:', session === undefined ? 'initializing' : session ? 'exists' : 'null', 'userId:', userId, 'user:', user ? 'exists' : 'null');
 
   // Show loading state while still initializing
   if (session === undefined) {
-    console.log('AppContent: Session still initializing, showing loading screen');
+    console.log('ManagerAppContent: Session still initializing, showing loading screen');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
         <LoadingScreen message="Initializing COORA..." />
@@ -24,7 +24,7 @@ function AppContent() {
 
   // Show loading state while loading (additional safety)
   if (loading) {
-    console.log('AppContent: Showing loading state');
+    console.log('ManagerAppContent: Showing loading state');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
         <LoadingScreen message="Loading..." />
@@ -34,44 +34,53 @@ function AppContent() {
 
   // Redirect to auth login if no session (null) or no valid user
   if (session === null || !session?.user || !userId || !user?.id) {
-    console.log('AppContent: No valid session or user found, redirecting to login');
+    console.log('ManagerAppContent: No valid session or user found, redirecting to login');
     return <Redirect href="/(auth)/login" />;
   }
 
-  console.log('AppContent: Valid session found, rendering app');
-
-  // Check if user is a manager and redirect accordingly
-  if (user.role === 'manager') {
-    console.log('AppContent: User is a manager, redirecting to manager tabs');
-    return <Redirect href="/(app)/manager-tabs" />;
+  // Check if user is a manager
+  if (user.role !== 'manager') {
+    console.log('ManagerAppContent: User is not a manager, redirecting to regular tabs');
+    return <Redirect href="/(app)/(tabs)" />;
   }
 
-  // Render Stack with all screens when session exists (for non-managers)
+  console.log('ManagerAppContent: Valid manager session found, rendering manager app');
+
+  // Render Stack with manager screens when session exists and user is manager
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen 
-        name="(tabs)" 
+        name="manager-dashboard" 
         options={{ 
           headerShown: false,
           gestureEnabled: true 
         }} 
       />
       <Stack.Screen 
-        name="manager-tabs" 
+        name="manager-infohub" 
         options={{ 
           headerShown: false,
           gestureEnabled: true 
         }} 
       />
-      <Stack.Screen name="notifications" />
-      <Stack.Screen name="settings" />
-      <Stack.Screen name="EditProfileScreen" />
-      <Stack.Screen name="live-ticker" />
-      <Stack.Screen name="+not-found" />
+      <Stack.Screen 
+        name="manager-calendar" 
+        options={{ 
+          headerShown: false,
+          gestureEnabled: true 
+        }} 
+      />
+      <Stack.Screen 
+        name="manager-playerboard" 
+        options={{ 
+          headerShown: false,
+          gestureEnabled: true 
+        }} 
+      />
     </Stack>
   );
 }
 
-export default function AppLayout() {
-  return <AppContent />;
-} 
+export default function ManagerAppLayout() {
+  return <ManagerAppContent />;
+}

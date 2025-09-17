@@ -11,7 +11,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   email: string;
-  role: 'admin' | 'trainer' | 'player' | 'parent';
+  role: 'admin' | 'trainer' | 'player' | 'parent' | 'manager';
   teamId: string;
   clubId: string;
   accessCode?: string;

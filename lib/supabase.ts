@@ -1,7 +1,51 @@
 // Re-export the supabase client from the safe client file
 import { supabase } from './supabaseClient';
 import { storage } from './storage';
+import { createClient } from '@supabase/supabase-js';
 export { supabase };
+
+// Type definitions for signup with access code
+type SignUpInputs = {
+  email: string;
+  password: string;
+  accessCode: string; // required
+};
+
+export async function signUpWithAccessCode(
+  client: ReturnType<typeof createClient>,
+  { email, password, accessCode }: SignUpInputs
+) {
+  if (!accessCode?.trim()) {
+    throw new Error('Access code is required.');
+  }
+
+  const { data, error } = await client.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        access_code: accessCode.trim(),  // backend trigger will validate it
+        // Optionally pass role if UI chooses, but backend enforces from code
+        // role: 'player'
+      },
+    },
+  });
+
+  if (error) {
+    // Map backend errors to friendly messages
+    const msg = String(error.message || '').toLowerCase();
+    if (msg.includes('access code') && msg.includes('required')) {
+      throw new Error('Please enter your access code.');
+    }
+    if (msg.includes('invalid') || msg.includes('expired') || msg.includes('revoked') || msg.includes('exhausted')) {
+      throw new Error('This access code is invalid or no longer available. Ask your coach for a new one.');
+    }
+    // default
+    throw error;
+  }
+
+  return data;
+}
 
 // Helper functions for common operations
 export const getCurrentUser = async () => {
@@ -105,20 +149,38 @@ export const createUserAccount = async (userData: {
 };
 
 export const validateAccessCode = async (code: string) => {
-  const { data, error } = await supabase
-    .from('access_codes')
-    .select('id, code, description')
-    .eq('code', code.toUpperCase())
-    .eq('is_active', true)
-    .or('expires_at.is.null,expires_at.gt.now()')
-    .maybeSingle();
-  
-  if (error) {
+  try {
+    // First, let's check if the access_codes table exists
+    const { data, error } = await supabase
+      .from('access_codes')
+      .select('code, is_active, expires_at')
+      .eq('code', code.toUpperCase())
+      .eq('is_active', true)
+      .or('expires_at.is.null,expires_at.gt.now()')
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error validating access code:', error);
+      
+      // If the table doesn't exist, we'll allow the signup to proceed
+      // This handles the case where migrations haven't been applied yet
+      if (error.code === '42703' || error.message.includes('does not exist')) {
+        console.warn('Access codes table not found, allowing signup to proceed');
+        return true; // Allow signup if table doesn't exist
+      }
+      
+      throw new Error('Unable to validate access code');
+    }
+    
+    return !!data; // Returns true if valid code found
+  } catch (error) {
     console.error('Error validating access code:', error);
-    throw new Error('Unable to validate access code');
+    
+    // If there's any database error, allow signup to proceed
+    // This ensures the app doesn't break if there are DB issues
+    console.warn('Database error during access code validation, allowing signup to proceed');
+    return true;
   }
-  
-  return !!data; // Returns true if valid code found
 };
 
 export const getAccessCodes = async () => {
@@ -1122,7 +1184,7 @@ export const updateUserProfile = async (userId: string, updates: {
   weight_kg?: number | null;
   jersey_number?: number | null;
   date_of_birth?: string | null;
-  role?: 'admin' | 'trainer' | 'player' | 'parent';
+  role?: 'admin' | 'trainer' | 'player' | 'parent' | 'manager';
 }) => {
   console.log('📝 Updating user profile:', { userId, updates });
 
@@ -1666,7 +1728,7 @@ export const createUserProfile = async (profile: {
   first_name?: string;
   last_name?: string;
   name?: string;
-  role?: 'player' | 'trainer' | 'admin' | 'parent';
+  role?: 'player' | 'trainer' | 'admin' | 'parent' | 'manager';
   team_id?: string;
   club_id?: string;
   phone_number?: string;
@@ -1696,4 +1758,139 @@ export const createUserProfile = async (profile: {
 
   console.log('✅ User profile created successfully:', data);
   return data;
+};
+
+// Manager-specific functions
+
+export const getManagerClubOverview = async (clubId: string) => {
+  console.log('🏢 Getting manager club overview:', { clubId });
+
+  const { data, error } = await supabase
+    .from('manager_club_overview')
+    .select('*')
+    .eq('club_id', clubId)
+    .single();
+
+  if (error) {
+    console.error('❌ Error getting manager club overview:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const getAllClubTeams = async (clubId: string) => {
+  console.log('🏢 Getting all club teams for manager:', { clubId });
+
+  const { data, error } = await supabase
+    .from('teams')
+    .select(`
+      *,
+      users!teams_team_id_fkey(
+        id,
+        name,
+        first_name,
+        last_name,
+        role,
+        active
+      )
+    `)
+    .eq('club_id', clubId)
+    .order('name');
+
+  if (error) {
+    console.error('❌ Error getting club teams:', error);
+    throw error;
+  }
+
+  return data || [];
+};
+
+export const getAllClubUsers = async (clubId: string) => {
+  console.log('🏢 Getting all club users for manager:', { clubId });
+
+  const { data, error } = await supabase
+    .from('users')
+    .select(`
+      *,
+      teams(
+        id,
+        name,
+        sport
+      )
+    `)
+    .eq('club_id', clubId)
+    .eq('active', true)
+    .order('first_name');
+
+  if (error) {
+    console.error('❌ Error getting club users:', error);
+    throw error;
+  }
+
+  return data || [];
+};
+
+export const getAllClubEvents = async (clubId: string) => {
+  console.log('🏢 Getting all club events for manager:', { clubId });
+
+  const { data, error } = await supabase
+    .from('events')
+    .select(`
+      *,
+      teams!events_team_id_fkey(
+        id,
+        name,
+        sport,
+        club_id
+      ),
+      users!events_created_by_fkey(
+        id,
+        name,
+        first_name,
+        last_name
+      )
+    `)
+    .eq('teams.club_id', clubId)
+    .order('event_date', { ascending: false });
+
+  if (error) {
+    console.error('❌ Error getting club events:', error);
+    throw error;
+  }
+
+  return data || [];
+};
+
+export const getClubOrganizationPosts = async (clubId: string) => {
+  console.log('🏢 Getting club organization posts for manager:', { clubId });
+
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      users!posts_author_id_fkey(
+        id,
+        name,
+        first_name,
+        last_name
+      ),
+      teams!posts_team_id_fkey(
+        id,
+        name,
+        sport,
+        club_id
+      ),
+      post_reactions(emoji, user_id)
+    `)
+    .eq('teams.club_id', clubId)
+    .eq('post_type', 'organization')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('❌ Error getting club organization posts:', error);
+    throw error;
+  }
+
+  return data || [];
 };

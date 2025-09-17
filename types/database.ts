@@ -103,7 +103,7 @@ export interface Database {
           name: string
           first_name: string
           last_name: string
-          role: 'admin' | 'trainer' | 'player' | 'parent'
+          role: 'admin' | 'trainer' | 'player' | 'parent' | 'manager'
           team_id: string | null
           club_id: string
           access_code: string | null
@@ -124,7 +124,7 @@ export interface Database {
           name: string
           first_name: string
           last_name: string
-          role: 'admin' | 'trainer' | 'player' | 'parent'
+          role: 'admin' | 'trainer' | 'player' | 'parent' | 'manager'
           team_id?: string | null
           club_id: string
           access_code?: string | null
@@ -145,7 +145,7 @@ export interface Database {
           name?: string
           first_name?: string
           last_name?: string
-          role?: 'admin' | 'trainer' | 'player' | 'parent'
+          role?: 'admin' | 'trainer' | 'player' | 'parent' | 'manager'
           team_id?: string | null
           club_id?: string
           access_code?: string | null

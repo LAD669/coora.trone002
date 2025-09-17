@@ -69,7 +69,7 @@ export default function SignUpScreen() {
     if (!validateForm()) return;
 
     try {
-      await signUp(formData.email, formData.password, formData.name);
+      await signUp(formData.email, formData.password, formData.name, formData.accessCode);
     } catch (error) {
       Alert.alert(t('common.error'), error instanceof Error ? error.message : t('common.somethingWentWrong'));
     }
