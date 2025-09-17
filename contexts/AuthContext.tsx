@@ -646,7 +646,7 @@ export function AuthProvider({ children, isAppReady = false }: AuthProviderProps
               name: name,
               first_name: name.split(' ')[0] || name,
               last_name: name.split(' ').slice(1).join(' ') || '',
-              role: 'player', // Default role - manager role not yet available in DB
+              role: 'player', // Default role for new signups
               club_id: clubId,
               team_id: teamId,
               access_code: accessCode.trim().toUpperCase(),
