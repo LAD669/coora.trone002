@@ -20,6 +20,10 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "e2e:build": "detox build",
+    "e2e:test": "detox test",
+    "e2e:test:ios": "detox test --configuration ios.sim.debug",
+    "e2e:test:android": "detox test --configuration android.emu.debug",
     "clean": "rm -rf node_modules package-lock.json && npm install",
     "reset-cache": "expo start --clear",
     "doctor": "expo doctor"
@@ -74,6 +78,7 @@
     "@types/react": "~18.3.12",
     "@types/react-native": "^0.72.8",
     "cross-env": "^10.0.0",
+    "detox": "^20.41.2",
     "jest": "^30.1.3",
     "jest-expo": "^54.0.11",
     "typescript": "~5.8.3"
