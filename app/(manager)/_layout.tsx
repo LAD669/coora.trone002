@@ -5,8 +5,8 @@ export default function ManagerGuard() {
   const { session, isManager, sessionLoaded } = useAuth();
   const nav = useRootNavigationState();
   
-  // Don't render until session is loaded and router is ready to prevent flicker
-  if (!sessionLoaded || !nav?.key) return null;
+  // Don't render until session is loaded to prevent flicker
+  if (!sessionLoaded) return null;
   
   // Fallback: if role is unknown, redirect to app tabs
   if (session === null || !session?.user) {

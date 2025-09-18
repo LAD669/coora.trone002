@@ -5,8 +5,11 @@ export default function Index() {
   const { sessionLoaded, isManager } = useAuth();
   const nav = useRootNavigationState();
   
-  // Wait until router is ready and session is loaded
-  if (!sessionLoaded || !nav?.key) return null;
+  // Debug logging
+  console.log('Index: sessionLoaded =', sessionLoaded, 'nav?.key =', !!nav?.key, 'isManager =', isManager);
+  
+  // Wait until session is loaded (router readiness is optional for initial redirect)
+  if (!sessionLoaded) return null;
   
   return (
     <Redirect href={isManager ? "/(manager)/(tabs)/dashboard" : "/(app)/(tabs)/dashboard"} />

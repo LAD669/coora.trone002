@@ -19,9 +19,12 @@ function RootLayoutContent() {
   const nav = useRootNavigationState();
   const { handleDeepLink } = useDeepLinking();
 
+  // Debug logging
+  console.log('RootLayoutContent: sessionLoaded =', sessionLoaded, 'segments =', segments, 'isManager =', isManager);
+
   useEffect(() => {
-    // Wait until router is ready before performing redirects
-    if (!sessionLoaded || !nav?.key) return;
+    // Wait until session is loaded before performing redirects
+    if (!sessionLoaded) return;
     
     // Handle logout: redirect to app group when session becomes null
     if (session === null) {
@@ -45,7 +48,7 @@ function RootLayoutContent() {
       console.log('Non-manager user in manager section, redirecting to app tabs');
       router.replace("/(app)/(tabs)/dashboard");
     }
-  }, [sessionLoaded, session, isManager, segments, nav?.key]);
+  }, [sessionLoaded, session, isManager, segments]);
 
   // Handle deep linking
   useEffect(() => {
@@ -71,8 +74,8 @@ function RootLayoutContent() {
     };
   }, [handleDeepLink]);
 
-  // Don't render until session is loaded and router is ready to prevent flicker
-  if (!sessionLoaded || !nav?.key) {
+  // Don't render until session is loaded to prevent flicker
+  if (!sessionLoaded) {
     return null;
   }
 
