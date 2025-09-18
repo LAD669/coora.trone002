@@ -11,7 +11,6 @@ import {
   Alert,
 } from 'react-native';
 import Modal from 'react-native-modal';
-import Header from '@/components/Header';
 import PlayerCard from '@/components/PlayerCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
@@ -399,8 +398,6 @@ export default function PlayerboardScreen() {
 
   return (
     <View style={styles.container}>
-      <Header title="Players" />
-
       {/* Toggle Section - LINEUP VIEW DEACTIVATED */}
       {/* 
       <View style={styles.toggleContainer}>

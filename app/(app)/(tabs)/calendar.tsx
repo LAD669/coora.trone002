@@ -9,7 +9,6 @@ import {
   Alert,
 } from 'react-native';
 import Modal from 'react-native-modal';
-import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamEvents, createEvent, respondToEvent, getEventResponses } from '@/lib/supabase';
 import { Plus, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Check, X, Users, UserCheck, UserX, Clock as ClockIcon } from 'lucide-react-native';
@@ -525,8 +524,6 @@ export default function CalendarScreen() {
 
   return (
     <View style={styles.container}>
-      <Header title="Calendar" />
-      
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Calendar Header */}
         <View style={styles.calendarHeader}>

@@ -1,38 +1,59 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs } from 'expo-router';
 import { MessageSquare, Calendar, Users, ChartBar as BarChart3 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import TopBar from '@/components/TopBar';
 
 export default function TabLayout() {
   const { t: tabsT } = useTranslation('tabs');
+  const [activeTabTitle, setActiveTabTitle] = useState('Info-Hub');
+
+  const getTabTitle = (tabName: string) => {
+    switch (tabName) {
+      case 'index': return 'Info-Hub';
+      case 'dashboard': return 'Dashboard';
+      case 'calendar': return 'Kalender';
+      case 'playerboard': return 'Playerboard';
+      default: return 'Info-Hub';
+    }
+  };
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#1A1A1A',
-        tabBarInactiveTintColor: '#8E8E93',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 0,
-          paddingVertical: 12,
-          height: 64,
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-        tabBarShowLabel: false,
-        tabBarIconStyle: {
-          marginTop: 0,
-        },
-      }}
-      initialRouteName="index"
-    >
+    <View style={styles.container}>
+      <TopBar title={activeTabTitle} />
+      <Tabs
+        screenOptions={{
+          headerShown: false, // Hide default headers
+          tabBarActiveTintColor: '#1A1A1A',
+          tabBarInactiveTintColor: '#8E8E93',
+          tabBarStyle: {
+            backgroundColor: '#FFFFFF',
+            borderTopWidth: 0,
+            paddingVertical: 12,
+            height: 64,
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          tabBarShowLabel: false,
+          tabBarIconStyle: {
+            marginTop: 0,
+          },
+        }}
+        initialRouteName="index"
+        screenListeners={{
+          tabPress: (e) => {
+            const tabName = e.target?.split('-')[0];
+            if (tabName) {
+              setActiveTabTitle(getTabTitle(tabName));
+            }
+          },
+        }}
+      >
       <Tabs.Screen
         name="index"
         options={{
           title: tabsT('home'),
-          headerShown: false, // Remove top navigation completely
           tabBarIcon: ({ size, color }) => (
             <MessageSquare size={24} color={color} strokeWidth={1.5} />
           ),
@@ -67,8 +88,13 @@ export default function TabLayout() {
       />
 
     </Tabs>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
 });

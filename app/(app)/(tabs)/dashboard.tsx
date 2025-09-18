@@ -9,7 +9,6 @@ import {
   TextInput,
 } from 'react-native';
 import Modal from 'react-native-modal';
-import Header from '@/components/Header';
 import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleCheck, Circle, Plus, ChevronRight, Clock, X, CalendarDays, Zap } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -843,7 +842,6 @@ export default function DashboardScreen() {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <Header title={tabsT('dashboard')} />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{commonT('loading')}</Text>
         </View>
@@ -853,8 +851,6 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <Header title={tabsT('dashboard')} />
-      
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>

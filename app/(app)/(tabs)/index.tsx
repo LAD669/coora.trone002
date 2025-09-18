@@ -10,7 +10,6 @@ import {
   Alert,
 } from 'react-native';
 import Modal from 'react-native-modal';
-import Header from '@/components/Header';
 import { Plus, MoveHorizontal as MoreHorizontal, Heart, MessageCircle, Building2, Users, Smile } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
@@ -256,7 +255,6 @@ function InfohubScreenContent() {
   if (!user) {
     return (
       <View style={styles.container}>
-        <Header title={commonT('infoHub')} />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{commonT('loading')}</Text>
         </View>
