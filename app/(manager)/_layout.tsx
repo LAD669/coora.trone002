@@ -1,11 +1,12 @@
-import { Slot, Redirect } from 'expo-router';
+import { Slot, Redirect, useRootNavigationState } from 'expo-router';
 import { useAuth } from '@/contexts/AuthProvider';
 
 export default function ManagerGuard() {
   const { session, isManager, sessionLoaded } = useAuth();
+  const nav = useRootNavigationState();
   
-  // Don't render until session is loaded to prevent flicker
-  if (!sessionLoaded) return null;
+  // Don't render until session is loaded and router is ready to prevent flicker
+  if (!sessionLoaded || !nav?.key) return null;
   
   // Fallback: if role is unknown, redirect to app tabs
   if (session === null || !session?.user) {
