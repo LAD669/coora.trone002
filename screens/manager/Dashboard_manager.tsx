@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getClubStats } from '@/lib/api/club';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ManagerErrorBoundary } from '@/components/ManagerErrorBoundary';
+import { logApiCall, logApiError, logUserAction } from '@/lib/logging';
 
 // Default stats structure - always visible with zero values
 const defaultStats = [
@@ -52,7 +54,7 @@ const defaultStats = [
   },
 ];
 
-export default function DashboardManager() {
+function DashboardManagerContent() {
   const { t: commonT } = useTranslation('common');
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
@@ -77,6 +79,12 @@ export default function DashboardManager() {
 
     setIsLoading(true);
     try {
+      logApiCall('getClubStats', 'GET', { 
+        component: 'DashboardManager', 
+        clubId: user.clubId, 
+        userId: user.id 
+      });
+      
       // Load club stats
       const statsData = await getClubStats(user.clubId);
       
@@ -120,6 +128,11 @@ export default function DashboardManager() {
       setStats(updatedStats);
       
     } catch (error) {
+      logApiError('getClubStats', 'GET', error as Error, { 
+        component: 'DashboardManager', 
+        clubId: user.clubId, 
+        userId: user.id 
+      });
       console.error('Error loading dashboard data:', error);
     } finally {
       setIsLoading(false);
@@ -268,3 +281,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Regular',
   },
 });
+
+export default function DashboardManager() {
+  return (
+    <ManagerErrorBoundary tabName="Dashboard">
+      <DashboardManagerContent />
+    </ManagerErrorBoundary>
+  );
+}
