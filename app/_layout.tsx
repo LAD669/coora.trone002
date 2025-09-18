@@ -1,4 +1,4 @@
-import { Slot, useRouter, useSegments } from 'expo-router';
+import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { AuthProvider, useAuth } from '@/contexts/AuthProvider';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -16,11 +16,15 @@ function RootLayoutContent() {
   const { session, isManager, sessionLoaded } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const nav = useRootNavigationState();
   const { handleDeepLink } = useDeepLinking();
 
   useEffect(() => {
+    // Wait until router is ready before performing redirects
+    if (!sessionLoaded || !nav?.key) return;
+    
     // Handle logout: redirect to app group when session becomes null
-    if (sessionLoaded && session === null) {
+    if (session === null) {
       const group = segments[0];
       if (group === "(manager)") {
         console.log('User logged out, redirecting from manager to app group');
@@ -29,8 +33,8 @@ function RootLayoutContent() {
       return;
     }
     
-    // Only redirect if session is loaded and we have a valid session
-    if (!sessionLoaded || session === null || !session?.user) return;
+    // Only redirect if we have a valid session
+    if (session === null || !session?.user) return;
     
     const group = segments[0]; // "(manager)" | "(app)" | ...
     
@@ -41,7 +45,7 @@ function RootLayoutContent() {
       console.log('Non-manager user in manager section, redirecting to app tabs');
       router.replace("/(app)/(tabs)/dashboard");
     }
-  }, [sessionLoaded, session, isManager, segments]);
+  }, [sessionLoaded, session, isManager, segments, nav?.key]);
 
   // Handle deep linking
   useEffect(() => {
@@ -67,8 +71,8 @@ function RootLayoutContent() {
     };
   }, [handleDeepLink]);
 
-  // Don't render until session is loaded to prevent flicker
-  if (!sessionLoaded) {
+  // Don't render until session is loaded and router is ready to prevent flicker
+  if (!sessionLoaded || !nav?.key) {
     return null;
   }
 
