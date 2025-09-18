@@ -2,3 +2,4 @@
 export * from './club';
 export * from './teams';
 export * from './notifications';
+export * from './audit';
