@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 6.3.0",
+    "version": ">= 8.0.0",
     "promptToConfigurePushNotifications": false
   },
   "build": {
@@ -14,17 +14,46 @@
         "EXPO_NO_NEW_ARCH": "1"
       }
     },
+    "staging": {
+      "channel": "staging",
+      "ios": {
+        "distribution": "internal",
+        "buildConfiguration": "Release"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_NO_NEW_ARCH": "1",
+        "SUPABASE_URL": "https://gryyeaxuvwamhigwjmih.supabase.co",
+        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdyeXllYXh1dndhbWhpZ3dqbWloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNDg0MDUsImV4cCI6MjA2NzYyNDQwNX0.gR1ibWfKkzSHCsGY4_Fj7z1dDWws8lZg9rNVj-kYmpY"
+      }
+    },
     "production": {
+      "channel": "production",
       "ios": {
         "distribution": "store",
         "buildConfiguration": "Release"
       },
+      "android": {
+        "buildType": "aab"
+      },
       "env": {
-        "EXPO_NO_NEW_ARCH": "1"
+        "EXPO_NO_NEW_ARCH": "1",
+        "SUPABASE_URL": "https://gryyeaxuvwamhigwjmih.supabase.co",
+        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdyeXllYXh1dndhbWhpZ3dqbWloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNDg0MDUsImV4cCI6MjA2NzYyNDQwNX0.gR1ibWfKkzSHCsGY4_Fj7z1dDWws8lZg9rNVj-kYmpY"
       }
     }
   },
   "submit": {
     "production": {}
+  },
+  "update": {
+    "staging": {
+      "channel": "staging"
+    },
+    "production": {
+      "channel": "production"
+    }
   }
 }

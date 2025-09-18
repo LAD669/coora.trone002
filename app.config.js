@@ -91,8 +91,8 @@ export default {
       eas: {
         projectId: "2ddea270-61d0-4101-948b-e5ec57f5cfdc"
       },
-      supabaseUrl: process.env.SUPABASE_URL || "https://gryyeaxuvwamhigwjmih.supabase.co",
-      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdyeXllYXh1dndhbWhpZ3dqbWloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNDg0MDUsImV4cCI6MjA2NzYyNDQwNX0.gR1ibWfKkzSHCsGY4_Fj7z1dDWws8lZg9rNVj-kYmpY"
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY
     }
   }
 };
