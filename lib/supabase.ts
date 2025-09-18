@@ -238,16 +238,6 @@ export const createAccessCode = async (accessCode: {
   return data;
 };
 
-export const getClubTeams = async (clubId: string) => {
-  const { data, error } = await supabase
-    .from('teams')
-    .select('*')
-    .eq('club_id', clubId)
-    .order('name');
-  
-  if (error) throw error;
-  return data;
-};
 
 export const getClubUsers = async (clubId: string) => {
   const { data, error } = await supabase
@@ -608,22 +598,6 @@ export const getClubEvents = async (clubId: string, startDate?: string, endDate?
   return data;
 };
 
-export const getClubTeams = async (clubId: string) => {
-  const { data, error } = await supabase
-    .from('teams')
-    .select(`
-      id,
-      name,
-      sport,
-      color,
-      club_id
-    `)
-    .eq('club_id', clubId)
-    .order('name');
-
-  if (error) throw error;
-  return data;
-};
 
 export const getClubStats = async (clubId: string) => {
   // Get member count (players + trainers in the club)
@@ -743,82 +717,7 @@ export const getTeamStats = async (teamId: string) => {
   return result;
 };
 
-export const getClubStats = async (clubId: string) => {
-  console.log('🏢 getClubStats called for clubId:', clubId);
-  
-  // Get all teams in the club
-  const { data: teams, error: teamsError } = await supabase
-    .from('teams')
-    .select('id')
-    .eq('club_id', clubId);
 
-  if (teamsError) throw teamsError;
-
-  const teamIds = teams.map(t => t.id);
-
-  // Get aggregated stats for all teams
-  const { data: matchResults, error: matchError } = await supabase
-    .from('match_results')
-    .select('id, team_score, opponent_score')
-    .in('team_id', teamIds);
-
-  if (matchError) throw matchError;
-
-  const { data: players, error: playersError } = await supabase
-    .from('players')
-    .select('id')
-    .in('team_id', teamIds);
-
-  if (playersError) throw playersError;
-
-  const { data: events, error: eventsError } = await supabase
-    .from('events')
-    .select('id, event_type, event_date')
-    .in('team_id', teamIds);
-
-  if (eventsError) throw eventsError;
-
-  console.log('🏢 getClubStats - Raw data fetched:', {
-    teams: teams?.length || 0,
-    teamIds,
-    matchResults: matchResults?.length || 0,
-    players: players?.length || 0,
-    events: events?.length || 0,
-    sampleMatchResult: matchResults?.[0]
-  });
-
-  // Calculate total goals by summing team_score from all matches
-  const totalGoals = matchResults.reduce((sum, match) => {
-    const teamScore = match.team_score || 0;
-    
-    console.log('⚽ Club match goals calculation:', {
-      matchId: match.id,
-      teamScore: teamScore,
-      opponentScore: match.opponent_score || 0,
-      runningTotal: sum + teamScore
-    });
-    
-    return sum + teamScore;
-  }, 0);
-
-  const totalMatches = matchResults.length;
-  const wins = matchResults.filter(m => m.team_score > m.opponent_score).length;
-  const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
-  const upcomingEvents = events.filter(e => new Date(e.event_date) > new Date()).length;
-
-  const result = {
-    totalGoals,
-    totalMatches,
-    winRate,
-    totalPlayers: players.length,
-    totalTeams: teams.length,
-    upcomingEvents,
-    trainings: events.filter(e => e.event_type === 'training').length,
-  };
-
-  console.log('🏢 getClubStats - Final result:', result);
-  return result;
-};
 
 export const createClub = async (club: {
   name: string;
