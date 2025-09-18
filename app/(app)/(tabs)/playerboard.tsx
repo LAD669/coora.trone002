@@ -273,68 +273,6 @@ export default function PlayerboardScreen() {
     }
     
     await loadPlayersForTeam(teamId);
-        playersWithComputedName.map(async (player) => {
-          try {
-            // Load match stats
-            const { data: matchStatsData, error: matchStatsError } = await supabase
-              .from('match_stats')
-              .select('goals, assists')
-              .eq('user_id', player.id);
-
-            let goals = 0;
-            let assists = 0;
-            if (!matchStatsError && matchStatsData && matchStatsData.length > 0) {
-              goals = matchStatsData.reduce((sum: number, stat: any) => sum + (stat.goals || 0), 0);
-              assists = matchStatsData.reduce((sum: number, stat: any) => sum + (stat.assists || 0), 0);
-            }
-
-            // Load event participation
-            const { data: eventData, error: eventError } = await supabase
-              .from('event_participation')
-              .select('status')
-              .eq('user_id', player.id);
-
-            let trainingsAccepted = 0;
-            if (!eventError && eventData) {
-              trainingsAccepted = eventData.filter((event: any) => event.status === 'accepted').length;
-            }
-
-            return {
-              ...player,
-              goals,
-              assists,
-              trainingsAccepted,
-            };
-          } catch (error) {
-            console.error(`Error loading stats for player ${player.id}:`, error);
-            return {
-              ...player,
-              goals: 0,
-              assists: 0,
-              trainingsAccepted: 0,
-            };
-          }
-        })
-      );
-      
-      console.log('✅ Successfully loaded team users with stats:', {
-        teamId,
-        totalCount: playersWithStats.length,
-        trainerCount: playersWithStats.filter(u => u.role === 'trainer').length,
-        playerCount: playersWithStats.filter(u => u.role === 'player').length
-      });
-      
-      setPlayers(playersWithStats);
-      
-      if (!data || data.length === 0) {
-        console.warn('⚠️ No team members found for team:', teamId);
-      }
-    } catch (error) {
-      console.error('❌ Error loading team members:', error);
-      setPlayers([]);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const positions = [
