@@ -9,7 +9,7 @@ import {
 import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleCheck, Circle } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getClubStats } from '@/lib/supabase';
+import { getClubStats } from '@/lib/api/club';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Default stats structure - always visible with zero values

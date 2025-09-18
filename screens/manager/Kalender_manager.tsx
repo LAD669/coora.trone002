@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getClubEvents, createEvent } from '@/lib/supabase';
+import { getClubEvents } from '@/lib/api/club';
+import { createEvent } from '@/lib/supabase';
 import { Plus, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Check, X, Users, UserCheck, UserX, Clock as ClockIcon } from 'lucide-react-native';
 import { Event } from '@/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

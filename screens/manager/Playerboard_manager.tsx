@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Users, ChevronRight } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getClubTeams } from '@/lib/api/teams';
+import { getClubTeams, getClubTeamPlayerCounts } from '@/lib/api/club';
 import { getSafeKey } from '@/lib/helpers';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

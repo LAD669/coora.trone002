@@ -13,7 +13,8 @@ import Modal from 'react-native-modal';
 import { Plus, MoveHorizontal as MoreHorizontal, Heart, MessageCircle, Building2, Users, Smile } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getClubPosts, createPost, addPostReaction, removePostReaction } from '@/lib/supabase';
+import { getClubPosts } from '@/lib/api/club';
+import { createPost, addPostReaction, removePostReaction } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
