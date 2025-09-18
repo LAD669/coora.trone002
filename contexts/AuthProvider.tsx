@@ -293,6 +293,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
+      
+      // Clear query cache on logout
+      try {
+        const { queryClient } = await import('@/lib/queryClient');
+        queryClient.clear();
+      } catch (cacheError) {
+        console.error('Error clearing query cache:', cacheError);
+      }
+      
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;

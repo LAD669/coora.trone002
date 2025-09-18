@@ -19,6 +19,16 @@ function RootLayoutContent() {
   const { handleDeepLink } = useDeepLinking();
 
   useEffect(() => {
+    // Handle logout: redirect to app group when session becomes null
+    if (sessionLoaded && session === null) {
+      const group = segments[0];
+      if (group === "(manager)") {
+        console.log('User logged out, redirecting from manager to app group');
+        router.replace("/(app)/(tabs)/dashboard");
+      }
+      return;
+    }
+    
     // Only redirect if session is loaded and we have a valid session
     if (!sessionLoaded || session === null || !session?.user) return;
     
