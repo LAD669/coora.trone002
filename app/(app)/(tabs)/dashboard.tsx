@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamGoals, createTeamGoal, getTeamStats, getClubStats, getTeamUsers, getTeamEvents, submitMatchResult } from '@/lib/supabase';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Default stats structure - always visible with zero values
 const defaultStats = [
@@ -78,6 +79,7 @@ export default function DashboardScreen() {
   const { t: commonT } = useTranslation('common');
   const { t: tabsT } = useTranslation('tabs');
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   
   // Early return if user is not available
   if (!user) {
@@ -851,7 +853,11 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 16 + insets.bottom + 49 }}
+      >
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeText}>{commonT('welcomeBack')}, {user?.name}!</Text>
@@ -1080,8 +1086,6 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacing} />
       </ScrollView>
 
       {/* Create Team Goal Modal */}

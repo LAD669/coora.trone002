@@ -18,6 +18,7 @@ import { Users, Target, Plus, X, User, Phone, Calendar, Ruler, Weight, Trophy, A
 import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamPlayersOnly, createPlayer, supabase } from '@/lib/supabase';
 import { getSafeKey } from '@/lib/helpers';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -164,6 +165,7 @@ export default function PlayerboardScreen() {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { safePush } = useNavigationReady();
+  const insets = useSafeAreaInsets();
   
   // Early return if user is not available
   if (!user) {
@@ -376,7 +378,7 @@ export default function PlayerboardScreen() {
         <ScrollView 
           style={styles.playersList}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.playersListContainer}
+          contentContainerStyle={[styles.playersListContainer, { paddingBottom: 16 + insets.bottom + 49 }]}
         >
           {sortedPlayers.map((player, index) => (
             <PlayerCard

@@ -24,7 +24,7 @@ export default function TabLayout() {
   };
 
   return (
-    <View style={[styles.container, { paddingBottom: TABBAR_CONTENT_HEIGHT + insets.bottom }]}>
+    <View style={styles.container}>
       <TopBar title={activeTabTitle} />
       <Tabs
         screenOptions={{
@@ -32,21 +32,22 @@ export default function TabLayout() {
           tabBarActiveTintColor: '#1A1A1A',
           tabBarInactiveTintColor: '#8E8E93',
           tabBarStyle: {
-            backgroundColor: '#FFFFFF',
-            borderTopWidth: 0,
             height: TABBAR_CONTENT_HEIGHT + insets.bottom,
             paddingBottom: insets.bottom,
-            elevation: 0,
-            shadowOpacity: 0,
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
+            paddingTop: 6,
+            position: 'absolute',   // ensures it's anchored to screen bottom
+            left: 0, right: 0, bottom: 0,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            backgroundColor: '#fff',
+            elevation: 0, shadowOpacity: 0,
           },
+          tabBarItemStyle: { paddingVertical: 2 },
+          tabBarLabelStyle: { marginBottom: 0 },
           tabBarShowLabel: false,
           tabBarIconStyle: {
             marginTop: 0,
           },
+          tabBarHideOnKeyboard: false,
         }}
         initialRouteName="index"
         screenListeners={{

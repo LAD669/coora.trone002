@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamPosts, createPost, addPostReaction, removePostReaction } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -65,6 +66,7 @@ function ErrorFallback({ error, retry }: { error: Error; retry: () => void }) {
 function InfohubScreenContent() {
   const { t: commonT } = useTranslation('common');
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   
   // Early return if user is not available
   if (!user) {
@@ -301,7 +303,7 @@ function InfohubScreenContent() {
         <ScrollView 
           style={styles.scrollContent} 
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContainer}
+          contentContainerStyle={[styles.scrollContainer, { paddingBottom: 16 + insets.bottom + 49 }]}
         >
           {isLoading ? (
             <View style={styles.loadingContainer}>
@@ -662,7 +664,6 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingHorizontal: 24,
-    paddingBottom: 100, // Extra padding for floating button
   },
   loadingContainer: {
     flex: 1,

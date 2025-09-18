@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthProvider';
 import { getTeamEvents, createEvent, respondToEvent, getEventResponses } from '@/lib/supabase';
 import { Plus, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Check, X, Users, UserCheck, UserX, Clock as ClockIcon } from 'lucide-react-native';
 import { Event } from '@/types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -71,6 +72,7 @@ const isToday = (date: Date) => {
 
 export default function CalendarScreen() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   
   // Early return if user is not available
   if (!user) {
@@ -524,7 +526,11 @@ export default function CalendarScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 16 + insets.bottom + 49 }}
+      >
         {/* Calendar Header */}
         <View style={styles.calendarHeader}>
           <TouchableOpacity 
