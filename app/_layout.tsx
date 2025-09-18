@@ -9,12 +9,15 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
-// Create a client
+// Create a client with optimized defaults for club-wide data
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute
-      gcTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 60_000, // 1 minute - data stays fresh for 1 minute
+      gcTime: 300_000, // 5 minutes - cache cleanup after 5 minutes
+      retry: 1, // Retry failed requests once
+      refetchOnWindowFocus: false, // Don't refetch on window focus for mobile
+      refetchOnReconnect: true, // Refetch when network reconnects
     },
   },
 });
