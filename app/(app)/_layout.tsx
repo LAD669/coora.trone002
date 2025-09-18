@@ -40,25 +40,13 @@ function AppContent() {
 
   console.log('AppContent: Valid session found, rendering app');
 
-  // Check if user is a manager and redirect accordingly
-  // Temporarily disabled - manager tabs not fully implemented yet
-  // if (user.role === 'manager') {
-  //   console.log('AppContent: User is a manager, redirecting to manager tabs');
-  //   return <Redirect href="/(app)/manager-tabs" />;
-  // }
+  // Manager users are now handled by the root layout routing system
 
   // Render Stack with all screens when session exists (for non-managers)
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen 
         name="(tabs)" 
-        options={{ 
-          headerShown: false,
-          gestureEnabled: true 
-        }} 
-      />
-      <Stack.Screen 
-        name="manager-tabs" 
         options={{ 
           headerShown: false,
           gestureEnabled: true 

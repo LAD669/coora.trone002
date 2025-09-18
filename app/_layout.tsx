@@ -1,5 +1,5 @@
-import { Slot } from 'expo-router';
-import { AuthProvider } from '@/contexts/AuthProvider';
+import { Slot, useRouter, useSegments } from 'expo-router';
+import { AuthProvider, useAuth } from '@/contexts/AuthProvider';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +7,7 @@ import AppInitializer from '@/components/AppInitializer';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -17,6 +18,29 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function RootLayoutContent() {
+  const { session, isManager } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Only redirect if we have a valid session
+    if (session === null || !session?.user) return;
+    
+    const group = segments[0]; // "(manager)" | "(app)" | ...
+    
+    if (isManager && group !== "(manager)") {
+      console.log('Manager user detected, redirecting to manager tabs');
+      router.replace("/(manager)/(tabs)/dashboard");
+    } else if (!isManager && group === "(manager)") {
+      console.log('Non-manager user in manager section, redirecting to app tabs');
+      router.replace("/(app)/(tabs)/dashboard");
+    }
+  }, [session, isManager, segments]);
+
+  return <Slot />;
+}
 
 export default function RootLayout() {
   const { isAppReady } = useFrameworkReady();
@@ -30,7 +54,7 @@ export default function RootLayout() {
           <SafeAreaProvider>
             <LanguageProvider>
               <AppInitializer>
-                <Slot />
+                <RootLayoutContent />
                 <StatusBar style="auto" />
               </AppInitializer>
             </LanguageProvider>

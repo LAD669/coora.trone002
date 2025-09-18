@@ -16,4 +16,10 @@ export async function getClubTeams(clubId: string): Promise<Team[]> {
   return (data ?? []) as Team[];
 }
 
+export async function getClubTeamPlayerCounts(teamId: string): Promise<{ count: number }> {
+  const { data, error } = await supabase.rpc("get_club_team_player_counts", { p_team_id: teamId });
+  if (error) throw error;
+  return { count: data ?? 0 };
+}
+
 export default getClubTeams;
