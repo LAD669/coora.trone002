@@ -61,15 +61,16 @@ export async function getClubStats(clubId: string): Promise<ClubStats> {
 
   if (membersError) throw membersError;
 
-  // Get team count
+  // Get team count (excluding soft-deleted teams)
   const { data: teams, error: teamsError } = await supabase
     .from('teams')
     .select('id', { count: 'exact', head: true })
-    .eq('club_id', clubId);
+    .eq('club_id', clubId)
+    .is('deleted_at', null);
 
   if (teamsError) throw teamsError;
 
-  // Get upcoming events count (next 30 days)
+  // Get upcoming events count (next 30 days, excluding soft-deleted events)
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
   
@@ -77,6 +78,7 @@ export async function getClubStats(clubId: string): Promise<ClubStats> {
     .from('events')
     .select('id', { count: 'exact', head: true })
     .eq('club_id', clubId)
+    .is('deleted_at', null)
     .gte('event_date', new Date().toISOString())
     .lte('event_date', thirtyDaysFromNow.toISOString());
 
@@ -102,6 +104,7 @@ export async function getClubPosts(clubId: string, postType: 'organization' | 'c
     `)
     .eq('club_id', clubId)
     .eq('post_type', postType)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -119,6 +122,7 @@ export async function getClubEvents(clubId: string, startDate?: string, endDate?
       teams(name, color)
     `)
     .eq('club_id', clubId)
+    .is('deleted_at', null)
     .order('event_date', { ascending: true });
 
   if (startDate) {
@@ -141,6 +145,7 @@ export async function getClubTeams(clubId: string): Promise<ClubTeam[]> {
     .from('teams')
     .select('*')
     .eq('club_id', clubId)
+    .is('deleted_at', null)
     .order('name');
 
   if (error) throw error;
