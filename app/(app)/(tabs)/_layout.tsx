@@ -49,7 +49,7 @@ export default function TabLayout() {
           },
           tabBarHideOnKeyboard: false,
         }}
-        initialRouteName="index"
+        initialRouteName="dashboard"
         screenListeners={{
           tabPress: (e) => {
             const tabName = e.target?.split('-')[0];
