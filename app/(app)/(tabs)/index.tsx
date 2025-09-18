@@ -13,7 +13,7 @@ import Modal from 'react-native-modal';
 import { Plus, MoveHorizontal as MoreHorizontal, Heart, MessageCircle, Building2, Users, Smile } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getTeamPosts, createPost, addPostReaction, removePostReaction } from '@/lib/supabase';
+import { getTeamPosts, getClubPosts, createPost, addPostReaction, removePostReaction } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -65,7 +65,7 @@ function ErrorFallback({ error, retry }: { error: Error; retry: () => void }) {
 
 function InfohubScreenContent() {
   const { t: commonT } = useTranslation('common');
-  const { user } = useAuth();
+  const { user, isManager } = useAuth();
   const insets = useSafeAreaInsets();
   
   // Early return if user is not available
@@ -99,18 +99,30 @@ function InfohubScreenContent() {
   }, [activeTab, user]);
 
   const loadPosts = async () => {
-    if (!user?.teamId || !user?.id) {
-      console.log('Cannot load posts - missing user data:', { userId: user?.id, teamId: user?.teamId });
+    if (!user?.id) {
+      console.log('Cannot load posts - missing user data:', { userId: user?.id });
       setIsLoading(false);
       return;
     }
     
     setIsLoading(true);
     try {
-      console.log('Fetching posts for team:', user.teamId, 'type:', activeTab);
-      // Map 'teams' to 'coach' for backend compatibility
-      const postType = activeTab === 'teams' ? 'coach' : activeTab;
-      const data = await getTeamPosts(user.teamId, postType);
+      let data;
+      if (isManager && user.clubId) {
+        // Manager: load organization posts from entire club
+        console.log('Fetching club posts for manager:', user.clubId);
+        data = await getClubPosts(user.clubId, 'organization');
+      } else if (user.teamId) {
+        // Regular user: load team posts
+        console.log('Fetching posts for team:', user.teamId, 'type:', activeTab);
+        // Map 'teams' to 'coach' for backend compatibility
+        const postType = activeTab === 'teams' ? 'coach' : activeTab;
+        data = await getTeamPosts(user.teamId, postType);
+      } else {
+        console.log('No teamId or clubId available');
+        data = [];
+      }
+      
       console.log('Received posts data:', data);
       setPosts(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -267,38 +279,40 @@ function InfohubScreenContent() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        {/* Toggle Section */}
-        <View style={styles.toggleContainer}>
-          <View style={styles.toggle}>
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                activeTab === 'organization' && styles.toggleButtonActive
-              ]}
-              onPress={() => setActiveTab('organization')}
-            >
-              <Building2 
-                size={18} 
-                color={activeTab === 'organization' ? '#1A1A1A' : '#8E8E93'} 
-                strokeWidth={1.5} 
-              />
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                activeTab === 'teams' && styles.toggleButtonActive
-              ]}
-              onPress={() => setActiveTab('teams')}
-            >
-              <Users 
-                size={18} 
-                color={activeTab === 'teams' ? '#1A1A1A' : '#8E8E93'} 
-                strokeWidth={1.5} 
-              />
-            </TouchableOpacity>
+        {/* Toggle Section - Hidden for managers */}
+        {!isManager && (
+          <View style={styles.toggleContainer}>
+            <View style={styles.toggle}>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  activeTab === 'organization' && styles.toggleButtonActive
+                ]}
+                onPress={() => setActiveTab('organization')}
+              >
+                <Building2 
+                  size={18} 
+                  color={activeTab === 'organization' ? '#1A1A1A' : '#8E8E93'} 
+                  strokeWidth={1.5} 
+                />
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  activeTab === 'teams' && styles.toggleButtonActive
+                ]}
+                onPress={() => setActiveTab('teams')}
+              >
+                <Users 
+                  size={18} 
+                  color={activeTab === 'teams' ? '#1A1A1A' : '#8E8E93'} 
+                  strokeWidth={1.5} 
+                />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
         <ScrollView 
           style={styles.scrollContent} 

@@ -17,6 +17,7 @@ interface AuthContextType {
   session: Session | null | undefined; // undefined = initializing, null = no session, Session = valid session
   user: AuthUser | null;
   loading: boolean;
+  isManager: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signUp: (email: string, password: string, name: string, accessCode: string) => Promise<void>;
@@ -33,6 +34,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Helper to check if user is a manager
+  const isManager = user?.role === 'manager';
 
   // Load session on mount
   useEffect(() => {
@@ -298,6 +302,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     session,
     user,
     loading,
+    isManager,
     signIn,
     signOut,
     signUp,

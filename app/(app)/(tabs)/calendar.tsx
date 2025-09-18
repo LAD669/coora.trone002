@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getTeamEvents, createEvent, respondToEvent, getEventResponses } from '@/lib/supabase';
+import { getTeamEvents, getClubEvents, createEvent, respondToEvent, getEventResponses } from '@/lib/supabase';
 import { Plus, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Check, X, Users, UserCheck, UserX, Clock as ClockIcon } from 'lucide-react-native';
 import { Event } from '@/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -71,7 +71,7 @@ const isToday = (date: Date) => {
 };
 
 export default function CalendarScreen() {
-  const { user } = useAuth();
+  const { user, isManager } = useAuth();
   const insets = useSafeAreaInsets();
   
   // Early return if user is not available
@@ -121,16 +121,29 @@ export default function CalendarScreen() {
 
   // Load events from database on component mount
   useEffect(() => {
-    if (user?.teamId) {
+    if (user?.id) {
       loadEvents();
     }
-  }, [user]);
+  }, [user, currentMonth]);
 
   const loadEvents = async () => {
-    if (!user?.teamId) return;
+    if (!user?.id) return;
     
     try {
-      const data = await getTeamEvents(user.teamId);
+      let data;
+      if (isManager && user.clubId) {
+        // Manager: load club-wide events
+        const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+        const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+        data = await getClubEvents(user.clubId, startOfMonth.toISOString(), endOfMonth.toISOString());
+      } else if (user.teamId) {
+        // Regular user: load team events
+        data = await getTeamEvents(user.teamId);
+      } else {
+        console.log('No teamId or clubId available');
+        data = [];
+      }
+      
       // Transform Supabase data to match component expectations
       const transformedEvents = (data || []).map((event: any) => ({
         id: event.id,

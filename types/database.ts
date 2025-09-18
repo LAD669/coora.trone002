@@ -260,6 +260,7 @@ export interface Database {
           image_url: string | null
           author_id: string
           team_id: string
+          club_id: string
           post_type: 'organization' | 'coach'
           created_at: string
           updated_at: string
@@ -271,6 +272,7 @@ export interface Database {
           image_url?: string | null
           author_id: string
           team_id: string
+          club_id: string
           post_type?: 'organization' | 'coach'
           created_at?: string
           updated_at?: string
@@ -282,6 +284,7 @@ export interface Database {
           image_url?: string | null
           author_id?: string
           team_id?: string
+          club_id?: string
           post_type?: 'organization' | 'coach'
           created_at?: string
           updated_at?: string
@@ -322,6 +325,7 @@ export interface Database {
           location: string
           notes: string | null
           team_id: string
+          club_id: string
           created_by: string
           requires_response: boolean
           is_repeating: boolean
@@ -341,6 +345,7 @@ export interface Database {
           location: string
           notes?: string | null
           team_id: string
+          club_id: string
           created_by: string
           requires_response?: boolean
           is_repeating?: boolean
@@ -360,6 +365,7 @@ export interface Database {
           location?: string
           notes?: string | null
           team_id?: string
+          club_id?: string
           created_by?: string
           requires_response?: boolean
           is_repeating?: boolean

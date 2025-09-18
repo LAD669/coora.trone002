@@ -16,7 +16,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationReady } from '@/hooks/useNavigationReady';
 import { Users, Target, Plus, X, User, Phone, Calendar, Ruler, Weight, Trophy, Activity, Clock, Hash, ChevronDown } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getTeamPlayersOnly, createPlayer, supabase } from '@/lib/supabase';
+import { getTeamPlayersOnly, getClubTeams, createPlayer, supabase } from '@/lib/supabase';
 import { getSafeKey } from '@/lib/helpers';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -163,7 +163,7 @@ const formations = [
 
 export default function PlayerboardScreen() {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, isManager } = useAuth();
   const { safePush } = useNavigationReady();
   const insets = useSafeAreaInsets();
   
@@ -182,6 +182,8 @@ export default function PlayerboardScreen() {
   const [isFormationDropdownVisible, setFormationDropdownVisible] = useState(false);
   const [assignedPlayers, setAssignedPlayers] = useState<{[key: string]: any}>({});
   const [players, setPlayers] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load players on component mount
@@ -191,19 +193,67 @@ export default function PlayerboardScreen() {
       return;
     }
 
-    // Use teamId from the User interface (AuthContext maps Supabase's team_id to this)
-    const teamId = user.teamId;
-    if (teamId) {
-      console.log('🔍 Loading players for team:', teamId);
+    if (isManager && user.clubId) {
+      console.log('🔍 Loading teams for club:', user.clubId);
+      loadTeams();
+    } else if (user.teamId) {
+      console.log('🔍 Loading players for team:', user.teamId);
       loadPlayers();
     } else {
-      console.warn('⚠️ No team assigned to current user:', {
+      console.warn('⚠️ No team or club assigned to current user:', {
         userId: user.id,
         email: user.email,
-        role: user.role
+        role: user.role,
+        teamId: user.teamId,
+        clubId: user.clubId
       });
     }
-  }, [user]);
+  }, [user, isManager]);
+
+  const loadTeams = async () => {
+    if (!user?.clubId) {
+      console.warn('⚠️ Cannot load teams: No clubId available');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      console.log('🔄 Loading teams for club:', user.clubId);
+      
+      const teamsData = await getClubTeams(user.clubId);
+      console.log('✅ Teams loaded:', teamsData?.length || 0);
+      setTeams(teamsData || []);
+    } catch (error) {
+      console.error('❌ Error loading teams:', error);
+      setTeams([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadPlayersForTeam = async (teamId: string) => {
+    try {
+      setIsLoading(true);
+      console.log('📊 Fetching players for team:', teamId);
+      const data = await getTeamPlayersOnly(teamId);
+      
+      // getTeamUsers already returns properly transformed and sorted data
+      // Just add the computed 'name' field for UI consistency
+      const playersWithComputedName = (data || []).map(user => ({
+        ...user,
+        name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User',
+        user_id: user.id, // For UI compatibility
+      }));
+      
+      console.log('✅ Players loaded:', playersWithComputedName?.length || 0);
+      setPlayers(playersWithComputedName || []);
+    } catch (error) {
+      console.error('❌ Error loading players:', error);
+      setPlayers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadPlayers = async () => {
     if (!user) {
@@ -222,21 +272,7 @@ export default function PlayerboardScreen() {
       return;
     }
     
-    setIsLoading(true);
-    try {
-      console.log('📊 Fetching team players for team:', teamId);
-      const data = await getTeamPlayersOnly(teamId);
-      
-      // getTeamUsers already returns properly transformed and sorted data
-      // Just add the computed 'name' field for UI consistency
-      const playersWithComputedName = (data || []).map(user => ({
-        ...user,
-        name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User',
-        user_id: user.id, // For UI compatibility
-      }));
-      
-      // Load stats for all players
-      const playersWithStats = await Promise.all(
+    await loadPlayersForTeam(teamId);
         playersWithComputedName.map(async (player) => {
           try {
             // Load match stats
@@ -349,22 +385,66 @@ export default function PlayerboardScreen() {
     if (isLoading) {
       return (
         <View style={styles.centerContainer}>
-          <Text style={styles.loadingText}>Loading team members...</Text>
-        </View>
-      );
-    }
-
-    if (players.length === 0) {
-      return (
-        <View style={styles.centerContainer}>
-          <Users size={48} color="#E5E5E7" strokeWidth={1} />
-          <Text style={styles.emptyPlayersText}>No team members found</Text>
-          <Text style={styles.emptyPlayersSubtext}>
-            No trainers or players found for this team.
+          <Text style={styles.loadingText}>
+            {isManager ? 'Loading teams...' : 'Loading team members...'}
           </Text>
         </View>
       );
     }
+
+    if (isManager) {
+      // Manager view: show teams
+      if (teams.length === 0) {
+        return (
+          <View style={styles.centerContainer}>
+            <Users size={48} color="#E5E5E7" strokeWidth={1} />
+            <Text style={styles.emptyPlayersText}>No teams found</Text>
+            <Text style={styles.emptyPlayersSubtext}>
+              No teams found for this club.
+            </Text>
+          </View>
+        );
+      }
+
+      return (
+        <View style={styles.listWrapper}>
+          <ScrollView 
+            style={styles.playersList}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.playersListContainer, { paddingBottom: 16 + insets.bottom + 49 }]}
+          >
+            {teams.map((team, index) => (
+              <TouchableOpacity
+                key={getSafeKey(team, index, 'team')}
+                style={styles.playerCard}
+                onPress={() => {
+                  setSelectedTeam(team);
+                  loadPlayersForTeam(team.id);
+                }}
+              >
+                <View style={styles.playerInfo}>
+                  <Text style={styles.playerName}>{team.name}</Text>
+                  <Text style={styles.playerPosition}>{team.sport}</Text>
+                </View>
+                <ChevronRight size={20} color="#8E8E93" strokeWidth={1.5} />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      );
+    } else {
+      // Regular user view: show players
+      if (players.length === 0) {
+        return (
+          <View style={styles.centerContainer}>
+            <Users size={48} color="#E5E5E7" strokeWidth={1} />
+            <Text style={styles.emptyPlayersText}>No team members found</Text>
+            <Text style={styles.emptyPlayersSubtext}>
+              No trainers or players found for this team.
+            </Text>
+          </View>
+        );
+      }
 
     // Sort players: trainers first, then players
     const sortedPlayers = [...players].sort((a, b) => {
@@ -396,6 +476,7 @@ export default function PlayerboardScreen() {
         </ScrollView>
       </View>
     );
+    }
   };
 
   return (

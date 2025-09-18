@@ -13,7 +13,7 @@ import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleChe
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getTeamGoals, createTeamGoal, getTeamStats, getClubStats, getTeamUsers, getTeamEvents, submitMatchResult } from '@/lib/supabase';
+import { getTeamGoals, createTeamGoal, getTeamStats, getClubStats, getTeamUsers, getTeamEvents, submitMatchResult, getClubStats as getClubStatsData } from '@/lib/supabase';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Default stats structure - always visible with zero values
@@ -78,7 +78,7 @@ const defaultStats = [
 export default function DashboardScreen() {
   const { t: commonT } = useTranslation('common');
   const { t: tabsT } = useTranslation('tabs');
-  const { user } = useAuth();
+  const { user, isManager } = useAuth();
   const insets = useSafeAreaInsets();
   
   // Early return if user is not available
@@ -263,9 +263,24 @@ export default function DashboardScreen() {
       // Load team stats
       let statsData;
       try {
-        statsData = user.role === 'admin' && user.clubId
-          ? await getClubStats(user.clubId)
-          : await getTeamStats(user.teamId);
+        if ((user.role === 'admin' || isManager) && user.clubId) {
+          // Admin or Manager: load club-wide stats
+          const clubStats = await getClubStatsData(user.clubId);
+          // Map club stats to expected format
+          statsData = {
+            totalGoals: 0, // Club-wide goals not implemented yet
+            totalMatches: 0, // Club-wide matches not implemented yet
+            winRate: 0, // Club-wide win rate not implemented yet
+            totalPlayers: clubStats.memberCount,
+            upcomingEvents: clubStats.upcomingEventsCount,
+            trainings: 0 // Club-wide trainings not implemented yet
+          };
+        } else if (user.teamId) {
+          // Regular user: load team stats
+          statsData = await getTeamStats(user.teamId);
+        } else {
+          throw new Error('No teamId or clubId available');
+        }
       } catch (error) {
         console.error('❌ Error loading stats data:', error);
         // Provide fallback data if stats loading fails
@@ -318,15 +333,6 @@ export default function DashboardScreen() {
         switch (stat.title) {
           case 'Goals Scored':
             currentValue = statsData?.totalGoals ?? 0;
-                  console.log('🎯 Goals Scored calculation:', {
-        rawValue: statsData?.totalGoals,
-        type: typeof statsData?.totalGoals,
-        finalValue: currentValue,
-        isNull: statsData?.totalGoals === null,
-        isUndefined: statsData?.totalGoals === undefined,
-        statsDataKeys: statsData ? Object.keys(statsData) : [],
-        note: 'Calculated by summing team_score from all match_results'
-      });
             change = calculateChange(currentValue, previousStats?.totalGoals);
             break;
           case 'Matches Played':
