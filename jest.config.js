@@ -16,4 +16,15 @@ module.exports = {
     '!**/*.d.ts',
     '!**/node_modules/**',
   ],
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: '.',
+      outputName: 'jest-junit.xml',
+      classNameTemplate: '{classname}',
+      titleTemplate: '{title}',
+      ancestorSeparator: ' › ',
+      usePathForSuiteName: true
+    }]
+  ],
 };
