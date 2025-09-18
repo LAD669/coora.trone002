@@ -6,23 +6,11 @@ import { StatusBar } from 'expo-status-bar';
 import AppInitializer from '@/components/AppInitializer';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useDeepLinking } from '@/lib/deepLinking';
 import * as Linking from 'expo-linking';
-
-// Create a client with optimized defaults for club-wide data
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60_000, // 1 minute - data stays fresh for 1 minute
-      gcTime: 300_000, // 5 minutes - cache cleanup after 5 minutes
-      retry: 1, // Retry failed requests once
-      refetchOnWindowFocus: false, // Don't refetch on window focus for mobile
-      refetchOnReconnect: true, // Refetch when network reconnects
-    },
-  },
-});
+import { queryClient } from '@/lib/queryClient';
 
 function RootLayoutContent() {
   const { session, isManager, sessionLoaded } = useAuth();
