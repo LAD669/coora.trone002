@@ -7,8 +7,39 @@ export default {
     version: "1.1.7",
     orientation: "portrait",
     icon: "./images/coora.icon.png",
-    scheme: "myapp",
+    scheme: "coora",
     userInterfaceStyle: "automatic",
+    linking: {
+      prefixes: ["coora://"],
+      config: {
+        screens: {
+          "(app)": {
+            screens: {
+              "(tabs)": {
+                screens: {
+                  dashboard: "dashboard",
+                  infohub: "infohub",
+                  calendar: "calendar",
+                  playerboard: "playerboard",
+                },
+              },
+            },
+          },
+          "(manager)": {
+            screens: {
+              "(tabs)": {
+                screens: {
+                  dashboard: "manager/dashboard",
+                  infohub: "manager/infohub",
+                  calendar: "manager/calendar",
+                  playerboard: "manager/playerboard",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     owner: "cooraforsport",
     platforms: [
       "ios",

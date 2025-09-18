@@ -8,6 +8,8 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { useDeepLinking } from '@/lib/deepLinking';
+import * as Linking from 'expo-linking';
 
 // Create a client with optimized defaults for club-wide data
 const queryClient = new QueryClient({
@@ -26,6 +28,7 @@ function RootLayoutContent() {
   const { session, isManager, sessionLoaded } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const { handleDeepLink } = useDeepLinking();
 
   useEffect(() => {
     // Only redirect if session is loaded and we have a valid session
@@ -41,6 +44,30 @@ function RootLayoutContent() {
       router.replace("/(app)/(tabs)/dashboard");
     }
   }, [sessionLoaded, session, isManager, segments]);
+
+  // Handle deep linking
+  useEffect(() => {
+    const handleInitialURL = async () => {
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) {
+        await handleDeepLink(initialUrl);
+      }
+    };
+
+    const handleURL = (event: { url: string }) => {
+      handleDeepLink(event.url);
+    };
+
+    // Handle initial URL
+    handleInitialURL();
+
+    // Listen for incoming URLs
+    const subscription = Linking.addEventListener('url', handleURL);
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [handleDeepLink]);
 
   // Don't render until session is loaded to prevent flicker
   if (!sessionLoaded) {
