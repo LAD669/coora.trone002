@@ -13,6 +13,8 @@ import { getClubStats } from '@/lib/api/club';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ManagerErrorBoundary } from '@/components/ManagerErrorBoundary';
 import { logApiCall, logApiError, logUserAction } from '@/lib/logging';
+import TopBarManager from '@/components/ui/TopBarManager';
+import { useRouter } from 'expo-router';
 
 // Default stats structure - always visible with zero values
 const defaultStats = [
@@ -58,6 +60,7 @@ function DashboardManagerContent() {
   const { t: commonT } = useTranslation('common');
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   
   // Early return if user is not available
   if (!user) {
@@ -151,6 +154,11 @@ function DashboardManagerContent() {
 
   return (
     <View style={styles.container}>
+      <TopBarManager 
+        title="Dashboard" 
+        onPressBell={() => router.push("/notifications")} 
+        onPressSettings={() => router.push("/settings")} 
+      />
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}

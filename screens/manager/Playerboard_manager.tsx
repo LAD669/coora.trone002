@@ -11,10 +11,13 @@ import { useAuth } from '@/contexts/AuthProvider';
 import { getClubTeams, getClubTeamPlayerCounts } from '@/lib/api/club';
 import { getSafeKey } from '@/lib/helpers';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import TopBarManager from '@/components/ui/TopBarManager';
+import { useRouter } from 'expo-router';
 
 export default function PlayerboardManager() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   
   // Early return if user is not available
   if (!user) {
@@ -77,6 +80,11 @@ export default function PlayerboardManager() {
 
   return (
     <View style={styles.container}>
+      <TopBarManager 
+        title="Playerboard" 
+        onPressBell={() => router.push("/notifications")} 
+        onPressSettings={() => router.push("/settings")} 
+      />
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}

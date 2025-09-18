@@ -15,6 +15,8 @@ import { createEvent } from '@/lib/supabase';
 import { Plus, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Check, X, Users, UserCheck, UserX, Clock as ClockIcon } from 'lucide-react-native';
 import { Event } from '@/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import TopBarManager from '@/components/ui/TopBarManager';
+import { useRouter } from 'expo-router';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -26,6 +28,7 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export default function KalenderManager() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   
   // Early return if user is not available
   if (!user) {
@@ -242,6 +245,11 @@ export default function KalenderManager() {
 
   return (
     <View style={styles.container}>
+      <TopBarManager 
+        title="Kalender" 
+        onPressBell={() => router.push("/notifications")} 
+        onPressSettings={() => router.push("/settings")} 
+      />
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}

@@ -17,6 +17,7 @@ import { getClubPosts } from '@/lib/api/club';
 import { createPost, addPostReaction, removePostReaction } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import TopBarManager from '@/components/ui/TopBarManager';
 
 export default function InfohubManager() {
   const { t: commonT } = useTranslation('common');
@@ -161,6 +162,11 @@ export default function InfohubManager() {
 
   return (
     <View style={styles.container}>
+      <TopBarManager 
+        title="Info-Hub" 
+        onPressBell={() => router.push("/notifications")} 
+        onPressSettings={() => router.push("/settings")} 
+      />
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
