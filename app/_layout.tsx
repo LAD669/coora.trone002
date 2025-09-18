@@ -20,13 +20,13 @@ const queryClient = new QueryClient({
 });
 
 function RootLayoutContent() {
-  const { session, isManager } = useAuth();
+  const { session, isManager, sessionLoaded } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    // Only redirect if we have a valid session
-    if (session === null || !session?.user) return;
+    // Only redirect if session is loaded and we have a valid session
+    if (!sessionLoaded || session === null || !session?.user) return;
     
     const group = segments[0]; // "(manager)" | "(app)" | ...
     
@@ -37,7 +37,12 @@ function RootLayoutContent() {
       console.log('Non-manager user in manager section, redirecting to app tabs');
       router.replace("/(app)/(tabs)/dashboard");
     }
-  }, [session, isManager, segments]);
+  }, [sessionLoaded, session, isManager, segments]);
+
+  // Don't render until session is loaded to prevent flicker
+  if (!sessionLoaded) {
+    return null;
+  }
 
   return <Slot />;
 }

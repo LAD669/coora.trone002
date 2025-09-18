@@ -17,6 +17,7 @@ interface AuthContextType {
   session: Session | null | undefined; // undefined = initializing, null = no session, Session = valid session
   user: AuthUser | null;
   loading: boolean;
+  sessionLoaded: boolean; // true when session initialization is complete
   isManager: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -33,6 +34,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null | undefined>(undefined); // Start as undefined (initializing)
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Helper to check if user is a manager
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('Session null — showing login');
       } finally {
         setLoading(false);
+        setSessionLoaded(true);
         setIsInitialized(true);
       }
     };
@@ -302,6 +305,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     session,
     user,
     loading,
+    sessionLoaded,
     isManager,
     signIn,
     signOut,
