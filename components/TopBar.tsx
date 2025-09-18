@@ -1,11 +1,13 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { Bell, Settings } from 'lucide-react-native';
 import { router } from 'expo-router';
 
 interface TopBarProps {
   title: string;
 }
+
+const TOPBAR_CONTENT_HEIGHT = 56;
 
 export default function TopBar({ title }: TopBarProps) {
   const handleNotificationsPress = () => {
@@ -17,35 +19,42 @@ export default function TopBar({ title }: TopBarProps) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      <View style={styles.actions}>
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={handleNotificationsPress}
-          activeOpacity={0.7}
-        >
-          <Bell size={24} color="#1A1A1A" strokeWidth={1.5} />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={handleSettingsPress}
-          activeOpacity={0.7}
-        >
-          <Settings size={24} color="#1A1A1A" strokeWidth={1.5} />
-        </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>{title}</Text>
+        <View style={styles.actions}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={handleNotificationsPress}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Bell size={24} color="#1A1A1A" strokeWidth={1.5} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={handleSettingsPress}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Settings size={24} color="#1A1A1A" strokeWidth={1.5} />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    backgroundColor: '#FFFFFF',
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    height: TOPBAR_CONTENT_HEIGHT,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
@@ -63,9 +72,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   actionButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#F8F9FA',
     justifyContent: 'center',
     alignItems: 'center',

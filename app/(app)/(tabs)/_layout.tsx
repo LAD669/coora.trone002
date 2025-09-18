@@ -3,11 +3,15 @@ import { Tabs } from 'expo-router';
 import { MessageSquare, Calendar, Users, ChartBar as BarChart3 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TopBar from '@/components/TopBar';
+
+const TABBAR_CONTENT_HEIGHT = 49;
 
 export default function TabLayout() {
   const { t: tabsT } = useTranslation('tabs');
   const [activeTabTitle, setActiveTabTitle] = useState('Info-Hub');
+  const insets = useSafeAreaInsets();
 
   const getTabTitle = (tabName: string) => {
     switch (tabName) {
@@ -20,7 +24,7 @@ export default function TabLayout() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: TABBAR_CONTENT_HEIGHT + insets.bottom }]}>
       <TopBar title={activeTabTitle} />
       <Tabs
         screenOptions={{
@@ -30,9 +34,8 @@ export default function TabLayout() {
           tabBarStyle: {
             backgroundColor: '#FFFFFF',
             borderTopWidth: 0,
-            paddingVertical: 12,
-            paddingBottom: 20,
-            height: 84,
+            height: TABBAR_CONTENT_HEIGHT + insets.bottom,
+            paddingBottom: insets.bottom,
             elevation: 0,
             shadowOpacity: 0,
             position: 'absolute',
@@ -101,6 +104,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingBottom: 84, // Add padding to account for absolute positioned tab bar
   },
 });
