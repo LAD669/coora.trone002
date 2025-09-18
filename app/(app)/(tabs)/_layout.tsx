@@ -31,9 +31,14 @@ export default function TabLayout() {
             backgroundColor: '#FFFFFF',
             borderTopWidth: 0,
             paddingVertical: 12,
-            height: 64,
+            paddingBottom: 20,
+            height: 84,
             elevation: 0,
             shadowOpacity: 0,
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
           },
           tabBarShowLabel: false,
           tabBarIconStyle: {
@@ -96,5 +101,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingBottom: 84, // Add padding to account for absolute positioned tab bar
   },
 });
