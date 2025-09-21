@@ -1,59 +1,32 @@
 {
-  "cli": {
-    "version": ">= 8.0.0",
-    "promptToConfigurePushNotifications": false
-  },
+  "cli": { "version": ">= 8.0.0" },
   "build": {
     "development": {
-      "ios": {
-        "distribution": "internal",
-        "developmentClient": true,
-        "simulator": false
-      },
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
       "env": {
-        "EXPO_NO_NEW_ARCH": "1"
+        "EXPO_PUBLIC_SUPABASE_URL": "process_env",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "process_env"
       }
     },
-    "staging": {
-      "channel": "staging",
-      "ios": {
-        "distribution": "internal",
-        "buildConfiguration": "Release"
-      },
-      "android": {
-        "buildType": "apk"
-      },
+    "preview": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
       "env": {
-        "EXPO_NO_NEW_ARCH": "1",
-        "SUPABASE_URL": "https://gryyeaxuvwamhigwjmih.supabase.co",
-        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdyeXllYXh1dndhbWhpZ3dqbWloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNDg0MDUsImV4cCI6MjA2NzYyNDQwNX0.gR1ibWfKkzSHCsGY4_Fj7z1dDWws8lZg9rNVj-kYmpY"
+        "EXPO_PUBLIC_SUPABASE_URL": "process_env",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "process_env"
       }
     },
     "production": {
-      "channel": "production",
-      "ios": {
-        "distribution": "store",
-        "buildConfiguration": "Release"
-      },
-      "android": {
-        "buildType": "aab"
-      },
+      "android": { "buildType": "app-bundle" },
       "env": {
-        "EXPO_NO_NEW_ARCH": "1",
-        "SUPABASE_URL": "https://gryyeaxuvwamhigwjmih.supabase.co",
-        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdyeXllYXh1dndhbWhpZ3dqbWloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNDg0MDUsImV4cCI6MjA2NzYyNDQwNX0.gR1ibWfKkzSHCsGY4_Fj7z1dDWws8lZg9rNVj-kYmpY"
+        "EXPO_PUBLIC_SUPABASE_URL": "process_env",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "process_env"
       }
     }
   },
   "submit": {
     "production": {}
-  },
-  "update": {
-    "staging": {
-      "channel": "staging"
-    },
-    "production": {
-      "channel": "production"
-    }
   }
 }
