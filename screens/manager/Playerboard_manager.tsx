@@ -10,7 +10,7 @@ import { Users, ChevronRight } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getClubTeams, getClubTeamPlayerCounts } from '@/lib/api/club';
 import { getSafeKey } from '@/lib/helpers';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import TopBarManager from '@/components/ui/TopBarManager';
 import { useRouter } from 'expo-router';
 
@@ -70,16 +70,16 @@ export default function PlayerboardManager() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading teams...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <TopBarManager 
         title="Playerboard" 
         onPressBell={() => router.push("/notifications")} 
@@ -129,7 +129,7 @@ export default function PlayerboardManager() {
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

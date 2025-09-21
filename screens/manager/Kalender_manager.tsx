@@ -14,7 +14,7 @@ import { getClubEvents } from '@/lib/api/club';
 import { createEvent } from '@/lib/supabase';
 import { Plus, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Check, X, Users, UserCheck, UserX, Clock as ClockIcon } from 'lucide-react-native';
 import { Event } from '@/types';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import TopBarManager from '@/components/ui/TopBarManager';
 import { useRouter } from 'expo-router';
 
@@ -244,7 +244,7 @@ export default function KalenderManager() {
   const days = getDaysInMonth(currentMonth);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <TopBarManager 
         title="Kalender" 
         onPressBell={() => router.push("/notifications")} 
@@ -541,7 +541,7 @@ export default function KalenderManager() {
           </ScrollView>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
