@@ -49,45 +49,44 @@ export type ClubTeam = {
 };
 
 /**
- * Get club-wide statistics
+ * Get club-wide statistics using RPC function
  */
 export async function getClubStats(clubId: string): Promise<ClubStats> {
-  // Get member count (players + trainers in the club)
-  const { data: members, error: membersError } = await supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
-    .eq('club_id', clubId)
-    .in('role', ['player', 'trainer']);
-
-  if (membersError) throw membersError;
-
-  // Get team count (excluding soft-deleted teams)
-  const { data: teams, error: teamsError } = await supabase
-    .from('teams')
-    .select('id', { count: 'exact', head: true })
-    .eq('club_id', clubId)
-    .is('deleted_at', null);
-
-  if (teamsError) throw teamsError;
-
-  // Get upcoming events count (next 30 days, excluding soft-deleted events)
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  const { data, error } = await supabase.rpc("get_club_stats", { p_club_id: clubId });
   
-  const { data: events, error: eventsError } = await supabase
-    .from('events')
-    .select('id', { count: 'exact', head: true })
-    .eq('club_id', clubId)
-    .is('deleted_at', null)
-    .gte('event_date', new Date().toISOString())
-    .lte('event_date', thirtyDaysFromNow.toISOString());
-
-  if (eventsError) throw eventsError;
-
+  if (error) {
+    // Make error message more descriptive
+    const details = (error as any).details || (error as any).hint || error.message || "unknown";
+    throw new Error(`getClubStats RPC failed: ${details}`);
+  }
+  
+  // data is an array with one row (returns table)
+  const row = Array.isArray(data) ? data[0] : data;
+  
   return {
-    memberCount: members?.length || 0,
-    teamCount: teams?.length || 0,
-    upcomingEventsCount: events?.length || 0,
+    memberCount: Number(row?.member_count ?? 0),
+    teamCount: Number(row?.team_count ?? 0),
+    upcomingEventsCount: Number(row?.upcoming_events ?? 0),
+  };
+}
+
+/**
+ * Fallback function to compute stats manually if RPC fails
+ */
+export async function computeStatsFallback(clubId: string): Promise<ClubStats> {
+  const [{ data: users }, { data: teams }, { data: events }] = await Promise.all([
+    supabase.from("users").select("id").eq("club_id", clubId).eq("active", true).is("deleted_at", null),
+    supabase.from("teams").select("id").eq("club_id", clubId).is("deleted_at", null),
+    supabase.from("events").select("id")
+      .eq("club_id", clubId).is("deleted_at", null)
+      .gte("event_date", new Date().toISOString())
+      .lt("event_date", new Date(Date.now() + 30*864e5).toISOString()),
+  ]);
+  
+  return {
+    memberCount: users?.length ?? 0,
+    teamCount: teams?.length ?? 0,
+    upcomingEventsCount: events?.length ?? 0,
   };
 }
 

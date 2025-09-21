@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,13 @@ import {
 import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleCheck, Circle } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getClubStats } from '@/lib/api/club';
+import { getClubStats, computeStatsFallback } from '@/lib/api/club';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ManagerErrorBoundary } from '@/components/ManagerErrorBoundary';
 import { logApiCall, logApiError, logUserAction } from '@/lib/logging';
 import TopBarManager from '@/components/ui/TopBarManager';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 
 // Default stats structure - always visible with zero values
 const defaultStats = [
@@ -61,88 +62,64 @@ function DashboardManagerContent() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const fallbackStatsRef = useRef<any>(null);
   
   // Early return if user is not available
   if (!user) {
     return null;
   }
-  
-  const [stats, setStats] = useState<any[]>(defaultStats);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Load data on component mount
-  useEffect(() => {
-    if (user?.clubId) {
-      loadDashboardData();
+  // React Query hook for club stats with fallback
+  const clubStatsQuery = useQuery({
+    queryKey: ["clubStats", user.clubId],
+    queryFn: () => getClubStats(user.clubId!),
+    retry: 1,
+    staleTime: 60_000, // 1 minute
+    enabled: !!user.clubId,
+    onError: async (error) => {
+      console.error("getClubStats error:", error);
+      // Try fallback if RPC fails
+      try {
+        const fallbackStats = await computeStatsFallback(user.clubId!);
+        fallbackStatsRef.current = fallbackStats;
+        console.log("Using fallback stats:", fallbackStats);
+      } catch (fallbackError) {
+        console.error("Fallback also failed:", fallbackError);
+      }
     }
-  }, [user]);
+  });
 
-  const loadDashboardData = async () => {
-    if (!user?.clubId) return;
+  // Use RPC data if available, otherwise fallback
+  const statsData = clubStatsQuery.data ?? fallbackStatsRef.current;
 
-    setIsLoading(true);
-    try {
-      logApiCall('getClubStats', 'GET', { 
-        component: 'DashboardManager', 
-        clubId: user.clubId, 
-        userId: user.id 
-      });
-      
-      // Load club stats
-      const statsData = await getClubStats(user.clubId);
-      
-      console.log('🔍 Dashboard Manager - Raw stats data:', {
-        statsData,
-        userRole: user.role,
-        clubId: user.clubId,
-        memberCount: statsData?.memberCount,
-        teamCount: statsData?.teamCount,
-        upcomingEventsCount: statsData?.upcomingEventsCount,
-        upcomingMatchesCount: statsData?.upcomingMatchesCount
-      });
-      
-      // Update stats with real data
-      const updatedStats = defaultStats.map(stat => {
-        let currentValue: any;
+  // Update stats with real data
+  const stats = defaultStats.map(stat => {
+    let currentValue: any;
 
-        switch (stat.title) {
-          case 'Club Members':
-            currentValue = statsData?.memberCount ?? 0;
-            break;
-          case 'Total Teams':
-            currentValue = statsData?.teamCount ?? 0;
-            break;
-          case 'Active Events':
-            currentValue = statsData?.upcomingEventsCount ?? 0;
-            break;
-          case 'Active Trainings':
-            currentValue = statsData?.upcomingEventsCount ?? 0;
-            break;
-          default:
-            currentValue = stat.value;
-        }
-
-        return {
-          ...stat,
-          value: currentValue,
-        };
-      });
-
-      setStats(updatedStats);
-      
-    } catch (error) {
-      logApiError('getClubStats', 'GET', error as Error, { 
-        component: 'DashboardManager', 
-        clubId: user.clubId, 
-        userId: user.id 
-      });
-      console.error('Error loading dashboard data:', error);
-    } finally {
-      setIsLoading(false);
+    switch (stat.title) {
+      case 'Club Members':
+        currentValue = statsData?.memberCount ?? 0;
+        break;
+      case 'Total Teams':
+        currentValue = statsData?.teamCount ?? 0;
+        break;
+      case 'Active Events':
+        currentValue = statsData?.upcomingEventsCount ?? 0;
+        break;
+      case 'Active Trainings':
+        currentValue = statsData?.upcomingEventsCount ?? 0;
+        break;
+      default:
+        currentValue = stat.value;
     }
-  };
 
-  if (isLoading) {
+    return {
+      ...stat,
+      value: currentValue,
+    };
+  });
+
+  if (clubStatsQuery.isLoading) {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
