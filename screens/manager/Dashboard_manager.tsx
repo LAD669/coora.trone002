@@ -72,21 +72,26 @@ function DashboardManagerContent() {
   // React Query hook for club stats with fallback
   const clubStatsQuery = useQuery({
     queryKey: ["clubStats", user.clubId],
-    queryFn: () => getClubStats(user.clubId!),
+    queryFn: async () => {
+      try {
+        return await getClubStats(user.clubId!);
+      } catch (error) {
+        console.error("getClubStats error:", error);
+        // Try fallback if RPC fails
+        try {
+          const fallbackStats = await computeStatsFallback(user.clubId!);
+          fallbackStatsRef.current = fallbackStats;
+          console.log("Using fallback stats:", fallbackStats);
+          return fallbackStats;
+        } catch (fallbackError) {
+          console.error("Fallback also failed:", fallbackError);
+          throw error; // Re-throw original error
+        }
+      }
+    },
     retry: 1,
     staleTime: 60_000, // 1 minute
     enabled: !!user.clubId,
-    onError: async (error) => {
-      console.error("getClubStats error:", error);
-      // Try fallback if RPC fails
-      try {
-        const fallbackStats = await computeStatsFallback(user.clubId!);
-        fallbackStatsRef.current = fallbackStats;
-        console.log("Using fallback stats:", fallbackStats);
-      } catch (fallbackError) {
-        console.error("Fallback also failed:", fallbackError);
-      }
-    }
   });
 
   // Use RPC data if available, otherwise fallback
