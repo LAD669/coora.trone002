@@ -1,8 +1,10 @@
-// Re-export the supabase client from the safe client file
-import { supabase } from './supabaseClient';
-import { storage } from './storage';
-import { createClient } from '@supabase/supabase-js';
-export { supabase };
+import { createClient } from "@supabase/supabase-js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, assertSupabaseEnv } from "@/lib/env";
+
+assertSupabaseEnv();
+export const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+  auth: { persistSession: true, autoRefreshToken: true },
+});
 
 // Type definitions for signup with access code
 type SignUpInputs = {
