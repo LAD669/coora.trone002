@@ -43,6 +43,9 @@ export default function InfoHubView({
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   
+  // Debug: Log button props
+  console.log('InfoHubView render - canCreatePost:', canCreatePost, 'onCreatePost:', !!onCreatePost);
+  
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [expandedPost, setExpandedPost] = useState<string | null>(null);
   const [selectedPostForModal, setSelectedPostForModal] = useState<any>(null);
@@ -275,8 +278,12 @@ export default function InfoHubView({
         {canCreatePost && onCreatePost && (
           <TouchableOpacity
             style={styles.floatingButton}
-            onPress={onCreatePost}
+            onPress={() => {
+              console.log('Floating button pressed!');
+              onCreatePost();
+            }}
             activeOpacity={0.8}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Plus size={24} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
@@ -592,7 +599,7 @@ const styles = StyleSheet.create({
   },
   floatingButton: {
     position: 'absolute',
-    bottom: 32,
+    bottom: 100,
     right: 24,
     width: 56,
     height: 56,
@@ -608,6 +615,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    zIndex: 1000,
   },
   modal: {
     margin: 0,

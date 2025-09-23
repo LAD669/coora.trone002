@@ -9,12 +9,10 @@ import {
 import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleCheck, Circle } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getClubStats, computeStatsFallback } from '@/lib/api/club';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getClubStats } from '@/lib/api/club';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { ManagerErrorBoundary } from '@/components/ManagerErrorBoundary';
 import { logApiCall, logApiError, logUserAction } from '@/lib/logging';
-import TopBarManager from '@/components/ui/TopBarManager';
-import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 
 // Default stats structure - always visible with zero values
@@ -61,41 +59,23 @@ function DashboardManagerContent() {
   const { t: commonT } = useTranslation('common');
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const fallbackStatsRef = useRef<any>(null);
   
   // Early return if user is not available
   if (!user) {
     return null;
   }
 
-  // React Query hook for club stats with fallback
+  // React Query hook for club stats with automatic fallback
   const clubStatsQuery = useQuery({
     queryKey: ["clubStats", user.clubId],
-    queryFn: async () => {
-      try {
-        return await getClubStats(user.clubId!);
-      } catch (error) {
-        console.error("getClubStats error:", error);
-        // Try fallback if RPC fails
-        try {
-          const fallbackStats = await computeStatsFallback(user.clubId!);
-          fallbackStatsRef.current = fallbackStats;
-          console.log("Using fallback stats:", fallbackStats);
-          return fallbackStats;
-        } catch (fallbackError) {
-          console.error("Fallback also failed:", fallbackError);
-          throw error; // Re-throw original error
-        }
-      }
-    },
+    queryFn: () => getClubStats(user.clubId!),
     retry: 1,
     staleTime: 60_000, // 1 minute
     enabled: !!user.clubId,
   });
 
-  // Use RPC data if available, otherwise fallback
-  const statsData = clubStatsQuery.data ?? fallbackStatsRef.current;
+  // Use the stats data directly
+  const statsData = clubStatsQuery.data;
 
   // Update stats with real data
   const stats = defaultStats.map(stat => {
@@ -126,21 +106,16 @@ function DashboardManagerContent() {
 
   if (clubStatsQuery.isLoading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{commonT('loading')}</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <TopBarManager 
-        title="Dashboard" 
-        onPressBell={() => router.push("/notifications")} 
-        onPressSettings={() => router.push("/settings")} 
-      />
+    <SafeAreaView style={styles.container}>
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
@@ -173,7 +148,7 @@ function DashboardManagerContent() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -41,7 +41,11 @@ function RootLayoutContent() {
     
     const group = segments[0]; // "(manager)" | "(app)" | ...
     
-    if (isManager && group !== "(manager)") {
+    // Allow managers to access shared screens (settings, notifications, EditProfileScreen)
+    const sharedScreens = ['settings', 'notifications', 'EditProfileScreen'];
+    const isSharedScreen = segments.length > 1 && segments[1] && sharedScreens.includes(segments[1]);
+    
+    if (isManager && group !== "(manager)" && !isSharedScreen) {
       console.log('Manager user detected, redirecting to manager tabs');
       router.replace("/(manager)/(tabs)/dashboard");
     } else if (!isManager && group === "(manager)") {

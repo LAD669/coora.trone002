@@ -51,6 +51,14 @@ export class DeepLinkHandler {
 
       // Handle regular app deep links
       if (this.auth.isManager) {
+        // Allow managers to access shared screens (settings, notifications, EditProfileScreen)
+        const sharedScreens = ['settings', 'notifications', 'EditProfileScreen'];
+        if (sharedScreens.includes(path)) {
+          console.log('Manager user accessing shared screen:', path);
+          this.routeToAppSection(path, params);
+          return;
+        }
+        
         console.log('Manager user accessing app deep link, redirecting to manager section');
         this.router.replace('/(manager)/(tabs)/dashboard');
         return;

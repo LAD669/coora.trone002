@@ -59,44 +59,43 @@ export default function ManagerTabs() {
           },
         }}
       >
-      <Tabs.Screen
-        name="infohub"
-        options={{
-          title: tabsT('home'),
-          tabBarIcon: ({ size, color }) => (
-            <MessageSquare size={24} color={color} strokeWidth={1.5} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: tabsT('dashboard'),
-          tabBarIcon: ({ size, color }) => (
-            <BarChart3 size={24} color={color} strokeWidth={1.5} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          title: tabsT('calendar'),
-          tabBarIcon: ({ size, color }) => (
-            <Calendar size={24} color={color} strokeWidth={1.5} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="playerboard"
-        options={{
-          title: tabsT('playerboard'),
-          tabBarIcon: ({ size, color }) => (
-            <Users size={24} color={color} strokeWidth={1.5} />
-          ),
-        }}
-      />
-
-    </Tabs>
+        <Tabs.Screen
+          name="infohub"
+          options={{
+            title: tabsT('home'),
+            tabBarIcon: ({ size, color }) => (
+              <MessageSquare size={24} color={color} strokeWidth={1.5} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="dashboard"
+          options={{
+            title: tabsT('dashboard'),
+            tabBarIcon: ({ size, color }) => (
+              <BarChart3 size={24} color={color} strokeWidth={1.5} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="calendar"
+          options={{
+            title: tabsT('calendar'),
+            tabBarIcon: ({ size, color }) => (
+              <Calendar size={24} color={color} strokeWidth={1.5} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="playerboard"
+          options={{
+            title: tabsT('playerboard'),
+            tabBarIcon: ({ size, color }) => (
+              <Users size={24} color={color} strokeWidth={1.5} />
+            ),
+          }}
+        />
+      </Tabs>
     </View>
   );
 }

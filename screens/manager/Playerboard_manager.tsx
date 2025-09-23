@@ -11,13 +11,10 @@ import { useAuth } from '@/contexts/AuthProvider';
 import { getClubTeams, getClubTeamPlayerCounts } from '@/lib/api/club';
 import { getSafeKey } from '@/lib/helpers';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
-import TopBarManager from '@/components/ui/TopBarManager';
-import { useRouter } from 'expo-router';
 
 export default function PlayerboardManager() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   
   // Early return if user is not available
   if (!user) {
@@ -80,22 +77,11 @@ export default function PlayerboardManager() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopBarManager 
-        title="Playerboard" 
-        onPressBell={() => router.push("/notifications")} 
-        onPressSettings={() => router.push("/settings")} 
-      />
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 16 + insets.bottom + 49 }}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Club Teams</Text>
-          <Text style={styles.headerSubtitle}>Manage and view all teams in your club</Text>
-        </View>
-
         {/* Teams List */}
         {teams.length === 0 ? (
           <View style={styles.emptyState}>
@@ -148,24 +134,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 16,
-    color: '#8E8E93',
-    fontFamily: 'Urbanist-Regular',
-  },
-  header: {
-    paddingVertical: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    marginBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    fontFamily: 'Urbanist-SemiBold',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
     fontSize: 16,
     color: '#8E8E93',
     fontFamily: 'Urbanist-Regular',

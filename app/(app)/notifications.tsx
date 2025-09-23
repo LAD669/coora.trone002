@@ -9,8 +9,9 @@ import {
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useClubNotifications, useMarkNotificationRead } from '@/hooks/useClubNotifications';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Bell, Calendar, Users, MapPin, Clock } from 'lucide-react-native';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { Bell, Calendar, Users, MapPin, Clock, ArrowLeft } from 'lucide-react-native';
+import { router } from 'expo-router';
 
 export default function NotificationsScreen() {
   const { user, isManager } = useAuth();
@@ -35,6 +36,10 @@ export default function NotificationsScreen() {
   );
 
   const { mutateAsync: markAsRead } = useMarkNotificationRead(user.clubId, user.id);
+
+  const handleBackPress = () => {
+    router.back();
+  };
 
   const handleNotificationPress = async (notification: any) => {
     try {
@@ -110,7 +115,22 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      {/* Header with back button */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBackPress}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel="Go back"
+        >
+          <ArrowLeft size={24} color="#1A1A1A" strokeWidth={1.5} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Notifications</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -142,7 +162,7 @@ export default function NotificationsScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -150,6 +170,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    height: 56,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-Bold',
+  },
+  headerSpacer: {
+    width: 44,
   },
   centerContainer: {
     flex: 1,

@@ -49,45 +49,70 @@ export type ClubTeam = {
 };
 
 /**
- * Get club-wide statistics using RPC function
+ * Get club-wide statistics using RPC function with automatic fallback
  */
 export async function getClubStats(clubId: string): Promise<ClubStats> {
-  const { data, error } = await supabase.rpc("get_club_stats", { p_club_id: clubId });
-  
-  if (error) {
-    // Make error message more descriptive
-    const details = (error as any).details || (error as any).hint || error.message || "unknown";
-    throw new Error(`getClubStats RPC failed: ${details}`);
+  try {
+    const { data, error } = await supabase.rpc("get_club_stats", { p_club_id: clubId });
+    
+    if (error) {
+      // Make error message more descriptive
+      const details = (error as any).details || (error as any).hint || error.message || "unknown";
+      console.warn(`getClubStats RPC failed: ${details}`);
+      
+      // Automatically fall back to manual computation
+      console.log("Falling back to manual stats computation...");
+      return await computeStatsFallback(clubId);
+    }
+    
+    // data is an array with one row (returns table)
+    const row = Array.isArray(data) ? data[0] : data;
+    
+    return {
+      memberCount: Number(row?.member_count ?? 0),
+      teamCount: Number(row?.team_count ?? 0),
+      upcomingEventsCount: Number(row?.upcoming_events ?? 0),
+    };
+  } catch (error) {
+    console.error("getClubStats failed completely:", error);
+    // Final fallback to manual computation
+    return await computeStatsFallback(clubId);
   }
-  
-  // data is an array with one row (returns table)
-  const row = Array.isArray(data) ? data[0] : data;
-  
-  return {
-    memberCount: Number(row?.member_count ?? 0),
-    teamCount: Number(row?.team_count ?? 0),
-    upcomingEventsCount: Number(row?.upcoming_events ?? 0),
-  };
 }
 
 /**
  * Fallback function to compute stats manually if RPC fails
  */
 export async function computeStatsFallback(clubId: string): Promise<ClubStats> {
-  const [{ data: users }, { data: teams }, { data: events }] = await Promise.all([
-    supabase.from("users").select("id").eq("club_id", clubId).eq("active", true).is("deleted_at", null),
-    supabase.from("teams").select("id").eq("club_id", clubId).is("deleted_at", null),
-    supabase.from("events").select("id")
-      .eq("club_id", clubId).is("deleted_at", null)
-      .gte("event_date", new Date().toISOString())
-      .lt("event_date", new Date(Date.now() + 30*864e5).toISOString()),
-  ]);
-  
-  return {
-    memberCount: users?.length ?? 0,
-    teamCount: teams?.length ?? 0,
-    upcomingEventsCount: events?.length ?? 0,
-  };
+  try {
+    const [{ data: users, error: usersError }, { data: teams, error: teamsError }, { data: events, error: eventsError }] = await Promise.all([
+      supabase.from("users").select("id").eq("club_id", clubId).eq("active", true),
+      supabase.from("teams").select("id").eq("club_id", clubId),
+      supabase.from("events").select("id")
+        .eq("club_id", clubId)
+        .gte("event_date", new Date().toISOString())
+        .lt("event_date", new Date(Date.now() + 30*864e5).toISOString()),
+    ]);
+    
+    // Log any errors but don't fail completely
+    if (usersError) console.warn("Error fetching users for stats:", usersError);
+    if (teamsError) console.warn("Error fetching teams for stats:", teamsError);
+    if (eventsError) console.warn("Error fetching events for stats:", eventsError);
+    
+    return {
+      memberCount: users?.length ?? 0,
+      teamCount: teams?.length ?? 0,
+      upcomingEventsCount: events?.length ?? 0,
+    };
+  } catch (error) {
+    console.error("Fallback stats computation failed:", error);
+    // Return default values if everything fails
+    return {
+      memberCount: 0,
+      teamCount: 0,
+      upcomingEventsCount: 0,
+    };
+  }
 }
 
 /**
@@ -103,7 +128,6 @@ export async function getClubPosts(clubId: string, postType: 'organization' | 'c
     `)
     .eq('club_id', clubId)
     .eq('post_type', postType)
-    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -121,7 +145,6 @@ export async function getClubEvents(clubId: string, startDate?: string, endDate?
       teams(name, color)
     `)
     .eq('club_id', clubId)
-    .is('deleted_at', null)
     .order('event_date', { ascending: true });
 
   if (startDate) {
@@ -144,7 +167,6 @@ export async function getClubTeams(clubId: string): Promise<ClubTeam[]> {
     .from('teams')
     .select('*')
     .eq('club_id', clubId)
-    .is('deleted_at', null)
     .order('name');
 
   if (error) throw error;
