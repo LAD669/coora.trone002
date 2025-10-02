@@ -1,30 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, Modal, TextInput, TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import { Alert, Modal, TextInput, TouchableOpacity, Text, View, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getClubPosts } from '@/lib/api/club';
-import { createPost } from '@/lib/supabase';
-import { Building2 } from 'lucide-react-native';
+import { createClubPost, getClubPosts } from '@/lib/supabase';
 import InfoHubView from '@/screens/shared/InfoHubView';
-import { useLocalSearchParams } from 'expo-router';
+import { Building2 } from 'lucide-react-native';
 
 export default function InfohubManager() {
   const { t: commonT } = useTranslation('common');
   const { user } = useAuth();
-  const params = useLocalSearchParams();
   
   const [posts, setPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [newPost, setNewPost] = useState({
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [formData, setFormData] = useState({
     title: '',
-    content: '',
-    imageUrl: '',
+    body: '',
   });
-
-  // Debug: Log initial state and params
-  console.log('InfohubManager render - isModalVisible:', isModalVisible);
-  console.log('InfohubManager render - params:', params);
 
   // Load posts from Supabase
   useEffect(() => {
@@ -46,16 +38,16 @@ export default function InfohubManager() {
     
     setIsLoading(true);
     try {
-      // Manager: load organization posts from entire club
+      // Manager: load organization posts from club_posts table
       console.log('Fetching club posts for manager:', user.clubId);
       const data = await getClubPosts(user.clubId!, 'organization');
       
-      console.log('Received posts data:', data);
+      console.log('Received club posts data:', data);
       setPosts(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Error loading posts:', error);
+      console.error('Error loading club posts:', error);
       setPosts([]);
-      console.error('Failed to load posts:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Failed to load club posts:', error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setIsLoading(false);
     }
@@ -63,68 +55,81 @@ export default function InfohubManager() {
 
   const canCreatePost = user?.role === 'manager' || user?.role === 'admin';
 
-  const handleCreatePost = async () => {
-    if (!canCreatePost) {
-      Alert.alert(commonT('error'), commonT('noPermission'));
-      return;
-    }
+  // Determine which tab the user can post to based on their role
+  const getPostableTab = () => {
+    if (user?.role === 'admin') return 'organization';
+    if (user?.role === 'manager') return 'organization';
+    return null;
+  };
 
-    if (!user?.clubId || !user?.id) {
-      Alert.alert(commonT('error'), commonT('authError'));
-      return;
-    }
+  const postableTab = getPostableTab();
 
-    if (!newPost.title.trim() || !newPost.content.trim()) {
+  const openCreatePostModal = () => {
+    console.log('=== openCreatePostModal called ===');
+    console.log('postableTab:', postableTab);
+    console.log('user role:', user?.role);
+    
+    if (postableTab) {
+      console.log('Opening modal because postableTab is valid');
+      setIsCreateOpen(true);
+    } else {
+      console.log('NOT opening modal because postableTab is null/undefined');
+    }
+  };
+
+  const closeCreatePostModal = () => {
+    setIsCreateOpen(false);
+    setFormData({ title: '', body: '' });
+  };
+
+  const handlePublish = async () => {
+    if (!formData.title.trim() || !formData.body.trim()) {
       Alert.alert(commonT('error'), commonT('fillAllFields'));
       return;
     }
 
-    console.log('Creating club post with user data:', {
-      userId: user.id,
-      clubId: user.clubId,
-      userRole: user.role,
-      postData: newPost
-    });
+    if (!user?.clubId || !user?.id) {
+      Alert.alert(commonT('error'), 'User data missing');
+      return;
+    }
 
     try {
+      console.log('Creating club post:', {
+        title: formData.title,
+        body: formData.body,
+        postType: 'organization',
+        clubId: user.clubId,
+        authorId: user.id,
+      });
+
       const postData = {
-        title: newPost.title,
-        content: newPost.content,
-        imageUrl: newPost.imageUrl,
-        postType: 'organization' as 'organization' | 'coach',
-        teamId: user.clubId!, // Use clubId as teamId for club-wide posts
+        title: formData.title,
+        content: formData.body,
+        imageUrl: '', // No image support yet
+        postType: 'organization' as 'organization' | 'announcement',
+        clubId: user.clubId,
         authorId: user.id,
       };
-      
-      console.log('Calling createPost with:', postData);
-      const result = await createPost(postData);
+
+      const result = await createClubPost(postData);
       console.log('Club post created successfully:', result);
+
+      Alert.alert(commonT('success'), 'Post created successfully!');
+      closeCreatePostModal();
       
-      setNewPost({ title: '', content: '', imageUrl: '' });
-      setModalVisible(false);
-      Alert.alert(commonT('success'), commonT('postCreated'));
-      loadPosts(); // Reload posts
+      // Reload posts to show the new post
+      loadPosts();
     } catch (error) {
       console.error('Error creating club post:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('Full error details:', error);
-      Alert.alert(commonT('error'), commonT('postCreateError'));
+      Alert.alert(commonT('error'), 'Failed to create post. Please try again.');
     }
   };
 
-  const openCreatePostModal = () => {
-    console.log('Opening create post modal');
-    setModalVisible(true);
-  };
-
-  const closeCreatePostModal = () => {
-    console.log('Closing create post modal');
-    setModalVisible(false);
-    setNewPost({ title: '', content: '', imageUrl: '' });
-  };
-
-  // Debug: Log modal state before render
-  console.log('About to render - isModalVisible:', isModalVisible, 'canCreatePost:', canCreatePost);
+  // Debug logging
+  console.log('InfohubManager - canCreatePost:', canCreatePost);
+  console.log('InfohubManager - user role:', user?.role);
+  console.log('InfohubManager - postableTab:', postableTab);
+  console.log('InfohubManager - onCreatePost function:', !!openCreatePostModal);
 
   return (
     <>
@@ -141,53 +146,66 @@ export default function InfohubManager() {
 
       {/* Create Post Modal */}
       <Modal
-        isVisible={isModalVisible}
-        onBackdropPress={closeCreatePostModal}
-        style={styles.modal}
+        visible={isCreateOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={closeCreatePostModal}
       >
-        <View style={styles.modalContent}>
+        <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{commonT('createUpdate')}</Text>
-            <TouchableOpacity onPress={closeCreatePostModal}>
-              <Text style={styles.cancelText}>{commonT('cancel')}</Text>
+            <TouchableOpacity onPress={closeCreatePostModal} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.modalToggle}>
-            <Text style={styles.modalToggleLabel}>{commonT('postTo')}</Text>
-            <View style={styles.selectedPostType}>
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            {/* Post Type Display */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>{commonT('postTo')}</Text>
               <View style={styles.postTypeDisplay}>
                 <Building2 size={16} color="#1A1A1A" strokeWidth={1.5} />
                 <Text style={styles.postTypeText}>{commonT('organization')}</Text>
               </View>
             </View>
+
+            {/* Title Input */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>{commonT('updateTitle')}</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter update title..."
+                value={formData.title}
+                onChangeText={(text) => setFormData({ ...formData, title: text })}
+                placeholderTextColor="#8E8E93"
+              />
+            </View>
+
+            {/* Body Input */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>Content</Text>
+              <TextInput
+                style={[styles.textInput, styles.bodyInput]}
+                placeholder="What's happening in your club?"
+                value={formData.body}
+                onChangeText={(text) => setFormData({ ...formData, body: text })}
+                multiline
+                numberOfLines={6}
+                textAlignVertical="top"
+                placeholderTextColor="#8E8E93"
+              />
+            </View>
+          </ScrollView>
+
+          {/* Action Buttons */}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.cancelButton} onPress={closeCreatePostModal}>
+              <Text style={styles.cancelButtonText}>{commonT('cancel')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.publishButton} onPress={handlePublish}>
+              <Text style={styles.publishButtonText}>{commonT('publishUpdate')}</Text>
+            </TouchableOpacity>
           </View>
-
-          <TextInput
-            style={styles.titleInput}
-            placeholder={commonT('updateTitle')}
-            value={newPost.title}
-            onChangeText={(text) => setNewPost({ ...newPost, title: text })}
-            placeholderTextColor="#8E8E93"
-          />
-
-          <TextInput
-            style={styles.contentInput}
-            placeholder="Was gibt es Neues in der Organisation?"
-            value={newPost.content}
-            onChangeText={(text) => setNewPost({ ...newPost, content: text })}
-            multiline
-            numberOfLines={6}
-            textAlignVertical="top"
-            placeholderTextColor="#8E8E93"
-          />
-
-          <TouchableOpacity
-            style={styles.publishButton}
-            onPress={handleCreatePost}
-          >
-            <Text style={styles.publishButtonText}>{commonT('publishUpdate')}</Text>
-          </TouchableOpacity>
         </View>
       </Modal>
     </>
@@ -195,22 +213,18 @@ export default function InfohubManager() {
 }
 
 const styles = StyleSheet.create({
-  modal: {
-    margin: 0,
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
+  modalContainer: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   modalTitle: {
     fontSize: 20,
@@ -218,31 +232,42 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontFamily: 'Urbanist-SemiBold',
   },
-  cancelText: {
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
     fontSize: 16,
     color: '#8E8E93',
-    fontFamily: 'Urbanist-Regular',
+    fontWeight: '500',
   },
-  modalToggle: {
-    marginBottom: 24,
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: 24,
   },
-  modalToggleLabel: {
-    fontSize: 14,
-    color: '#8E8E93',
+  section: {
+    marginTop: 24,
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1A1A1A',
     marginBottom: 12,
-    fontFamily: 'Urbanist-Regular',
-  },
-  selectedPostType: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E5E7',
+    fontFamily: 'Urbanist-Medium',
   },
   postTypeDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: '#E5E5E7',
     gap: 8,
   },
   postTypeText: {
@@ -251,24 +276,46 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontFamily: 'Urbanist-Medium',
   },
-  titleInput: {
+  textInput: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     fontSize: 16,
     color: '#1A1A1A',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    marginBottom: 16,
     fontFamily: 'Urbanist-Regular',
+    borderWidth: 1,
+    borderColor: '#E5E5E7',
   },
-  contentInput: {
-    fontSize: 16,
-    color: '#1A1A1A',
-    paddingVertical: 16,
+  bodyInput: {
     height: 120,
-    marginBottom: 24,
-    fontFamily: 'Urbanist-Regular',
+    textAlignVertical: 'top',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5E7',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Medium',
   },
   publishButton: {
+    flex: 1,
     backgroundColor: '#1A1A1A',
     borderRadius: 12,
     paddingVertical: 16,
@@ -276,8 +323,8 @@ const styles = StyleSheet.create({
   },
   publishButtonText: {
     fontSize: 16,
-    color: '#FFFFFF',
     fontWeight: '500',
+    color: '#FFFFFF',
     fontFamily: 'Urbanist-Medium',
   },
 });

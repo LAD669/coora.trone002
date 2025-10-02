@@ -10,7 +10,8 @@ import { Users, Calendar, Trophy, TrendingUp, Target, Award, Activity, CircleChe
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
 import { getClubStats } from '@/lib/api/club';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { ManagerErrorBoundary } from '@/components/ManagerErrorBoundary';
 import { logApiCall, logApiError, logUserAction } from '@/lib/logging';
 import { useQuery } from '@tanstack/react-query';
@@ -58,7 +59,7 @@ const defaultStats = [
 function DashboardManagerContent() {
   const { t: commonT } = useTranslation('common');
   const { user } = useAuth();
-  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   
   // Early return if user is not available
   if (!user) {
@@ -106,7 +107,7 @@ function DashboardManagerContent() {
 
   if (clubStatsQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{commonT('loading')}</Text>
         </View>
@@ -115,11 +116,12 @@ function DashboardManagerContent() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 16 + insets.bottom + 49 }}
+        contentContainerStyle={{ paddingBottom: 16 + tabBarHeight }}
+        contentInsetAdjustmentBehavior="never"
       >
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>

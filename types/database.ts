@@ -290,7 +290,64 @@ export interface Database {
           updated_at?: string
         }
       }
-      post_reactions: {
+      club_posts: {
+        Row: {
+          id: string
+          title: string
+          content: string
+          image_url: string | null
+          author_id: string
+          club_id: string
+          post_type: 'organization' | 'announcement'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          content: string
+          image_url?: string | null
+          author_id: string
+          club_id: string
+          post_type?: 'organization' | 'announcement'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          content?: string
+          image_url?: string | null
+          author_id?: string
+          club_id?: string
+          post_type?: 'organization' | 'announcement'
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      club_post_reactions: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          emoji: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+          emoji: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+          emoji?: string
+          created_at?: string
+        }
+      }
         Row: {
           id: string
           post_id: string

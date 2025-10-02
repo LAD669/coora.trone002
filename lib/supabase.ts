@@ -695,6 +695,107 @@ export const createTeam = async (team: {
   return data;
 };
 
+export const createClubPost = async (post: {
+  title: string;
+  content: string;
+  imageUrl?: string;
+  postType: 'organization' | 'announcement';
+  clubId: string;
+  authorId: string;
+}) => {
+  console.log('Supabase createClubPost called with:', post);
+  
+  const { data, error } = await supabase
+    .from('club_posts')
+    .insert({
+      title: post.title,
+      content: post.content,
+      image_url: post.imageUrl,
+      post_type: post.postType,
+      club_id: post.clubId,
+      author_id: post.authorId,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Supabase createClubPost error:', error);
+    throw error;
+  }
+   
+   if (!data) {
+     console.error('Supabase createClubPost returned no data');
+     throw new Error('Failed to create club post');
+   }
+   
+  console.log('Supabase createClubPost success:', data);
+  return data;
+};
+
+export const getClubPosts = async (clubId: string, postType: 'organization' | 'announcement' = 'organization') => {
+  console.log('Supabase getClubPosts called with:', { clubId, postType });
+  
+  const { data, error } = await supabase
+    .from('club_posts')
+    .select(`
+      *,
+      users(name),
+      club_post_reactions(emoji, user_id)
+    `)
+    .eq('club_id', clubId)
+    .eq('post_type', postType)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Supabase getClubPosts error:', error);
+    throw error;
+  }
+   
+  console.log('Supabase getClubPosts success:', data);
+  return data || [];
+};
+
+export const addClubPostReaction = async (postId: string, userId: string, emoji: string) => {
+  console.log('Supabase addClubPostReaction called with:', { postId, userId, emoji });
+  
+  const { data, error } = await supabase
+    .from('club_post_reactions')
+    .insert({
+      post_id: postId,
+      user_id: userId,
+      emoji: emoji,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Supabase addClubPostReaction error:', error);
+    throw error;
+  }
+   
+  console.log('Supabase addClubPostReaction success:', data);
+  return data;
+};
+
+export const removeClubPostReaction = async (postId: string, userId: string, emoji: string) => {
+  console.log('Supabase removeClubPostReaction called with:', { postId, userId, emoji });
+  
+  const { error } = await supabase
+    .from('club_post_reactions')
+    .delete()
+    .eq('post_id', postId)
+    .eq('user_id', userId)
+    .eq('emoji', emoji);
+
+  if (error) {
+    console.error('Supabase removeClubPostReaction error:', error);
+    throw error;
+  }
+   
+  console.log('Supabase removeClubPostReaction success');
+  return true;
+};
+
 export const createPost = async (post: {
   title: string;
   content: string;
