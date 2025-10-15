@@ -6,6 +6,12 @@ export type ClubStats = {
   upcomingEventsCount: number;
 };
 
+export type DashboardCounts = {
+  total_teams: number;
+  active_events: number;
+  upcoming_matches: number;
+};
+
 export type ClubPost = {
   id: string;
   title: string;
@@ -47,6 +53,42 @@ export type ClubTeam = {
   club_id: string;
   playerCount?: number;
 };
+
+/**
+ * Get dashboard counts for manager screens (teams, events, matches)
+ */
+export async function getDashboardCounts(clubId: string): Promise<DashboardCounts> {
+  try {
+    const { data, error } = await supabase.rpc('get_dashboard_counts', { p_club_id: clubId });
+    
+    if (error) {
+      console.warn(`getDashboardCounts RPC failed: ${error.message}`);
+      // Return default values on error
+      return {
+        total_teams: 0,
+        active_events: 0,
+        upcoming_matches: 0,
+      };
+    }
+    
+    // data is an array with one row (returns table)
+    const row = Array.isArray(data) ? data[0] : data;
+    
+    return {
+      total_teams: Number(row?.total_teams ?? 0),
+      active_events: Number(row?.active_events ?? 0),
+      upcoming_matches: Number(row?.upcoming_matches ?? 0),
+    };
+  } catch (error) {
+    console.error("getDashboardCounts failed:", error);
+    // Return default values on error
+    return {
+      total_teams: 0,
+      active_events: 0,
+      upcoming_matches: 0,
+    };
+  }
+}
 
 /**
  * Get club-wide statistics using RPC function with automatic fallback

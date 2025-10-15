@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import { Alert, TouchableOpacity, Text, View, StyleSheet, Modal, TextInput, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getTeamPosts } from '@/lib/supabase';
+import { getTeamPosts, createPost, createClubPost } from '@/lib/supabase';
 import { getClubPosts } from '@/lib/api/club';
 import InfoHubView from '@/screens/shared/InfoHubView';
+import { Building2, Users } from 'lucide-react-native';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -64,6 +65,11 @@ function InfohubScreenContent() {
   const [activeTab, setActiveTab] = useState<'organization' | 'teams'>('organization');
   const [posts, setPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    body: '',
+  });
 
   // Load posts from Supabase
   useEffect(() => {
@@ -128,28 +134,155 @@ function InfohubScreenContent() {
   const openCreatePostModal = () => {
     if (postableTab) {
       setActiveTab(postableTab);
-      Alert.alert(
-        'Create Post',
-        'Post creation functionality will be implemented here',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'OK', onPress: () => console.log('Create post pressed') }
-        ]
-      );
+      setIsCreateOpen(true);
+    }
+  };
+
+  const closeCreatePostModal = () => {
+    setIsCreateOpen(false);
+    setFormData({ title: '', body: '' });
+  };
+
+  const handlePublish = async () => {
+    if (!formData.title.trim() || !formData.body.trim()) {
+      Alert.alert(commonT('error'), commonT('fillAllFields'));
+      return;
+    }
+
+    if (!user?.id) {
+      Alert.alert(commonT('error'), 'User data missing');
+      return;
+    }
+
+    try {
+      let result;
+      
+      if (isManager && user.clubId) {
+        // Manager creating club post
+        const postData = {
+          title: formData.title,
+          content: formData.body,
+          imageUrl: '', // No image support yet
+          postType: 'organization' as 'organization' | 'announcement',
+          clubId: user.clubId,
+          authorId: user.id,
+        };
+        result = await createClubPost(postData);
+      } else if (user.teamId) {
+        // Regular user creating team post
+        const postData = {
+          title: formData.title,
+          content: formData.body,
+          imageUrl: '', // No image support yet
+          postType: (postableTab === 'teams' ? 'coach' : 'organization') as 'organization' | 'coach',
+          teamId: user.teamId,
+          authorId: user.id,
+        };
+        result = await createPost(postData);
+      } else {
+        Alert.alert(commonT('error'), 'Missing team or club information');
+        return;
+      }
+
+      console.log('Post created successfully:', result);
+      Alert.alert(commonT('success'), 'Post created successfully!');
+      closeCreatePostModal();
+      
+      // Reload posts to show the new post
+      loadPosts();
+    } catch (error) {
+      console.error('Error creating post:', error);
+      Alert.alert(commonT('error'), 'Failed to create post. Please try again.');
     }
   };
 
   return (
-    <InfoHubView
-      posts={posts}
-      isLoading={isLoading}
-      onRefresh={loadPosts}
-      onCreatePost={canCreatePost ? openCreatePostModal : undefined}
-      canCreatePost={canCreatePost}
-      showToggle={!isManager} // Only show toggle for non-managers
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-    />
+    <>
+      <InfoHubView
+        posts={posts}
+        isLoading={isLoading}
+        onRefresh={loadPosts}
+        onCreatePost={canCreatePost ? openCreatePostModal : undefined}
+        canCreatePost={canCreatePost}
+        showToggle={!isManager} // Only show toggle for non-managers
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
+
+      {/* Create Post Modal */}
+      <Modal
+        visible={isCreateOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={closeCreatePostModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{commonT('createUpdate')}</Text>
+            <TouchableOpacity onPress={closeCreatePostModal} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            {/* Post Type Display */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>{commonT('postTo')}</Text>
+              <View style={styles.postTypeDisplay}>
+                {postableTab === 'organization' ? (
+                  <>
+                    <Building2 size={16} color="#1A1A1A" strokeWidth={1.5} />
+                    <Text style={styles.postTypeText}>{commonT('organization')}</Text>
+                  </>
+                ) : (
+                  <>
+                    <Users size={16} color="#1A1A1A" strokeWidth={1.5} />
+                    <Text style={styles.postTypeText}>{commonT('teams')}</Text>
+                  </>
+                )}
+              </View>
+            </View>
+
+            {/* Title Input */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>{commonT('updateTitle')}</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter update title..."
+                value={formData.title}
+                onChangeText={(text) => setFormData({ ...formData, title: text })}
+                placeholderTextColor="#8E8E93"
+              />
+            </View>
+
+            {/* Body Input */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>Content</Text>
+              <TextInput
+                style={[styles.textInput, styles.bodyInput]}
+                placeholder="What's happening in your team?"
+                value={formData.body}
+                onChangeText={(text) => setFormData({ ...formData, body: text })}
+                multiline
+                numberOfLines={6}
+                textAlignVertical="top"
+                placeholderTextColor="#8E8E93"
+              />
+            </View>
+          </ScrollView>
+
+          {/* Action Buttons */}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.cancelButton} onPress={closeCreatePostModal}>
+              <Text style={styles.cancelButtonText}>{commonT('cancel')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.publishButton} onPress={handlePublish}>
+              <Text style={styles.publishButtonText}>{commonT('publishUpdate')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -193,6 +326,121 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '500',
+    fontFamily: 'Urbanist-Medium',
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-SemiBold',
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  section: {
+    marginTop: 24,
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1A1A1A',
+    marginBottom: 12,
+    fontFamily: 'Urbanist-Medium',
+  },
+  postTypeDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: '#E5E5E7',
+    gap: 8,
+  },
+  postTypeText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-Medium',
+  },
+  textInput: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-Regular',
+    borderWidth: 1,
+    borderColor: '#E5E5E7',
+  },
+  bodyInput: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5E7',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Medium',
+  },
+  publishButton: {
+    flex: 1,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  publishButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#FFFFFF',
     fontFamily: 'Urbanist-Medium',
   },
 });
