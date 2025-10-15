@@ -10,11 +10,12 @@ import {
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { useAuth } from '@/contexts/AuthProvider';
-import { getClubEvents } from '@/lib/api/club';
+import { getClubEvents, getDashboardCounts } from '@/lib/api/club';
 import { createEvent } from '@/lib/supabase';
 import { Plus, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Check, X, Users, UserCheck, UserX, Clock as ClockIcon } from 'lucide-react-native';
 import { Event } from '@/types';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -50,6 +51,17 @@ export default function KalenderManager() {
   });
 
   const canCreateEvent = user?.role === 'manager' || user?.role === 'admin';
+
+  // React Query hook for dashboard counts (reused from Dashboard screen)
+  const dashboardCountsQuery = useQuery({
+    queryKey: ["dashboardCounts", user?.clubId],
+    queryFn: () => getDashboardCounts(user!.clubId!),
+    retry: 1,
+    staleTime: 60_000, // 1 minute
+    enabled: !!user?.clubId,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
 
   // Load events from database on component mount
   useEffect(() => {
@@ -246,6 +258,7 @@ export default function KalenderManager() {
         style={styles.content} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 16 + insets.bottom + 49 }}
+        contentInsetAdjustmentBehavior="never"
       >
         {/* Calendar Header */}
         <View style={styles.calendarHeader}>
@@ -266,6 +279,28 @@ export default function KalenderManager() {
           >
             <ChevronRight size={20} color="#1A1A1A" strokeWidth={1.5} />
           </TouchableOpacity>
+        </View>
+
+        {/* Dashboard Counts Summary */}
+        <View style={styles.countsSummary}>
+          <View style={styles.countItem}>
+            <Text style={styles.countValue}>
+              {dashboardCountsQuery.data?.total_teams ?? 0}
+            </Text>
+            <Text style={styles.countLabel}>Teams</Text>
+          </View>
+          <View style={styles.countItem}>
+            <Text style={styles.countValue}>
+              {dashboardCountsQuery.data?.active_events ?? 0}
+            </Text>
+            <Text style={styles.countLabel}>Active Events</Text>
+          </View>
+          <View style={styles.countItem}>
+            <Text style={styles.countValue}>
+              {dashboardCountsQuery.data?.upcoming_matches ?? 0}
+            </Text>
+            <Text style={styles.countLabel}>Upcoming Matches</Text>
+          </View>
         </View>
 
         {/* Days of Week Header */}
@@ -553,6 +588,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
     marginBottom: 16,
+  },
+  countsSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    marginBottom: 24,
+  },
+  countItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  countValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    fontFamily: 'Urbanist-Bold',
+    marginBottom: 4,
+  },
+  countLabel: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontFamily: 'Urbanist-Regular',
+    textAlign: 'center',
   },
   navButton: {
     width: 40,
